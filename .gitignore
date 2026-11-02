@@ -1,0 +1,4 @@
+node_modules/
+.revision/
+.env.local
+*:Zone.Identifier

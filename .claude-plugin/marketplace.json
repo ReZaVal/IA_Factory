@@ -1,0 +1,12 @@
+{
+  "name": "ia-factory",
+  "owner": { "name": "Renzo Zavala" },
+  "description": "Marketplace de IA Factory: harness multi-sesión (SDD) y revisión multi-agente.",
+  "plugins": [
+    {
+      "name": "ia-factory",
+      "source": "./",
+      "description": "Harness multi-sesión (SDD) + flujo multi-agente de construcción y revisión."
+    }
+  ]
+}

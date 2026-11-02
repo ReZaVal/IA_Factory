@@ -1,0 +1,7 @@
+{
+  "name": "ia-factory",
+  "version": "1.0.0",
+  "description": "IA Factory: harness de documentación multi-sesión (SDD) + flujo multi-agente de construcción y revisión (Claude Opus/Sonnet + Gemini Pro).",
+  "author": { "name": "Renzo Zavala" },
+  "keywords": ["harness", "sdd", "multi-agente", "revision", "gemini"]
+}
