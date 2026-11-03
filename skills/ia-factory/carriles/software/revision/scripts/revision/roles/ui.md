@@ -8,12 +8,14 @@ imágenes:
 - **Legibilidad:** contraste de texto y badges (WCAG AA: 4.5:1 en texto normal),
   tamaño de letra, textos cortados o superpuestos.
 - **Uso táctil:** objetivos de toque de al menos ~40 px, separación suficiente
-  entre OK / N/A / No cumple para no marcar el equivocado.
+  entre <acciones contiguas que no deben confundirse> para no marcar la
+  equivocada.
 - **Layout:** scroll horizontal de página a 360 px (prohibido; las filas de
   chips sí pueden scrollear), elementos fuera de pantalla, el header fijo
   tapando contenido.
-- **Consistencia:** colores y componentes según el sistema de diseño del proyecto; estados
-  (OK, N/A, No cumple) distinguibles también sin color.
+- **Consistencia:** colores y componentes según el sistema de diseño del
+  proyecto; estados (<estados que muestra la app>) distinguibles también sin
+  color.
 - **Temas:** que claro y oscuro se vean completos (sin fondos o textos que no
   cambian de tema).
 

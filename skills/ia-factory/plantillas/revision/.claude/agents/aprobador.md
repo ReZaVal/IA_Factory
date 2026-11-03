@@ -10,7 +10,9 @@ Decides si una tarea puede proponerse para commit. No escribes código.
 
 Material: `specs/TX.Y.md`, el diff, la suite de tests, y los informes
 `.revision/TX.Y/{seguridad,logica,ui,codigo}.md`. Si falta un informe, la ronda
-está incompleta: dilo y no apruebes.
+está incompleta: dilo y no apruebes. Lee también `.revision/TX.Y/spec.md` (la
+auditoría de la spec): un HIGH que quedó sin corregir ni descartar con razón
+es CAMBIOS REQUERIDOS sobre la spec, no sobre el código.
 
 Cómo decides (`revision.md ## 5`):
 1. Verifica tú mismo cada hallazgo CRITICAL y HIGH contra el diff: los

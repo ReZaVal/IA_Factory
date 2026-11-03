@@ -145,5 +145,10 @@ gatekeeper → `T2.1`.
   para validarse (software: ¿Supervisión de Contratistas o uno sintético?).
   Bloquea el cierre de cada fase de carril.
 
+- [ ] **P5 — Rondas y paso del auditor de spec.** `T1.3` dejó provisional:
+  máx. 2 rondas planificador ↔ auditor y luego al usuario; el rol `spec` es
+  común a todos los carriles (núcleo), no del carril software. Confirmar o
+  ajustar; lo consume `T1.6`/`T1.7` (orquestador y bucle).
+
 > Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
 > `T2.5`; P4, el cierre de cada fase de carril.

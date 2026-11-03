@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 // Revisores Gemini (revision.md ## 3, IA Factory): envía la constitución del carril
 // + spec + diff (+ capturas) a la API de Gemini y guarda el informe en
-// .revision/<tarea>/<rol>.md.
-// Uso: node scripts/revision/gemini.mjs <seguridad|logica|ui> --tarea TX.Y [--carril software] [--base REF] [--imagen f.png ...]
+// .revision/<tarea>/<rol>.md. El rol `spec` audita la spec antes de construir:
+// recibe spec + fila del backlog + chequeos deterministas (spec.mjs), sin diff.
+// Uso: node scripts/revision/gemini.mjs <spec|seguridad|logica|ui> --tarea TX.Y [--carril software] [--base REF] [--imagen f.png ...]
 //      node scripts/revision/gemini.mjs --modelos
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { filaBacklog, precheckSpec, tablaChequeos, buildSpecPrompt } from "./spec.mjs";
 
-export const ROLES = ["seguridad", "logica", "ui"];
+export const ROLES = ["spec", "seguridad", "logica", "ui"];
 const API = "https://generativelanguage.googleapis.com/v1beta";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // Nunca salen a la API: datos reales de inspección y secretos (agente.md §4).
@@ -157,6 +159,19 @@ async function listModels(apiKey) {
     .map((m) => m.name.replace(/^models\//, ""));
 }
 
+/** Material del auditor de spec; los chequeos deterministas también encabezan su informe. */
+async function specInput(tarea, spec) {
+  if (!spec) throw new Error(`No hay specs/${tarea}.md: el planificador la escribe antes de auditarla (revision.md ## 3)`);
+  const plannerPath = path.join(ROOT, "planner.md");
+  const planner = existsSync(plannerPath) ? await readFile(plannerPath, "utf8") : "";
+  const chequeos = precheckSpec({ spec, planner, tarea });
+  return {
+    prompt: buildSpecPrompt({ tarea, spec, fila: filaBacklog(planner, tarea), chequeos }),
+    previo: `## Chequeos deterministas (spec.mjs)\n\n${tablaChequeos(chequeos)}\n\n`,
+    base: "—"
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const dotenvPath = path.join(ROOT, ".env.local");
@@ -181,13 +196,13 @@ async function main() {
   });
   const specPath = path.join(ROOT, "specs", `${args.tarea}.md`);
   const spec = existsSync(specPath) ? await readFile(specPath, "utf8") : "";
-  const diff = await collectDiff(args.base);
-  const informe = await callGemini({ apiKey, model, system, prompt: buildPrompt({ tarea: args.tarea, spec, diff }), imagenes: args.imagenes });
+  const { prompt, previo, base } = args.rol === "spec" ? await specInput(args.tarea, spec) : { prompt: buildPrompt({ tarea: args.tarea, spec, diff: await collectDiff(args.base) }), previo: "", base: args.base };
+  const informe = await callGemini({ apiKey, model, system, prompt, imagenes: args.imagenes });
 
   const outDir = path.join(ROOT, ".revision", args.tarea);
   await mkdir(outDir, { recursive: true });
   const out = path.join(outDir, `${args.rol}.md`);
-  await writeFile(out, `<!-- revisor: ${args.rol} · carril: ${args.carril} · modelo: ${model} · base: ${args.base} -->\n\n${informe}\n`);
+  await writeFile(out, `<!-- revisor: ${args.rol} · carril: ${args.carril} · modelo: ${model} · base: ${base} -->\n\n${previo}${informe}\n`);
   process.stdout.write(`Informe guardado en ${path.relative(ROOT, out)}\n`);
 }
 

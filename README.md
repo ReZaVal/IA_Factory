@@ -52,7 +52,9 @@ sensibles), llena las plantillas y registra `D1`/`D2`.
 **4. Revisores Gemini** (solo con `--carril`/`--con-revision`): crea
 `.env.local` en el proyecto (queda ignorado por git) y llena
 `scripts/revision/roles/_contexto.md` y `constitucion-software.md` (las reglas
-duras que se envían a los revisores).
+duras que se envían a los revisores), y los huecos `<...>` de los roles. Antes
+de construir, `node scripts/revision/gemini.mjs spec --tarea TX.Y` audita la
+spec contra el backlog.
 ```
 GEMINI_API_KEY=<tu clave>
 GEMINI_MODEL=<id del modelo Pro>

@@ -14,6 +14,7 @@ texto. Un proyecto instalado con 1.0 sin constitución puede seguir listándolas
 aquí.
 
 Recibes la **spec** de la tarea (el contrato: qué debía hacerse y cómo se
-acepta) y el **diff**. Revisa solo tu especialidad; no repitas hallazgos de
+acepta) y el **diff** (el auditor de spec, antes de construir, recibe en su
+lugar la fila del backlog de la tarea). Revisa solo tu especialidad; no repitas hallazgos de
 otras áreas salvo que sean CRITICAL. No inventes código que no está en el diff:
 si necesitas contexto que no tienes, dilo como pregunta.

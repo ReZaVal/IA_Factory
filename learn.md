@@ -14,6 +14,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 | ID | Error | Regla derivada | Dónde vive |
 |---|---|---|---|
 | L1 | Conteo del instalador en subshell | No usar `cmd \| while` cuando el bucle modifica variables; usar `done < <(cmd)` | `instalar.sh` |
+| L2 | Prompts de revisor con contenido del cliente de origen | Todo ejemplo de dominio en el producto va como hueco `<...>`; al portar algo de un proyecto cliente, `grep` sus nombres propios antes de cerrar | `agente.md §1`; roles del carril software |
 
 ## 2. Log de errores
 ### L1 — `instalar.sh` reportaba menos archivos copiados
@@ -26,7 +27,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 - **Regla derivada:** ver §1.
 
 ### L2 — Los prompts de revisor traen contenido de un proyecto cliente
-- **Estado:** 🔴 Abierto (detectado en S-03, `T1.2`)
+- **Estado:** ✅ Resuelto (S-04, `T1.3`)
 - **Síntoma:** `carriles/software/revision/scripts/revision/roles/logica.md`
   menciona `FACILITIES`, `NORM_INFO`, prechecks y checklists; `seguridad.md` y
   `ui.md` hablan de "checklists en curso" y OK / N/A / No cumple. Es el
@@ -37,6 +38,11 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 - **Solución propuesta:** reescribir los ejemplos como `<...>` genéricos (o
   moverlos a la constitución del cliente). No se hizo en `T1.2` para no
   cambiar el contenido instalado; candidato para `T1.3`, que ya toca `roles/`.
+- **Solución aplicada:** `logica.md`, `seguridad.md` y `ui.md` con huecos
+  `<...>` (métricas, entidades, campos libres, estados, acciones contiguas);
+  `grep FACILITIES|NORM_INFO|checklist|No cumple|prechecks` → vacío.
+  `SKILL.md` paso 8, `README.md` e `instalar.sh` piden llenarlos.
+- **Regla derivada:** ver §1.
 
 ## 3. Errores de comportamiento del agente
 > (vacío)

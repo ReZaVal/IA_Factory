@@ -340,7 +340,10 @@ El agente que escribe código no ve sus propios errores: comparte los puntos
 ciegos de su modelo. En proyectos con código, cada tarea pasa por roles
 distintos con modelos distintos: **Planificador** (escribe la spec
 `specs/TX.Y.md`, el contrato de la tarea — SDD), **Constructor** (implementa
-con TDD contra la spec), **cuatro revisores por especialidad** en paralelo
+con TDD contra la spec), un **Auditor de spec** que, antes de construir,
+contrasta la spec con la fila del backlog de forma adversarial (chequeos
+deterministas + un proveedor distinto: alcance extra y requisitos ambiguos
+son HIGH y vuelven al planificador), **cuatro revisores por especialidad** en paralelo
 (Seguridad/Datos, Lógica/Métricas y UI/Visión con un proveedor distinto —
 Gemini—; Código/Estilo con otro modelo de Claude) y un **Approver** que
 verifica los hallazgos graves y decide APROBADO / CAMBIOS REQUERIDOS /
@@ -436,7 +439,8 @@ puntero o un ancla.
    `scripts/revision/`, `revision.md` y `constitucion-software.md`, y añade
    `.revision/` y `.env.local` al `.gitignore` (sin sobrescribir nada).
 2. Llenar `scripts/revision/roles/_contexto.md` y `constitucion-software.md`
-   (lo único que los revisores externos saben del proyecto; nada sensible),
+   (lo único que los revisores externos saben del proyecto; nada sensible) y
+   los huecos `<...>` de los roles `seguridad.md`, `logica.md` y `ui.md`,
    registrar la constitución en el «Mapa de documentos» y ajustar
    `revision.md ## 2-3`.
 3. En los agentes, reemplazar `<doc-codigo>.md` por el doc de dominio de código.

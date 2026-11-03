@@ -20,6 +20,13 @@ Reglas:
   en la sección "Preguntas abiertas" de la spec y detente ahí.
 - Criterios de aceptación verificables (un test o una comprobación concreta
   cada uno), incluidos los de UI si la tarea toca pantalla.
+- Tu spec pasa por el auditor de spec (`revision.md ## 3`, paso 2) antes de
+  construir. Son HIGH: una sección de la plantilla que falta, «No incluye»
+  vacío, un criterio sin «→ test …» o con palabras no verificables («rápido»,
+  «adecuado», «etc.»), un archivo en «Archivos» que no está en la columna
+  «Tocar» de la fila del backlog, y «Preguntas abiertas» sin resolver. Si te
+  devuelven el informe `.revision/TX.Y/spec.md`, corrige la spec, no el
+  backlog.
 - La tarea debe caber en una sesión (1-2 h). Si no cabe, propón partirla con
   IDs nuevos en vez de escribir una spec gigante.
 - No crees planes en otros archivos ni toques el backlog de `planner.md`; no

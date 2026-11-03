@@ -16,6 +16,16 @@
   sigue con `_contexto.md`. `_contexto.md` ya no lleva reglas duras.
 - Planificador, constructor y revisor de código leen la constitución.
 - Tests nuevos de `instalar.sh` (`tests/instalar.test.js`).
+- Auditor adversarial de la spec antes de construir (`revision.md ## 3`,
+  paso 2): `gemini.mjs spec --tarea TX.Y` corre chequeos deterministas
+  (`scripts/revision/spec.mjs`: secciones de la plantilla, «No incluye»,
+  criterios con «→ test», términos vagos, archivos fuera de «Tocar» del
+  backlog, preguntas sin resolver) y envía a Gemini la spec + la fila de
+  `planner.md §4` + esos chequeos, con el rol común `roles/spec.md`. Alcance
+  extra y requisitos ambiguos son HIGH; vuelven al planificador (máx. 2
+  rondas). Planificador y aprobador lo conocen. Tests en `tests/spec.test.js`.
+- Roles de seguridad, lógica y UI del carril software sin contenido del
+  proyecto de origen: los ejemplos pasan a huecos `<...>` (`L2` de IA Factory).
 
 ## 1.0.0 — 2026-11-02
 - Nace IA Factory a partir del skill `harness-agente-multisesion` (principios

@@ -1,4 +1,4 @@
-// instalar.sh (T1.2, memoria.md D8): el carril software reproduce 1.0 --con-revision + su constitución.
+// instalar.sh (T1.2-T1.3, memoria.md D8): el carril software reproduce 1.0 --con-revision + lo nuevo de 1.1.
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readdirSync, statSync, rmSync, readFileSync } from "node:fs";
@@ -30,6 +30,8 @@ const ARCHIVOS_1_0 = [
   "scripts/revision/roles/seguridad.md",
   "scripts/revision/roles/ui.md"
 ];
+// Lo que 1.1 añade: constitución del carril (T1.2) y auditor de spec (T1.3).
+const NUEVOS_1_1 = ["constitucion-software.md", "scripts/revision/roles/spec.md", "scripts/revision/spec.mjs"];
 
 function archivos(dir, base = dir) {
   return readdirSync(dir).flatMap((f) => {
@@ -50,9 +52,9 @@ function instalar(...args) {
 }
 
 describe("instalar.sh", () => {
-  it("--carril software = 1.0 --con-revision + constitucion-software.md", () => {
+  it("--carril software = 1.0 --con-revision + lo nuevo de 1.1", () => {
     const { lista, dir } = instalar("--carril", "software");
-    expect(lista).toEqual([...ARCHIVOS_1_0, "constitucion-software.md"].sort());
+    expect(lista).toEqual([...ARCHIVOS_1_0, ...NUEVOS_1_1].sort());
     expect(statSync(path.join(dir, "scripts/revision/capturas.sh")).mode & 0o111).toBeTruthy();
     expect(readFileSync(path.join(dir, ".gitignore"), "utf8")).toMatch(/^\.revision\/$/m);
     rmSync(dir, { recursive: true, force: true });
