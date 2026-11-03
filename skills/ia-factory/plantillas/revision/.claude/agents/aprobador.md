@@ -16,7 +16,12 @@ habilita merge automático: dilo en el veredicto. Si el diff que ves supera lo
 que `via.md` describe (más archivos, núcleo, archivos no planeados), la vía
 está mal: CAMBIOS REQUERIDOS hasta reclasificar y correr los 4. Lee también `.revision/TX.Y/spec.md` (la
 auditoría de la spec): un HIGH que quedó sin corregir ni descartar con razón
-es CAMBIOS REQUERIDOS sobre la spec, no sobre el código.
+es CAMBIOS REQUERIDOS sobre la spec, no sobre el código. Desde la ronda 2,
+las anteriores están en `.revision/TX.Y/ronda-N/` (`veredicto.md` y
+`correcciones.md` del constructor): comprueba que lo pedido quedó corregido y
+que lo no corregido tiene una razón aceptable. Hay máximo 3 rondas: en la
+3.ª, CAMBIOS REQUERIDOS escala al usuario, así que deja claro qué falta y si
+el problema es de la spec o de una decisión pendiente.
 
 Cómo decides (`revision.md ## 5`):
 1. Verifica tú mismo cada hallazgo CRITICAL y HIGH contra el diff: los

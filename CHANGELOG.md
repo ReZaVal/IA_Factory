@@ -52,6 +52,17 @@
   IA Factory). Salida 0 aprobado · 2 cambios requeridos · 3 bloqueado o al
   usuario · 1 error. Una sola ronda de revisión (el bucle llega en `T1.7`).
   `gemini.mjs` exporta `parseDotenv`. Tests en `tests/fabrica.test.js`.
+- Bucle de corrección en `fabrica.mjs` (propuesta §5 Fase 5): con CAMBIOS
+  REQUERIDOS los informes de la ronda pasan a `.revision/TX.Y/ronda-N/`, el
+  constructor corrige contra ese `veredicto.md` y deja `correcciones.md`, y
+  se repite vía → revisores → aprobador, hasta 3 rondas por corrida (también
+  con `--solo-revision`). A la 3.ª sin aprobar sale con código 2 y
+  `fabrica.md` trae el veredicto de cada ronda y el último completo para el
+  usuario; BLOQUEADO corta el bucle. Constructor y aprobador saben leer las
+  rondas anteriores. Las 3 rondas son un presupuesto de la tarea (`D11` de
+  IA Factory): relanzar no lo renueva y, gastado, sale con 3 sin llamar
+  agentes; `--reiniciar-rondas` archiva el historial en `intento-K/` y da 3
+  nuevas.
 
 ## 1.0.0 — 2026-11-02
 - Nace IA Factory a partir del skill `harness-agente-multisesion` (principios

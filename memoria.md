@@ -166,6 +166,29 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   comandos (build, servidor), el constructor falla hasta que se añadan a
   `FABRICA_PERMITIDOS`; se confirma en la primera corrida real.
 
+### D11 — Tope de rondas de revisión por tarea, con reinicio explícito
+- **Decisión:** las 3 rondas de revisión (`RONDAS_REVISION`) son un
+  presupuesto de la **tarea**, no de la corrida. El contador son las
+  carpetas `.revision/TX.Y/ronda-N/` del worktree (la ronda que cerró la
+  corrida anterior se archiva al relanzar). Con el presupuesto gastado,
+  `fabrica TX.Y` sale con 3 (al usuario) sin llamar a ningún agente. Solo
+  `--reiniciar-rondas`, que el humano usa tras intervenir, mueve el
+  historial a `intento-K/` y da 3 rondas nuevas; queda anotado en
+  `fabrica.md`.
+- **Razón:** elegido por el usuario (S-08, 2026-11-03) tras comparar
+  prácticas: *retry budget* por cliente (Google SRE, cap. 22), no apilar
+  reintentos entre capas (AWS Builders' Library), `backoffLimit` de los Job de
+  Kubernetes (el contador vive en el recurso, no en el intento) y el circuit
+  breaker que queda abierto hasta una acción explícita (Nygard, Fowler). La
+  propuesta llama a este paso «Circuit Breaker».
+- **Alternativas rechazadas:** por corrida (relanzar se salta el
+  escalamiento: 3 rondas se vuelven infinitas); por tarea sin reinicio
+  (bloquea para siempre la tarea aunque el humano ya decidió); reinicio
+  automático si cambia el hash de la spec (un cambio cosmético lo dispara;
+  se puede revisar más adelante).
+- **Impacto:** `fabrica.mjs` (`--reiniciar-rondas`), `revision.md ## 3`,
+  `tests/fabrica.test.js`.
+
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
 gatekeeper → `T2.1`.
@@ -189,6 +212,9 @@ gatekeeper → `T2.1`.
   común a todos los carriles (núcleo), no del carril software. Confirmar o
   ajustar; lo consume `T1.6`/`T1.7` (orquestador y bucle). `T1.6` (S-07)
   lo implementó con el valor provisional (`RONDAS_SPEC = 2` en `fabrica.mjs`).
+  `T1.7` (S-08) añadió `RONDAS_REVISION = 3` (propuesta §5 Fase 5); su
+  forma (presupuesto por tarea) quedó decidida en `D11`. Sigue abierto solo
+  lo del auditor de spec.
 
 > Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
 > `T2.5`; P4, el cierre de cada fase de carril.

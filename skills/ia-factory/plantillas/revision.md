@@ -111,24 +111,34 @@ SDD):
    `--carril` (por defecto `software`) elige qué `constitucion-<carril>.md`
    se envía.
 5. **Veredicto:** subagente `aprobador` → `.revision/TX.Y/veredicto.md`.
-   - CAMBIOS REQUERIDOS → `constructor` corrige → nueva ronda (máx. 3; si a la
-     tercera no aprueba, la tarea está mal partida o falta una decisión: se
-     lleva al usuario).
+   - CAMBIOS REQUERIDOS → los informes de la ronda pasan a
+     `.revision/TX.Y/ronda-N/`, `constructor` corrige contra ese
+     `veredicto.md` y deja `ronda-N/correcciones.md` → nueva ronda desde el
+     paso 4 (máx. 3; si a la tercera no aprueba, la tarea está mal partida o
+     falta una decisión: se lleva al usuario).
    - BLOQUEADO → se lleva al usuario.
    - APROBADO → el orquestador **propone** el commit; el usuario confirma
      (`agente.md §4`).
 ### Fábrica automática (pasos 1-5 en una orden)
 ```bash
-node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url <url>] [--solo-revision]
+node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url <url>] [--solo-revision] [--reiniciar-rondas]
 ```
 Crea (o reutiliza) el worktree y, dentro de él, corre: planificador (si no hay
 `specs/TX.Y.md`; la del repo principal sin commitear se copia) → auditoría
 (máx. 2 rondas con el planificador corrigiendo) → constructor → `via.mjs` →
 los revisores de la vía en paralelo (UI «no aplica» lo escribe él) →
-aprobador. Una ronda de revisión. Deja `.revision/TX.Y/fabrica.md` con cada
-paso y el costo de Claude. Salida: `0` APROBADO · `2` CAMBIOS REQUERIDOS ·
+aprobador. Con CAMBIOS REQUERIDOS archiva la ronda en `ronda-N/`, el
+constructor corrige y repite desde `via.mjs`. Las 3 rondas son de la
+**tarea**, no de la corrida: relanzar (también con `--solo-revision`) sigue
+contando desde las `ronda-N/` que haya; con las 3 gastadas sale con `3` sin
+llamar a ningún agente. Tras decidir o ajustar, el usuario relanza con
+`--reiniciar-rondas`: el historial pasa a `intento-K/` y hay 3 rondas
+nuevas. Deja `.revision/TX.Y/fabrica.md` con cada
+paso, el costo de Claude y el veredicto de cada ronda; si escala, añade el
+último veredicto para el usuario. Salida: `0` APROBADO · `2` CAMBIOS
+REQUERIDOS tras 3 rondas (al usuario) ·
 `3` BLOQUEADO o hace falta el usuario (spec con «Preguntas abiertas», spec
-sin limpiar tras 2 rondas, o tarea visible sin `--url`: sirve la app del
+sin limpiar tras 2 rondas, rondas de revisión ya gastadas, o tarea visible sin `--url`: sirve la app del
 worktree y relanza con `--solo-revision --url <url>`) · `1` error.
 - La fábrica, `planner.md` y `.claude/agents/` deben estar commiteados: el
   worktree sale de `HEAD`.

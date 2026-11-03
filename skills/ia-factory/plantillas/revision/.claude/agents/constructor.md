@@ -17,8 +17,11 @@ Forma de trabajo:
 - Respeta `constitucion-<carril>.md`, las reglas del doc de dominio de código y las `Dn` que cita la spec.
 - Datos de prueba solo sintéticos (seudónimos como `CLIENTE_01`).
 - Si la spec es ambigua o contradice `memoria.md`, para y repórtalo; no decidas.
-- Si corriges hallazgos de revisión (`.revision/TX.Y/`), atiende cada uno por su
-  `#` y anota cuáles no corriges y por qué.
+- Si corriges una ronda de revisión, el material está en `.revision/TX.Y/ronda-N/`
+  (`veredicto.md` del aprobador y los informes de esa ronda): atiende cada punto
+  de la lista del veredicto y escribe `.revision/TX.Y/ronda-N/correcciones.md`,
+  una fila por punto con qué hiciste o por qué no lo corriges. No toques lo
+  que el veredicto no pide.
 - Nunca hagas `git commit` ni `git push`.
 
 Al terminar corre el checklist de validación del doc de dominio de código y devuelve: archivos tocados,

@@ -1,4 +1,4 @@
-// Orquestador de la fábrica (T1.6): funciones puras + pipeline completo en un repo
+// Orquestador de la fábrica (T1.6, bucle T1.7): funciones puras + pipeline completo en un repo
 // temporal con `claude` y Gemini simulados (sin red ni costo).
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -6,15 +6,15 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, cpSync, m
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
-  parseArgs, configFabrica, argsClaude, resultadoClaude, conBloqueantes, veredictoDe, revisoresDeVia, informeUiNoAplica, SALIDA, RONDAS_SPEC
+  parseArgs, configFabrica, argsClaude, resultadoClaude, conBloqueantes, veredictoDe, revisoresDeVia, informeUiNoAplica, SALIDA, RONDAS_SPEC, RONDAS_REVISION, PROMPTS
 } from "../skills/ia-factory/plantillas/revision/scripts/fabrica/fabrica.mjs";
 
 const SKILL = path.resolve(import.meta.dirname, "../skills/ia-factory");
 
 describe("parseArgs", () => {
-  it("lee tarea, carril, url y --solo-revision", () => {
-    expect(parseArgs(["T1.6", "--carril", "ml", "--url", "http://x/", "--solo-revision"])).toEqual({ tarea: "T1.6", carril: "ml", url: "http://x/", soloRevision: true });
-    expect(parseArgs(["T1.6"])).toEqual({ tarea: "T1.6", carril: "software", url: "", soloRevision: false });
+  it("lee tarea, carril, url, --solo-revision y --reiniciar-rondas", () => {
+    expect(parseArgs(["T1.6", "--carril", "ml", "--url", "http://x/", "--solo-revision", "--reiniciar-rondas"])).toEqual({ tarea: "T1.6", carril: "ml", url: "http://x/", soloRevision: true, reiniciarRondas: true });
+    expect(parseArgs(["T1.6"])).toEqual({ tarea: "T1.6", carril: "software", url: "", soloRevision: false, reiniciarRondas: false });
   });
 
   it("rechaza tareas o carriles inválidos", () => {
@@ -54,6 +54,21 @@ describe("argsClaude: agente amnésico con permisos acotados", () => {
     expect(lista("--allowedTools")).toEqual(expect.arrayContaining(["Bash(npm test:*)", "Bash(git diff:*)", "Bash(make lint:*)"]));
     expect(lista("--allowedTools").some((t) => /commit|push/.test(t))).toBe(false);
     expect(lista("--disallowedTools")).toEqual(expect.arrayContaining(["Bash(git commit:*)", "Bash(git push:*)"]));
+  });
+});
+
+describe("PROMPTS del bucle de corrección", () => {
+  it("el constructor corrige contra el veredicto archivado y deja correcciones.md", () => {
+    const p = PROMPTS.corregir("T1.7", "npm test", 2);
+    expect(p).toMatch(/\.revision\/T1\.7\/ronda-2\/veredicto\.md/);
+    expect(p).toMatch(/\.revision\/T1\.7\/ronda-2\/correcciones\.md/);
+    expect(p).toMatch(/npm test/);
+  });
+
+  it("el aprobador sabe en qué ronda está y dónde están las anteriores", () => {
+    expect(PROMPTS.aprobar("T1.7", "npm test", 1)).toMatch(/ronda 1 de 3/);
+    expect(PROMPTS.aprobar("T1.7", "npm test", 1)).not.toMatch(/ronda-/);
+    expect(PROMPTS.aprobar("T1.7", "npm test", 3)).toMatch(/\.revision\/T1\.7\/ronda-\*\//);
   });
 });
 
@@ -123,12 +138,17 @@ fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ agente, args: process.a
 const escribir = (f, t) => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, t); };
 const t = "T9.1";
 if (agente === "planificador" && process.env.FAKE_SPEC !== "-") escribir("specs/T9.1.md", process.env.FAKE_SPEC);
-if (agente === "constructor") {
+const correcciones = prompt.match(/\\.revision\\/\\S+\\/correcciones\\.md/);
+if (agente === "constructor" && correcciones) escribir(correcciones[0], "| # | Corregido |\\n");
+else if (agente === "constructor") {
   for (const f of (process.env.FAKE_CODIGO || "src/suma.js").split(",")) escribir(f, "export const suma = (a, b) => a + b;\\n");
   escribir("tests/suma.test.js", "// test\\n");
 }
 if (agente === "revisor-codigo") escribir(".revision/" + t + "/codigo.md", "## Veredicto: SIN BLOQUEANTES\\n");
-if (agente === "aprobador") escribir(".revision/" + t + "/veredicto.md", "# Veredicto: " + (process.env.FAKE_VEREDICTO || "APROBADO") + "\\n");
+// FAKE_VEREDICTO: uno por ronda separados por coma; el último se repite.
+const ronda = fs.readFileSync(process.env.FAKE_LOG, "utf8").split("\\n").filter((l) => l.includes('"agente":"aprobador"')).length;
+const veredictos = (process.env.FAKE_VEREDICTO || "APROBADO").split(",");
+if (agente === "aprobador") escribir(".revision/" + t + "/veredicto.md", "# Veredicto: " + veredictos[Math.min(ronda, veredictos.length) - 1] + "\\n");
 process.stdout.write(JSON.stringify({ result: agente + " listo", total_cost_usd: 0.01, is_error: false }));
 `;
 
@@ -274,10 +294,84 @@ describe("fabrica TX.Y: pipeline completo", () => {
     expect(llamadas().map((l) => l.agente)).toEqual([]);
   });
 
-  it("CAMBIOS REQUERIDOS y BLOQUEADO salen con su código", () => {
+  it("CAMBIOS REQUERIDOS → el constructor corrige y una nueva ronda aprueba", () => {
     montarRepo();
-    expect(fabrica(["T9.1"], { FAKE_VEREDICTO: "CAMBIOS REQUERIDOS" }).codigo).toBe(SALIDA["CAMBIOS REQUERIDOS"]);
-    expect(fabrica(["T9.1", "--solo-revision"], { FAKE_VEREDICTO: "BLOQUEADO" }).codigo).toBe(SALIDA.BLOQUEADO);
+    const r = fabrica(["T9.1"], { FAKE_VEREDICTO: "CAMBIOS REQUERIDOS,APROBADO" });
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    const orden = llamadas().map((l) => l.agente);
+    expect(orden.filter((a) => a === "aprobador")).toHaveLength(2);
+    expect(orden.filter((a) => a === "gemini seguridad")).toHaveLength(2);
+    const correccion = llamadas().filter((l) => l.agente === "constructor")[1];
+    expect(correccion.prompt).toMatch(/ronda-1\/veredicto\.md/);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/ronda-1/veredicto.md"), "utf8")).toMatch(/CAMBIOS REQUERIDOS/);
+    expect(existsSync(path.join(wt(), ".revision/T9.1/ronda-1/seguridad.md"))).toBe(true);
+    expect(existsSync(path.join(wt(), ".revision/T9.1/ronda-1/correcciones.md"))).toBe(true);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/veredicto.md"), "utf8")).toMatch(/APROBADO/);
+    expect(existsSync(path.join(wt(), ".revision/T9.1/spec.md"))).toBe(true);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8")).toMatch(/Rondas de revisión: 2/);
+  });
+
+  it(`a la ronda ${RONDAS_REVISION} sin aprobar sale con CAMBIOS REQUERIDOS e informe para el humano`, () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_VEREDICTO: "CAMBIOS REQUERIDOS" });
+    expect(r.codigo).toBe(SALIDA["CAMBIOS REQUERIDOS"]);
+    expect(r.salida).toMatch(new RegExp(`tras ${RONDAS_REVISION} rondas`));
+    const orden = llamadas().map((l) => l.agente);
+    expect(orden.filter((a) => a === "aprobador")).toHaveLength(RONDAS_REVISION);
+    expect(orden.filter((a) => a === "constructor")).toHaveLength(RONDAS_REVISION);
+    const informe = readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8");
+    expect(informe).toMatch(/Necesita al usuario/);
+    expect(informe).toMatch(/ronda-1\/veredicto\.md[\s\S]*ronda-2\/veredicto\.md/);
+    expect(informe).toMatch(/## Último veredicto[\s\S]*# Veredicto: CAMBIOS REQUERIDOS/);
+  });
+
+  it("BLOQUEADO corta el bucle sin pedir correcciones", () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_VEREDICTO: "CAMBIOS REQUERIDOS,BLOQUEADO" });
+    expect(r.codigo).toBe(SALIDA.BLOQUEADO);
+    expect(llamadas().filter((l) => l.agente === "aprobador")).toHaveLength(2);
+    expect(llamadas().filter((l) => l.agente === "constructor")).toHaveLength(2);
+  });
+
+  it("--solo-revision continúa el presupuesto: la ronda de la corrida anterior cuenta", () => {
+    montarRepo();
+    fabrica(["T9.1"]);
+    rmSync(log);
+    const r = fabrica(["T9.1", "--solo-revision"], { FAKE_VEREDICTO: "CAMBIOS REQUERIDOS,APROBADO" });
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/ronda-1/veredicto.md"), "utf8")).toMatch(/APROBADO/);
+    const constructor = llamadas().filter((l) => l.agente === "constructor");
+    expect(constructor).toHaveLength(1);
+    expect(constructor[0].prompt).toMatch(/ronda-2\/veredicto\.md/);
+    expect(llamadas().find((l) => l.agente === "aprobador").prompt).toMatch(/ronda 2 de 3/);
+    expect(llamadas().map((l) => l.agente)).not.toContain("planificador");
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8")).toMatch(/Rondas de revisión: 3 de 3/);
+  });
+
+  it("presupuesto gastado: relanzar sale con 3 sin llamar a ningún agente", () => {
+    montarRepo();
+    fabrica(["T9.1"], { FAKE_VEREDICTO: "CAMBIOS REQUERIDOS" });
+    rmSync(log);
+    for (const args of [["T9.1"], ["T9.1", "--solo-revision"]]) {
+      const r = fabrica(args);
+      expect(r.codigo).toBe(SALIDA.usuario);
+      expect(r.salida).toMatch(/ya usó 3 rondas[\s\S]*--reiniciar-rondas/);
+    }
+    expect(llamadas()).toEqual([]);
+    expect(existsSync(path.join(wt(), ".revision/T9.1/ronda-3/veredicto.md"))).toBe(true);
+  });
+
+  it("--reiniciar-rondas archiva el historial en intento-K/ y da 3 rondas nuevas", () => {
+    montarRepo();
+    fabrica(["T9.1"], { FAKE_VEREDICTO: "CAMBIOS REQUERIDOS" });
+    rmSync(log);
+    const r = fabrica(["T9.1", "--solo-revision", "--reiniciar-rondas"]);
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    const base = path.join(wt(), ".revision/T9.1");
+    for (const n of [1, 2, 3]) expect(existsSync(path.join(base, `intento-1/ronda-${n}/veredicto.md`))).toBe(true);
+    expect(existsSync(path.join(base, "ronda-1"))).toBe(false);
+    expect(llamadas().find((l) => l.agente === "aprobador").prompt).toMatch(/ronda 1 de 3/);
+    expect(readFileSync(path.join(base, "fabrica.md"), "utf8")).toMatch(/reinicio de rondas.*intento-1/);
   });
 
   it("falla con un mensaje claro si la fábrica no está commiteada", () => {

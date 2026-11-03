@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 // Orquestador de la fábrica (revision.md ## 3, IA Factory): lleva una tarea de la
 // spec al veredicto del aprobador dentro de su worktree, sin intervención humana:
-// spec → auditoría (máx. RONDAS_SPEC) → construir → vía → revisores → aprobador.
+// spec → auditoría (máx. RONDAS_SPEC) → construir → [vía → revisores → aprobador]
+// × RONDAS_REVISION: con CAMBIOS REQUERIDOS el constructor corrige y hay otra ronda.
+// Las rondas son un presupuesto de la tarea (D11 de IA Factory): relanzar no lo
+// renueva; solo --reiniciar-rondas, que usa el humano tras intervenir.
 // Cada rol Claude es un agente amnésico `claude -p --agent <rol>` con permisos
 // acotados (acceptEdits + lista blanca de Bash; commit/push negados); los
-// revisores Gemini corren con gemini.mjs. Una sola ronda de revisión.
-// Uso: node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url URL] [--solo-revision]
+// revisores Gemini corren con gemini.mjs.
+// Uso: node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url URL] [--solo-revision] [--reiniciar-rondas]
 // Salida: 0 APROBADO · 2 CAMBIOS REQUERIDOS · 3 BLOQUEADO o hace falta el usuario · 1 error.
-import { readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
+import { readFile, writeFile, mkdir, copyFile, rename, rm, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { spawn } from "node:child_process";
 import path from "node:path";
@@ -18,6 +21,8 @@ import { precheckSpec } from "../revision/spec.mjs";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // Rondas planificador ↔ auditor antes de llevar la spec al usuario (memoria P5 de IA Factory, provisional).
 export const RONDAS_SPEC = 2;
+// Rondas de revisión por tarea antes de escalar al humano (propuesta §5 Fase 5, D11).
+export const RONDAS_REVISION = 3;
 export const SALIDA = { APROBADO: 0, error: 1, "CAMBIOS REQUERIDOS": 2, BLOQUEADO: 3, usuario: 3 };
 const LECTURA_GIT = ["diff", "status", "log", "show", "ls-files"].map((c) => `Bash(git ${c}:*)`);
 const NEGADOS = ["commit", "push", "merge", "rebase", "reset"].map((c) => `Bash(git ${c}:*)`);
@@ -29,18 +34,22 @@ const REQUERIDOS = [
   ...["planificador", "constructor", "revisor-codigo", "aprobador"].map((a) => `.claude/agents/${a}.md`)
 ];
 const CAPTURAS = ["360-claro", "360-oscuro", "1280-claro", "1280-oscuro"];
+// Informes de una ronda; al pedir cambios se mueven a .revision/TX.Y/ronda-N/.
+const DE_RONDA = ["via", "seguridad", "logica", "ui", "codigo", "veredicto"].map((f) => `${f}.md`);
+const DIR_RONDA = /^ronda-\d+$/;
 
 /**
  * @param {string[]} argv
- * @returns {{ tarea: string, carril: string, url: string, soloRevision: boolean }}
+ * @returns {{ tarea: string, carril: string, url: string, soloRevision: boolean, reiniciarRondas: boolean }}
  */
 export function parseArgs(argv) {
-  const args = { tarea: undefined, carril: "software", url: "", soloRevision: false };
+  const args = { tarea: undefined, carril: "software", url: "", soloRevision: false, reiniciarRondas: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--carril") args.carril = argv[++i];
     else if (a === "--url") args.url = argv[++i];
     else if (a === "--solo-revision") args.soloRevision = true;
+    else if (a === "--reiniciar-rondas") args.reiniciarRondas = true;
     else if (!a.startsWith("--") && !args.tarea) args.tarea = a;
     else throw new Error(`Argumento desconocido: ${a}`);
   }
@@ -119,7 +128,8 @@ export const PROMPTS = {
   corregirSpec: (t) => `La auditoría de specs/${t}.md encontró bloqueantes: lee .revision/${t}/spec.md y corrige la spec (no el backlog). ${SIN_HUMANO}`,
   construir: (t, tests) => `Implementa ${t} contra specs/${t}.md con TDD hasta que \`${tests}\` quede en verde. ${SIN_HUMANO}`,
   codigo: (t) => `Revisa ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Escribe .revision/${t}/codigo.md. ${SIN_HUMANO}`,
-  aprobar: (t, tests) => `Emite el veredicto de ${t} (ronda 1). La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${SIN_HUMANO}`
+  corregir: (t, tests, n) => `El aprobador pidió cambios en ${t} (ronda ${n}): corrige cada punto de .revision/${t}/ronda-${n}/veredicto.md (los informes de esa ronda están junto a él) contra specs/${t}.md, con TDD hasta que \`${tests}\` quede en verde. Escribe .revision/${t}/ronda-${n}/correcciones.md con una fila por punto: qué hiciste o por qué no lo corriges. ${SIN_HUMANO}`,
+  aprobar: (t, tests, n) => `Emite el veredicto de ${t} (ronda ${n} de ${RONDAS_REVISION}). ${n > 1 ? `Las rondas anteriores están en .revision/${t}/ronda-*/ (veredicto.md y correcciones.md): comprueba que lo pedido quedó corregido. ` : ""}La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${SIN_HUMANO}`
 };
 
 /** @returns {Promise<{ codigo: number, salida: string, error: string }>} */
@@ -141,6 +151,7 @@ const leer = (ruta) => (existsSync(ruta) ? readFile(ruta, "utf8") : Promise.reso
 /** Contexto de una corrida: worktree, configuración y bitácora de pasos. */
 function crearCtx({ tarea, carril, url }, cfg, wt) {
   const pasos = [];
+  const rondas = [];
   return {
     tarea, carril, url, cfg, wt,
     rel: (archivo) => path.join(wt, ".revision", tarea, archivo),
@@ -148,7 +159,9 @@ function crearCtx({ tarea, carril, url }, cfg, wt) {
       pasos.push({ nombre, resultado, costo });
       process.stderr.write(`  · ${nombre}: ${resultado}\n`);
     },
-    pasos: () => [...pasos]
+    pasos: () => [...pasos],
+    ronda: (n, veredicto) => rondas.push({ n, veredicto }),
+    rondas: () => [...rondas]
   };
 }
 
@@ -220,37 +233,94 @@ async function prepararWorktree(tarea) {
   return wt;
 }
 
-/** @returns {Promise<{ resultado: keyof typeof SALIDA, motivo: string }>} */
-async function correrPipeline(ctx, soloRevision) {
+/** Pasos 4-5 de la ronda n: vía → revisores → aprobador. */
+async function rondaRevision(ctx, n) {
+  const v = await correr(process.execPath, ["scripts/revision/via.mjs", "--tarea", ctx.tarea], { cwd: ctx.wt });
+  if (v.codigo !== 0) throw new Error(`via.mjs falló: ${v.error.trim()}`);
+  const { via, revisores } = revisoresDeVia(v.salida);
+  ctx.paso(`vía (ronda ${n})`, `${via}: ${revisores.join(" ")}`);
+  if (revisores.includes("ui") && !ctx.url) {
+    return { resultado: "usuario", motivo: `la tarea cambia algo visible: sirve la app del worktree y relanza con --solo-revision --url <url>` };
+  }
+  await revisar(ctx, revisores);
+  await agente(ctx, "aprobador", PROMPTS.aprobar(ctx.tarea, ctx.cfg.tests, n), `.revision/${ctx.tarea}/veredicto.md`);
+  const veredicto = veredictoDe(await readFile(ctx.rel("veredicto.md"), "utf8"));
+  if (!veredicto) throw new Error(`veredicto.md no empieza por «# Veredicto: …»`);
+  ctx.ronda(n, veredicto);
+  return { resultado: veredicto, motivo: `.revision/${ctx.tarea}/veredicto.md` };
+}
+
+/** Mueve los informes de la ronda n a ronda-n/ para que la siguiente empiece limpia. */
+async function archivarRonda(ctx, n) {
+  const dir = ctx.rel(`ronda-${n}`);
+  await rm(dir, { recursive: true, force: true });
+  await mkdir(dir, { recursive: true });
+  for (const f of DE_RONDA) if (existsSync(ctx.rel(f))) await rename(ctx.rel(f), path.join(dir, f));
+}
+
+/** Rondas ya gastadas por la tarea; la que cerró la corrida anterior se archiva primero. */
+async function rondasUsadas(ctx) {
+  const n = (await readdir(ctx.rel(""))).filter((f) => DIR_RONDA.test(f)).length;
+  if (!existsSync(ctx.rel("veredicto.md"))) return n;
+  await archivarRonda(ctx, n + 1);
+  return n + 1;
+}
+
+/** --reiniciar-rondas: el historial pasa a intento-K/ y el presupuesto vuelve a cero. */
+async function reiniciarRondas(ctx) {
+  if (!(await rondasUsadas(ctx))) return;
+  const entradas = await readdir(ctx.rel(""));
+  const mover = entradas.filter((f) => DIR_RONDA.test(f));
+  const k = entradas.filter((f) => /^intento-\d+$/.test(f)).length + 1;
+  await mkdir(ctx.rel(`intento-${k}`));
+  for (const f of mover) await rename(ctx.rel(f), path.join(ctx.rel(`intento-${k}`), f));
+  ctx.paso("reinicio de rondas", `historial → .revision/${ctx.tarea}/intento-${k}/`);
+}
+
+/** @returns {Promise<{ resultado: keyof typeof SALIDA, motivo: string, escalar?: boolean }>} */
+async function correrPipeline(ctx, { soloRevision, reiniciarRondas: reiniciar }) {
+  if (reiniciar) await reiniciarRondas(ctx);
+  const usadas = await rondasUsadas(ctx);
+  if (usadas >= RONDAS_REVISION) {
+    return { resultado: "usuario", motivo: `${ctx.tarea} ya usó ${RONDAS_REVISION} rondas de revisión (.revision/${ctx.tarea}/ronda-*/): decide, ajusta y relanza con --reiniciar-rondas` };
+  }
   if (!soloRevision) {
     const motivo = await especificar(ctx);
     if (motivo) return { resultado: "usuario", motivo };
     await agente(ctx, "constructor", PROMPTS.construir(ctx.tarea, ctx.cfg.tests));
   }
-  const v = await correr(process.execPath, ["scripts/revision/via.mjs", "--tarea", ctx.tarea], { cwd: ctx.wt });
-  if (v.codigo !== 0) throw new Error(`via.mjs falló: ${v.error.trim()}`);
-  const { via, revisores } = revisoresDeVia(v.salida);
-  ctx.paso("vía", `${via}: ${revisores.join(" ")}`);
-  if (revisores.includes("ui") && !ctx.url) {
-    return { resultado: "usuario", motivo: `la tarea cambia algo visible: sirve la app del worktree y relanza con --solo-revision --url <url>` };
+  for (let n = usadas + 1; ; n++) {
+    const fin = await rondaRevision(ctx, n);
+    if (fin.resultado !== "CAMBIOS REQUERIDOS") return fin;
+    if (n >= RONDAS_REVISION) {
+      return { ...fin, escalar: true, motivo: `sigue con CAMBIOS REQUERIDOS tras ${RONDAS_REVISION} rondas: la tarea está mal partida o falta una decisión (${fin.motivo})` };
+    }
+    await archivarRonda(ctx, n);
+    await agente(ctx, "constructor", PROMPTS.corregir(ctx.tarea, ctx.cfg.tests, n), `.revision/${ctx.tarea}/ronda-${n}/correcciones.md`);
   }
-  await revisar(ctx, revisores);
-  await agente(ctx, "aprobador", PROMPTS.aprobar(ctx.tarea, ctx.cfg.tests), `.revision/${ctx.tarea}/veredicto.md`);
-  const veredicto = veredictoDe(await readFile(ctx.rel("veredicto.md"), "utf8"));
-  if (!veredicto) throw new Error(`veredicto.md no empieza por «# Veredicto: …»`);
-  return { resultado: veredicto, motivo: `.revision/${ctx.tarea}/veredicto.md` };
 }
 
-function informeFabrica(ctx, { resultado, motivo }) {
+/** Historial de rondas de esta corrida: las que pidieron cambios quedaron en ronda-N/. */
+function lineasRondas(ctx) {
+  const rondas = ctx.rondas();
+  if (!rondas.length) return [];
+  const ultima = rondas.at(-1).n;
+  const ruta = (n) => `.revision/${ctx.tarea}/${n < ultima ? `ronda-${n}/` : ""}veredicto.md`;
+  return [`- Rondas de revisión: ${ultima} de ${RONDAS_REVISION}`, ...rondas.map(({ n, veredicto }) => `  - Ronda ${n}: ${veredicto} → \`${ruta(n)}\``)];
+}
+
+function informeFabrica(ctx, { resultado, motivo, escalar }, ultimoVeredicto) {
   const costo = ctx.pasos().reduce((n, p) => n + p.costo, 0);
   return [
     `# Fábrica ${ctx.tarea}: ${resultado}`,
     `- Worktree: \`${ctx.wt}\` · carril: ${ctx.carril} · costo Claude: US$ ${costo.toFixed(2)}`,
-    `- ${resultado === "usuario" ? "Necesita al usuario" : "Detalle"}: ${motivo}`,
+    `- ${resultado === "usuario" || escalar ? "Necesita al usuario" : "Detalle"}: ${motivo}`,
+    ...lineasRondas(ctx),
     "",
     "| Paso | Resultado | Costo (US$) |",
     "|---|---|---|",
-    ...ctx.pasos().map((p) => `| ${p.nombre} | ${p.resultado.replaceAll("|", "\\|")} | ${p.costo.toFixed(2)} |`)
+    ...ctx.pasos().map((p) => `| ${p.nombre} | ${p.resultado.replaceAll("|", "\\|")} | ${p.costo.toFixed(2)} |`),
+    ...(escalar ? ["", "## Último veredicto", "", ultimoVeredicto.trim()] : [])
   ].join("\n");
 }
 
@@ -260,11 +330,12 @@ async function main() {
   const ctx = crearCtx(args, cfg, await prepararWorktree(args.tarea));
   let fin;
   try {
-    fin = await correrPipeline(ctx, args.soloRevision);
+    fin = await correrPipeline(ctx, args);
   } catch (err) {
     fin = { resultado: "error", motivo: err.message };
   }
-  await writeFile(ctx.rel("fabrica.md"), `${informeFabrica(ctx, fin)}\n`);
+  const ultimo = fin.escalar ? await leer(ctx.rel("veredicto.md")) : "";
+  await writeFile(ctx.rel("fabrica.md"), `${informeFabrica(ctx, fin, ultimo)}\n`);
   process.stdout.write(`${args.tarea}: ${fin.resultado} — ${fin.motivo}\n  → ${ctx.rel("fabrica.md")}\n`);
   process.exitCode = SALIDA[fin.resultado];
 }

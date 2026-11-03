@@ -20,21 +20,22 @@ Regla de oro: decisión que cambia → `memoria.md` primero, luego producto y
 plan. Error detectado → `learn.md` antes de corregirlo.
 
 ## Contexto activo
-- **En qué estoy:** Fase 1. Próxima tarea `T1.7` (bucle de corrección).
+- **En qué estoy:** Fase 1. Backlog `T1.1`-`T1.7` ✅; falta la corrida real
+  que exige el criterio de salida.
   Vigentes: `D3` propuesta por fases, `D4` auto-merge con 4/4 + bajo riesgo,
   `D5` cuatro carriles, `D6` sin Codex, `D7` ingesta al final, `D8` Brain
   mapeado sobre el harness, `D9` vía rápida FTD, `D10` permisos de los
-  agentes amnésicos.
-- **Cambió en la última sesión (S-07):** `T1.6` cerrada: `D10` (agentes
-  `claude -p --agent` con `acceptEdits` + lista blanca; commit/push negados);
-  `scripts/fabrica/fabrica.mjs TX.Y` corre spec → auditoría → constructor →
-  vía → revisores → aprobador en el worktree, una ronda, y deja
-  `.revision/TX.Y/fabrica.md`. Probado solo con `claude`/Gemini simulados.
-  `P5` sigue abierta (usa 2 rondas provisionales).
+  agentes amnésicos, `D11` tope de rondas por tarea.
+- **Cambió en la última sesión (S-08):** `T1.7` cerrada: `fabrica.mjs`
+  repite vía → revisores → aprobador hasta 3 rondas; con CAMBIOS REQUERIDOS
+  archiva la ronda en `.revision/TX.Y/ronda-N/` y el constructor corrige
+  (deja `correcciones.md`). A la 3.ª sale con 2 y `fabrica.md` lleva el
+  historial y el último veredicto para el usuario. `D11`: el tope es de la
+  tarea (relanzar no lo renueva; `--reiniciar-rondas` sí). Probado solo con
+  `claude`/Gemini simulados. `P5` sigue abierta (solo el auditor de spec).
 - **Próximos pasos:** corrida real en un repo de prueba (`P4`, necesita
-  `GEMINI_API_KEY`) para validar `D10`; luego `T1.7`: CAMBIOS REQUERIDOS
-  (salida 2) → constructor con `veredicto.md` → nueva ronda con
-  `--solo-revision`, máx. 3, y al usuario con informe.
+  `GEMINI_API_KEY`) para validar `D10` y el bucle y cerrar la Fase 1; luego
+  `T2.1`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline
@@ -75,7 +76,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.6` ✅ |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.7` ✅; falta la corrida real |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |
