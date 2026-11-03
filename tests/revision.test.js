@@ -6,16 +6,22 @@ import {
   loadConfig,
   buildPrompt,
   buildSystem,
-  mimeFor,
   clasificarError,
-  pedirConReintentos
+  pedirConReintentos,
+  argsAgy,
+  mensajeAgy,
+  interpretarAgy,
+  cumpleFormato
 } from "../skills/ia-factory/plantillas/revision/scripts/revision/gemini.mjs";
 
 describe("parseArgs", () => {
-  it("lee rol, tarea, base e imágenes repetidas", () => {
-    expect(
-      parseArgs(["ui", "--tarea", "T2.5", "--base", "main~1", "--imagen", "a.png", "--imagen", "b.jpg"])
-    ).toEqual({ rol: "ui", tarea: "T2.5", base: "main~1", carril: "software", imagenes: ["a.png", "b.jpg"], modelos: false });
+  it("lee rol, tarea y base", () => {
+    expect(parseArgs(["logica", "--tarea", "T2.5", "--base", "main~1"])).toEqual({ rol: "logica", tarea: "T2.5", base: "main~1", carril: "software", modelos: false });
+  });
+
+  it("UI ya no pasa por aquí: lo revisa el agente revisor-ui (D13)", () => {
+    expect(() => parseArgs(["ui", "--tarea", "T2.5"])).toThrow(/rol/);
+    expect(() => parseArgs(["logica", "--tarea", "T2.5", "--imagen", "a.png"])).toThrow(/desconocido/);
   });
 
   it("carril por defecto software; --carril lo cambia", () => {
@@ -49,20 +55,25 @@ describe("forbiddenPaths", () => {
 });
 
 describe("loadConfig", () => {
-  it("prefiere variables de entorno sobre .env.local", () => {
-    const env = { GEMINI_API_KEY: "k-env", GEMINI_MODEL: "m-env" };
-    expect(loadConfig(env, "GEMINI_API_KEY=k-file\nGEMINI_MODEL=m-file")).toEqual({ apiKey: "k-env", model: "m-env" });
+  it("por defecto usa agy con el modelo de D13, sin clave", () => {
+    expect(loadConfig({}, "")).toEqual({ motor: "agy", agy: "agy", model: "gemini-4-argon-medium", apiKey: "" });
+  });
+
+  it("AGY_MODEL y AGY_BIN cambian el modelo y el ejecutable; GEMINI_MODEL no aplica a agy", () => {
+    expect(loadConfig({ AGY_BIN: "/x/agy" }, "AGY_MODEL=gemini-3.8-flash-medium\nGEMINI_MODEL=gemini-3.5-flash\n")).toMatchObject({ agy: "/x/agy", model: "gemini-3.8-flash-medium" });
+  });
+
+  it("GEMINI_MOTOR=api usa clave y modelo de la API; el entorno manda sobre .env.local", () => {
+    const env = { GEMINI_MOTOR: "api", GEMINI_API_KEY: "k-env", GEMINI_MODEL: "m-env" };
+    expect(loadConfig(env, "GEMINI_API_KEY=k-file\nGEMINI_MODEL=m-file")).toMatchObject({ motor: "api", apiKey: "k-env", model: "m-env" });
   });
 
   it("cae a .env.local, ignorando comentarios y comillas", () => {
-    expect(loadConfig({}, '# clave\nGEMINI_API_KEY="k-file"\nGEMINI_MODEL=m-file\n')).toEqual({
-      apiKey: "k-file",
-      model: "m-file"
-    });
+    expect(loadConfig({}, '# clave\nGEMINI_MOTOR=api\nGEMINI_API_KEY="k-file"\nGEMINI_MODEL=m-file\n')).toMatchObject({ motor: "api", apiKey: "k-file", model: "m-file" });
   });
 
-  it("sin clave devuelve apiKey vacía (el CLI explica cómo configurarla)", () => {
-    expect(loadConfig({}, "")).toEqual({ apiKey: "", model: "" });
+  it("rechaza un motor desconocido", () => {
+    expect(() => loadConfig({ GEMINI_MOTOR: "otro" }, "")).toThrow(/GEMINI_MOTOR/);
   });
 });
 
@@ -89,14 +100,6 @@ describe("buildSystem", () => {
 
   it("sin constitución (proyecto 1.0) queda contexto + rol + formato", () => {
     expect(buildSystem({ ...partes, carril: "software", constitucion: "" })).toBe("CTX\n\nROL\n\nFMT");
-  });
-});
-
-describe("mimeFor", () => {
-  it("solo acepta png y jpg", () => {
-    expect(mimeFor("a.PNG")).toBe("image/png");
-    expect(mimeFor("a.jpeg")).toBe("image/jpeg");
-    expect(() => mimeFor("a.gif")).toThrow(/imagen/);
   });
 });
 
@@ -196,5 +199,97 @@ describe("pedirConReintentos", () => {
     await expect(pedirConReintentos(e.hacer, e.opciones)).rejects.toThrow(/429.*facturación/s);
     expect(e.llamadas).toBe(1);
     expect(e.esperas).toEqual([]);
+  });
+});
+
+const INFORME = "## Veredicto: SIN BLOQUEANTES\n\n## Hallazgos\n";
+const resultado = (r) => `{"event":"init"}\n${JSON.stringify({ event: "result", result: r })}\n`;
+
+describe("argsAgy: revisor sin herramientas de escritura (learn.md L8)", () => {
+  const args = argsAgy("gemini-4-argon-medium");
+
+  it("siempre en modo plan, con el modelo fijado y sin saltarse permisos", () => {
+    expect(args[args.indexOf("--mode") + 1]).toBe("plan");
+    expect(args[args.indexOf("--model") + 1]).toBe("gemini-4-argon-medium");
+    expect(args).not.toContain("--dangerously-skip-permissions");
+  });
+
+  it("el prompt va por stdin en stream-json (un argumento tope en 128 KB)", () => {
+    expect(args[0]).toBe("--print=");
+    expect(args[args.indexOf("--input-format") + 1]).toBe("stream-json");
+    expect(args[args.indexOf("--output-format") + 1]).toBe("stream-json");
+  });
+});
+
+describe("mensajeAgy", () => {
+  it("una línea NDJSON con system y prompt en el contenido", () => {
+    const linea = mensajeAgy("SISTEMA", "PROMPT\ncon saltos");
+    expect(linea.trim().split("\n")).toHaveLength(1);
+    const m = JSON.parse(linea);
+    expect(m.event).toBe("user");
+    expect(m.message.role).toBe("user");
+    expect(m.message.content).toMatch(/SISTEMA[\s\S]*PROMPT\ncon saltos/);
+  });
+});
+
+describe("cumpleFormato", () => {
+  it("exige la cabecera de veredicto de _formato.md", () => {
+    expect(cumpleFormato("x\n## Veredicto: CON BLOQUEANTES\n")).toBe(true);
+    expect(cumpleFormato(INFORME)).toBe(true);
+    expect(cumpleFormato("Para hacer un scraper en Python usa requests")).toBe(false);
+    expect(cumpleFormato("## Veredicto: **CON BLOQUEANTES**")).toBe(false);
+  });
+});
+
+describe("interpretarAgy", () => {
+  const leer = (salida, codigo = 0, error = "") => interpretarAgy({ codigo, salida, error });
+
+  it("informe válido → ok con el texto", () => {
+    expect(leer(resultado({ status: "SUCCESS", response: INFORME }))).toEqual({ ok: true, status: 200, body: { texto: INFORME } });
+  });
+
+  it("SUCCESS vacío no es éxito: se reintenta y conserva stderr", () => {
+    const r = leer(resultado({ status: "SUCCESS", response: "" }), 0, "no output produced");
+    expect(r.ok).toBe(false);
+    expect(r.body.error.reintentar).toBe(true);
+    expect(r.body.error.message).toMatch(/no output produced/);
+  });
+
+  it("respuesta fuera de formato se reintenta", () => {
+    const r = leer(resultado({ status: "SUCCESS", response: "un scraper en Python" }));
+    expect(r.ok).toBe(false);
+    expect(r.body.error.reintentar).toBe(true);
+    expect(r.body.error.message).toMatch(/_formato\.md/);
+  });
+
+  it("saturación se reintenta; modelo inválido y cuota fallan a la primera", () => {
+    expect(leer(resultado({ status: "ERROR", error: "503 model overloaded" }), 1).body.error.reintentar).toBe(true);
+    expect(leer(resultado({ status: "ERROR", error: "model nope is not recognized" }), 1).body.error.reintentar).toBe(false);
+    const cuota = leer(resultado({ status: "ERROR", error: "RESOURCE_EXHAUSTED: quota exceeded" }), 1);
+    expect(cuota.body.error.reintentar).toBe(false);
+    expect(cuota.body.error.message).toMatch(/[Cc]uota/);
+  });
+
+  it("sin evento result usa stderr y no revienta con líneas que no son JSON", () => {
+    const r = leer("basura\n", 2, "sesión expirada");
+    expect(r.ok).toBe(false);
+    expect(r.body.error.message).toMatch(/sesión expirada/);
+  });
+});
+
+describe("pedirConReintentos con errores sin código HTTP (agy)", () => {
+  const sinCodigo = (reintentar) => ({ ok: false, status: 0, body: { error: { message: "agy: fallo X", reintentar } } });
+  const opciones = { dormir: async () => {}, azar: () => 0, avisar: () => {} };
+
+  it("reintenta los transitorios y no los presenta como respuesta HTTP", async () => {
+    let n = 0;
+    await expect(pedirConReintentos(async () => (n++, sinCodigo(true)), opciones)).rejects.toThrow(/^agy: fallo X\nSigue fallando/);
+    expect(n).toBe(4);
+  });
+
+  it("falla a la primera con los permanentes", async () => {
+    let n = 0;
+    await expect(pedirConReintentos(async () => (n++, sinCodigo(false)), opciones)).rejects.toThrow(/^agy: fallo X/);
+    expect(n).toBe(1);
   });
 });

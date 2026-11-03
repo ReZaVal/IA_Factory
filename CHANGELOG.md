@@ -1,6 +1,16 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Revisores sin API key (`D13` de IA Factory): `gemini.mjs` usa por defecto
+  `agy` (Antigravity CLI) con la cuenta personal, `AGY_MODEL` por defecto
+  `gemini-4-argon-medium`, en `--mode plan`, desde una carpeta temporal y con
+  el prompt por `stream-json`. Descarta el informe si el árbol cambia y
+  reintenta respuestas vacías o sin el formato de `_formato.md`.
+  `GEMINI_MOTOR=api` conserva la ruta con clave, ya sin imágenes.
+- El Revisor UI pasa a Claude: agente `revisor-ui` del carril software, que lee
+  las capturas. `gemini.mjs` deja el rol `ui` y `--imagen`.
+- `fabrica.mjs`: con cuota o límite agotado (Gemini o Claude) sale al usuario
+  con la orden para relanzar, sin gastar ronda.
 - `SKILL.md`: nuevo doc de dominio `constitucion-<carril>.md` (reglas duras
   del carril, única fuente; se envía a los revisores externos). El "Brain" de
   la propuesta Universal AI Factory se mapea sobre el harness, sin `wiki/` ni

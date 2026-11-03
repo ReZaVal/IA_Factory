@@ -18,6 +18,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 | L3 | El worktree salía sin dependencias (lo ignorado por git no viaja) | Probar la fábrica con una suite que dependa de algo ignorado por git, dentro del worktree; preparar con `FABRICA_PREPARAR` | `worktree.sh`, `revision.md ## 3`, `tests/worktree.test.js` |
 | L4 | Nombres de función en «Archivos» contados como alcance extra | Los chequeos deterministas se prueban también con specs escritas por el planificador real, no solo con las sintéticas | `spec.mjs` (`archivosDeSpec`), `tests/spec.test.js` |
 | L5 | Un error de Gemini cortaba la fábrica, fuese transitorio o permanente | Al llamar a una API externa, separar transitorio de permanente: reintentar con tope lo primero y fallar rápido con qué hacer lo segundo; no asumir en la plantilla un plan de pago | `gemini.mjs` (`clasificarError`, `pedirConReintentos`), `revision.md ## 6`, `tests/revision.test.js` |
+| L8 | `agy` escribe sin `--mode plan` y da éxito vacío | Probar cada CLI de agente con un archivo canario antes de darle material; `SUCCESS` no basta: validar contenido y formato | `gemini.mjs` (`argsAgy`, `interpretarAgy`, `huellaArbol`), `revision.md ## 6`, `tests/agy.test.js` |
 
 ## 2. Log de errores
 ### L1 — `instalar.sh` reportaba menos archivos copiados
@@ -89,6 +90,13 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   en paralelo con Seguridad; Seguridad pasó las dos veces y Lógica, corrida
   sola minutos después, pasó a la primera. Son pocas muestras: el paralelismo
   es hipótesis, no hecho.
+  Con reintentos (S-08): Lógica volvió a dar 503 en los 4 intentos (12 s en
+  total) y Seguridad pasó: 3 de 3 rondas SDD. Un experimento sola vs. paralelo
+  quedó **inválido**: agotó la cuota diaria (429, 20 peticiones por día en la
+  capa gratuita, informada como `gemini-3.6-flash`) y los fallos fueron de
+  cuota, no de paralelismo. La causa de los 503 en Lógica sigue sin
+  confirmar. Los reintentos y las pruebas manuales gastan esa misma cuota: una
+  tarea SDD con 3 rondas puede pedir más de 10 llamadas.
 - **Causa raíz:** `revision.md ## 6` asumía acceso a Pro;
   `gemini.mjs` no distinguía error transitorio (503, 429 por minuto) de error
   permanente (`limit: 0`, 404).
@@ -121,6 +129,24 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   git de lectura. Permitir `Bash(node:*)` equivale a shell libre.
 - **Solución propuesta:** decidir con el usuario: dejarlo así (el aprobador
   verifica con la suite) o permitir un comando acotado de sondas.
+
+### L8 — `agy` no es de solo lectura por defecto y puede dar éxito vacío
+- **Estado:** ✅ Resuelto (S-10, `T1.8`)
+- **Síntoma:** en prompts inocuos, sin `--mode plan` escribió en 3 de 3
+  intentos, también fuera de la carpeta de trabajo. `--sandbox` y las reglas
+  `deny` probadas no lo frenaron. Una herramienta negada da `SUCCESS`, código
+  0 y respuesta vacía. Con 100 KB de relleno repetitivo respondió sobre otro
+  tema; con texto realista no se repitió.
+- **Causa raíz probable:** `--sandbox` restringe la terminal, no las
+  herramientas de edición; los nombres de regla `deny` se probaron a ciegas.
+- **Solución aplicada:** `--mode plan` siempre, carpeta temporal, material en
+  el prompt, huella del árbol antes y después, e informes vacíos o sin
+  `_formato.md` rechazados. Probado con `agy` real en un clon con bugs
+  sembrados: Seguridad y Lógica en paralelo los detectaron en 26 s.
+- **Límite:** la huella ve cualquier cambio en archivos no ignorados, venga de
+  quien venga: mis logs dentro del repo dieron un falso «modificó el árbol».
+  No detecta escrituras fuera del repo; ahí la defensa es solo `--mode plan`.
+- **Regla derivada:** ver §1.
 
 ## 3. Errores de comportamiento del agente
 

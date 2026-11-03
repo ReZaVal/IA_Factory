@@ -16,9 +16,9 @@ Tiene dos piezas:
    |---|---|
    | Planificador (Spec / SDD) | Claude Opus 5.5 |
    | Constructor | Claude Opus 5.5 |
-   | Revisor 1 — Seguridad/Datos | Gemini Pro |
-   | Revisor 2 — Lógica/Métricas | Gemini Pro |
-   | Revisor 3 — UI/Visión (con capturas) | Gemini Pro |
+   | Revisor 1 — Seguridad/Datos | Gemini (`agy`, cuenta personal) |
+   | Revisor 2 — Lógica/Métricas | Gemini (`agy`, cuenta personal) |
+   | Revisor 3 — UI/Visión (con capturas) | Claude Sonnet 5.5 |
    | Revisor 4 — Código/Estilo | Claude Sonnet 5.5 |
    | Approver (Gatekeeper) | Claude Opus 5.5 |
 
@@ -49,19 +49,16 @@ No sobrescribe nada que ya exista.
 el agente entrevista lo justo (objetivo, fases, ritmo, deadline, datos
 sensibles), llena las plantillas y registra `D1`/`D2`.
 
-**4. Revisores Gemini** (solo con `--carril`/`--con-revision`): crea
-`.env.local` en el proyecto (queda ignorado por git) y llena
+**4. Revisores Gemini** (solo con `--carril`/`--con-revision`): inicia sesión
+una vez en Antigravity CLI (`agy`), sin API key, y llena
 `scripts/revision/roles/_contexto.md` y `constitucion-software.md` (las reglas
 duras que se envían a los revisores), y los huecos `<...>` de los roles. Antes
 de construir, `node scripts/revision/gemini.mjs spec --tarea TX.Y` audita la
 spec contra el backlog, y con el código construido
 `node scripts/revision/via.mjs --tarea TX.Y` decide vía rápida (FTD) o
 completa (SDD) y qué revisores corren.
-```
-GEMINI_API_KEY=<tu clave>
-GEMINI_MODEL=<id del modelo Pro>
-```
 Para ver los modelos disponibles: `node scripts/revision/gemini.mjs --modelos`.
+Para usar otro modelo o la API con clave, ver `revision.md ## 6`.
 
 ## Desarrollo de IA Factory
 ```bash

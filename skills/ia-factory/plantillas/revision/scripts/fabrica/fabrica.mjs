@@ -7,7 +7,8 @@
 // renueva; solo --reiniciar-rondas, que usa el humano tras intervenir.
 // Cada rol Claude es un agente amnésico `claude -p --agent <rol>` con permisos
 // acotados (acceptEdits + lista blanca de Bash; commit/push negados); los
-// revisores Gemini corren con gemini.mjs.
+// revisores Gemini corren con gemini.mjs. UI lo revisa el agente Claude `revisor-ui`,
+// que lee las capturas (D13). Si se agota una cuota, sale al usuario con cómo relanzar.
 // Uso: node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url URL] [--solo-revision] [--reiniciar-rondas]
 // Salida: 0 APROBADO · 2 CAMBIOS REQUERIDOS · 3 BLOQUEADO o hace falta el usuario · 1 error.
 import { readFile, writeFile, mkdir, copyFile, rename, rm, readdir } from "node:fs/promises";
@@ -37,6 +38,9 @@ const CAPTURAS = ["360-claro", "360-oscuro", "1280-claro", "1280-oscuro"];
 // Informes de una ronda; al pedir cambios se mueven a .revision/TX.Y/ronda-N/.
 const DE_RONDA = ["via", "seguridad", "logica", "ui", "codigo", "veredicto"].map((f) => `${f}.md`);
 const DIR_RONDA = /^ronda-\d+$/;
+const CUOTA = /cuota|quota|usage limit|rate.?limit|limit reached|resource.?exhausted/i;
+// Roles antes de que exista lo que se revisa: relanzar debe repetir la construcción.
+const ANTES_DE_REVISAR = ["spec", "planificador", "constructor"];
 
 /**
  * @param {string[]} argv
@@ -127,6 +131,7 @@ export const PROMPTS = {
   spec: (t) => `Escribe la spec de la tarea ${t} en specs/${t}.md según tus instrucciones. ${SIN_HUMANO} Las decisiones que falten van a «Preguntas abiertas».`,
   corregirSpec: (t) => `La auditoría de specs/${t}.md encontró bloqueantes: lee .revision/${t}/spec.md y corrige la spec (no el backlog). ${SIN_HUMANO}`,
   construir: (t, tests) => `Implementa ${t} contra specs/${t}.md con TDD hasta que \`${tests}\` quede en verde. ${SIN_HUMANO}`,
+  ui: (t) => `Revisa la UI de ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Mira con Read cada captura: ${CAPTURAS.map((c) => `.revision/${t}/captura-${c}.png`).join(", ")}. Escribe .revision/${t}/ui.md. ${SIN_HUMANO}`,
   codigo: (t) => `Revisa ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Escribe .revision/${t}/codigo.md. ${SIN_HUMANO}`,
   corregir: (t, tests, n) => `El aprobador pidió cambios en ${t} (ronda ${n}): corrige cada punto de .revision/${t}/ronda-${n}/veredicto.md (los informes de esa ronda están junto a él) contra specs/${t}.md, con TDD hasta que \`${tests}\` quede en verde. Escribe .revision/${t}/ronda-${n}/correcciones.md con una fila por punto: qué hiciste o por qué no lo corriges. ${SIN_HUMANO}`,
   aprobar: (t, tests, n) => `Emite el veredicto de ${t} (ronda ${n} de ${RONDAS_REVISION}). ${n > 1 ? `Las rondas anteriores están en .revision/${t}/ronda-*/ (veredicto.md y correcciones.md): comprueba que lo pedido quedó corregido. ` : ""}La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${SIN_HUMANO}`
@@ -165,18 +170,25 @@ function crearCtx({ tarea, carril, url }, cfg, wt) {
   };
 }
 
+/** Falla de un rol; si fue cuota, va al usuario con cómo seguir (D13). */
+function falloDe(ctx, rol, mensaje) {
+  if (!CUOTA.test(mensaje)) return new Error(mensaje);
+  const relanzar = `fabrica ${ctx.tarea}${ANTES_DE_REVISAR.includes(rol) ? "" : " --solo-revision"}`;
+  return Object.assign(new Error(`cuota o límite agotado en ${rol}: espera a que se reinicie y relanza con \`${relanzar}\`. ${mensaje}`), { usuario: true });
+}
+
 async function agente(ctx, rol, prompt, entregable) {
   const r = await correr(ctx.cfg.claude, argsClaude(rol, ctx.cfg), { cwd: ctx.wt, entrada: prompt });
   const res = resultadoClaude(r.salida);
-  if (r.codigo !== 0 || res.error) throw new Error(`${rol} falló (código ${r.codigo}): ${(res.texto || r.error).slice(0, 500)}`);
+  if (r.codigo !== 0 || res.error) throw falloDe(ctx, rol, `${rol} falló (código ${r.codigo}): ${(res.texto || r.error).slice(0, 500)}`);
   if (entregable && !existsSync(path.join(ctx.wt, entregable))) throw new Error(`${rol} terminó sin dejar ${entregable}`);
   ctx.paso(rol, res.texto.split("\n")[0].slice(0, 160) || "ok", res.costo);
 }
 
-async function gemini(ctx, rol, extra = []) {
-  const args = ["scripts/revision/gemini.mjs", rol, "--tarea", ctx.tarea, "--carril", ctx.carril, ...extra];
+async function gemini(ctx, rol) {
+  const args = ["scripts/revision/gemini.mjs", rol, "--tarea", ctx.tarea, "--carril", ctx.carril];
   const r = await correr(process.execPath, args, { cwd: ctx.wt });
-  if (r.codigo !== 0) throw new Error(`gemini ${rol} falló: ${r.error.trim()}`);
+  if (r.codigo !== 0) throw falloDe(ctx, rol, `gemini ${rol} falló: ${r.error.trim()}`);
   const informe = await readFile(ctx.rel(`${rol}.md`), "utf8");
   ctx.paso(`gemini ${rol}`, conBloqueantes(informe) ? "CON BLOQUEANTES" : "SIN BLOQUEANTES");
   return informe;
@@ -199,10 +211,10 @@ async function especificar(ctx) {
 }
 
 async function capturasYUi(ctx) {
+  if (!existsSync(path.join(ctx.wt, ".claude/agents/revisor-ui.md"))) throw new Error("falta .claude/agents/revisor-ui.md: reinstala el carril y commitéalo");
   const r = await correr(path.join(ctx.wt, "scripts/revision/capturas.sh"), [ctx.tarea, ctx.url], { cwd: ctx.wt });
   if (r.codigo !== 0) throw new Error(`capturas.sh falló: ${r.error.trim()}`);
-  const imagenes = CAPTURAS.flatMap((c) => ["--imagen", `.revision/${ctx.tarea}/captura-${c}.png`]);
-  return gemini(ctx, "ui", imagenes);
+  return agente(ctx, "revisor-ui", PROMPTS.ui(ctx.tarea), `.revision/${ctx.tarea}/ui.md`);
 }
 
 /** Paso 4: revisores en paralelo; si alguno falla, falla la ronda. */
@@ -213,8 +225,11 @@ async function revisar(ctx, revisores) {
     if (rol === "ui") return capturasYUi(ctx);
     return gemini(ctx, rol);
   }));
-  const fallos = resultados.filter((r) => r.status === "rejected").map((r) => r.reason.message);
-  if (fallos.length) throw new Error(`revisión incompleta:\n- ${fallos.join("\n- ")}`);
+  const fallos = resultados.filter((r) => r.status === "rejected").map((r) => r.reason);
+  if (fallos.length) {
+    const mensaje = `revisión incompleta:\n- ${fallos.map((f) => f.message).join("\n- ")}`;
+    throw Object.assign(new Error(mensaje), { usuario: fallos.some((f) => f.usuario) });
+  }
 }
 
 async function prepararWorktree(tarea) {
@@ -332,7 +347,7 @@ async function main() {
   try {
     fin = await correrPipeline(ctx, args);
   } catch (err) {
-    fin = { resultado: "error", motivo: err.message };
+    fin = { resultado: err.usuario ? "usuario" : "error", motivo: err.message };
   }
   const ultimo = fin.escalar ? await leer(ctx.rel("veredicto.md")) : "";
   await writeFile(ctx.rel("fabrica.md"), `${informeFabrica(ctx, fin, ultimo)}\n`);

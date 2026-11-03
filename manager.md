@@ -20,23 +20,23 @@ Regla de oro: decisión que cambia → `memoria.md` primero, luego producto y
 plan. Error detectado → `learn.md` antes de corregirlo.
 
 ## Contexto activo
-- **En qué estoy:** Fase 1. Backlog `T1.1`-`T1.7` ✅; falta la corrida real
+- **En qué estoy:** Fase 1. Backlog `T1.1`-`T1.8` ✅; falta la corrida real
   que exige el criterio de salida.
   Vigentes: `D3` propuesta por fases, `D4` auto-merge con 4/4 + bajo riesgo,
   `D5` cuatro carriles, `D6` sin Codex, `D7` ingesta al final, `D8` Brain
   mapeado sobre el harness, `D9` vía rápida FTD, `D10` permisos de los
-  agentes amnésicos, `D11` tope de rondas por tarea, `D12` Gemini 3.5 Flash
-  para validar y medición (`T2.7`) antes del auto-merge.
-- **Cambió en la última sesión (S-08):** `T1.7` cerrada: `fabrica.mjs`
-  repite vía → revisores → aprobador hasta 3 rondas; con CAMBIOS REQUERIDOS
-  archiva la ronda en `.revision/TX.Y/ronda-N/` y el constructor corrige
-  (deja `correcciones.md`). A la 3.ª sale con 2 y `fabrica.md` lleva el
-  historial y el último veredicto para el usuario. `D11`: el tope es de la
-  tarea (relanzar no lo renueva; `--reiniciar-rondas` sí). Probado solo con
-  `claude`/Gemini simulados. `P5` sigue abierta (solo el auditor de spec).
-- **Próximos pasos:** corrida real en un repo de prueba (`P4`, necesita
-  `GEMINI_API_KEY`) para validar `D10` y el bucle y cerrar la Fase 1; luego
-  `T2.1`.
+  agentes amnésicos, `D11` tope de rondas por tarea, `D12` medición (`T2.7`)
+  antes del auto-merge, `D13` revisores con la cuenta personal vía `agy`, sin
+  API keys, y UI en Claude.
+- **Cambió en la última sesión (S-10):** `T1.8` cerrada (`D13`): el usuario no
+  tiene API keys. `gemini.mjs` usa `agy` con su cuenta Google AI Pro, en
+  `--mode plan`, desde una carpeta temporal; UI pasa al agente Claude
+  `revisor-ui`; con cuota agotada la fábrica sale al usuario. Probados en real
+  Seguridad, Lógica y spec; `revisor-ui` y la corrida completa, no. `P5` y `P6`
+  abiertas.
+- **Próximos pasos:** corrida real completa con `agy` en el repo de prueba
+  (`P4`) para validar `D10`, `D13` y el bucle y cerrar la Fase 1; `P6` antes de
+  enviar código de clientes; luego `T2.1`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline
@@ -49,6 +49,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 | T1.5 | propuesta §2.3 | `plantillas/revision/scripts/fabrica/worktree.sh`, `instalar.sh`, `tests/` |
 | T1.6 | `revision.md ## 3`; `memoria.md D9, D10, P5` | `scripts/fabrica/fabrica.mjs`, `revision.md`, `tests/fabrica.test.js` |
 | T1.7 | propuesta §5 Fase 5; `fabrica.mjs` (`correrPipeline`, `SALIDA`) | `fabrica.mjs`, `constructor.md`, `revision.md ## 3`, `tests/fabrica.test.js` |
+| T1.8 | `memoria.md D13`; `learn.md L8` | `gemini.mjs`, `fabrica.mjs`, `revisor-ui.md`, `revision.md ## 6`, `tests/agy.test.js` |
 
 ## Fases del proyecto
 ### Fase 0 — Instalación del harness ✅
@@ -77,7 +78,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.7` ✅; falta la corrida real |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅; falta la corrida real |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |

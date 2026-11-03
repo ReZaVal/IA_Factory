@@ -8,12 +8,12 @@ Flujo multi-agente de IA Factory (`memoria.md D<n>`). Las decisiones viven en
 | Rol | Modelo | Dónde vive | Entrega |
 |---|---|---|---|
 | Planificador (Spec / SDD) | Claude Opus 5.5 | `.claude/agents/planificador.md` | `specs/TX.Y.md` |
-| Auditor de spec | Gemini + chequeos deterministas | `scripts/revision/roles/spec.md`, `spec.mjs` | `.revision/TX.Y/spec.md` |
+| Auditor de spec | Gemini (`agy`) + chequeos deterministas | `scripts/revision/roles/spec.md`, `spec.mjs` | `.revision/TX.Y/spec.md` |
 | Clasificador de vía (FTD / SDD) | determinista | `scripts/revision/via.mjs` | `.revision/TX.Y/via.md` |
 | Constructor | Claude Opus 5.5 | `.claude/agents/constructor.md` | código + tests |
-| Revisor 1 — Seguridad/Datos | Gemini (`GEMINI_MODEL`) | `scripts/revision/roles/seguridad.md` | `.revision/TX.Y/seguridad.md` |
-| Revisor 2 — Lógica/Métricas | Gemini | `scripts/revision/roles/logica.md` | `.revision/TX.Y/logica.md` |
-| Revisor 3 — UI/Visión | Gemini + capturas | `scripts/revision/roles/ui.md` | `.revision/TX.Y/ui.md` |
+| Revisor 1 — Seguridad/Datos | Gemini (`agy`, `AGY_MODEL`) | `scripts/revision/roles/seguridad.md` | `.revision/TX.Y/seguridad.md` |
+| Revisor 2 — Lógica/Métricas | Gemini (`agy`) | `scripts/revision/roles/logica.md` | `.revision/TX.Y/logica.md` |
+| Revisor 3 — UI/Visión | Claude Sonnet 5.5 + capturas | `.claude/agents/revisor-ui.md`, `scripts/revision/roles/ui.md` | `.revision/TX.Y/ui.md` |
 | Revisor 4 — Código/Estilo | Claude Sonnet 5.5 | `.claude/agents/revisor-codigo.md` | `.revision/TX.Y/codigo.md` |
 | Approver (Gatekeeper) | Claude Opus 5.5 | `.claude/agents/aprobador.md` | `.revision/TX.Y/veredicto.md` |
 
@@ -106,11 +106,8 @@ SDD):
    node scripts/revision/gemini.mjs logica --tarea TX.Y
    <comando para servir la app>   # en otra terminal, para las capturas
    scripts/revision/capturas.sh TX.Y <url>
-   node scripts/revision/gemini.mjs ui --tarea TX.Y \
-     --imagen .revision/TX.Y/captura-360-claro.png --imagen .revision/TX.Y/captura-360-oscuro.png \
-     --imagen .revision/TX.Y/captura-1280-claro.png --imagen .revision/TX.Y/captura-1280-oscuro.png
    ```
-   y subagente `revisor-codigo`. `--base` (por defecto `HEAD`) define contra
+   y subagentes `revisor-ui` (lee las capturas) y `revisor-codigo`. `--base` (por defecto `HEAD`) define contra
    qué se compara; los archivos nuevos sin `git add` también se envían.
    `--carril` (por defecto `software`) elige qué `constitucion-<carril>.md`
    se envía.
@@ -142,7 +139,7 @@ paso, el costo de Claude y el veredicto de cada ronda; si escala, añade el
 último veredicto para el usuario. Salida: `0` APROBADO · `2` CAMBIOS
 REQUERIDOS tras 3 rondas (al usuario) ·
 `3` BLOQUEADO o hace falta el usuario (spec con «Preguntas abiertas», spec
-sin limpiar tras 2 rondas, rondas de revisión ya gastadas, o tarea visible sin `--url`: sirve la app del
+sin limpiar tras 2 rondas, rondas de revisión ya gastadas, cuota agotada, o tarea visible sin `--url`: sirve la app del
 worktree y relanza con `--solo-revision --url <url>`) · `1` error.
 - La fábrica, `planner.md` y `.claude/agents/` deben estar commiteados: el
   worktree sale de `HEAD`.
@@ -200,23 +197,34 @@ Formato común de informes: `scripts/revision/roles/_formato.md`
 - Un hallazgo descartado por el aprobador lleva su razón en el veredicto.
 
 ## 6. Configuración de Gemini
-- **Clave:** `GEMINI_API_KEY` en el entorno o en `.env.local` en la raíz
-  (ignorado por git). Nunca en el repo, en un `.md` ni en el chat.
-- **Modelo:** `GEMINI_MODEL` (mismo lugar). Para ver los disponibles con tu
-  clave: `node scripts/revision/gemini.mjs --modelos`. Los modelos Pro requieren
-  facturación activa: en la capa gratuita responden 429 con `limit: 0`; sin
-  facturación, usar un Flash.
-- **Errores:** `gemini.mjs` reintenta hasta 3 veces los 503 y los 429 por
-  minuto (backoff con jitter, o la espera que pida la API). Con `limit: 0`,
+- **Motor por defecto, sin clave:** `agy` (Antigravity CLI) con tu cuenta de
+  Google. Instálalo, inicia sesión una vez con `agy` y comprueba con
+  `node scripts/revision/gemini.mjs --modelos`. Si `agy` no está en el `PATH`,
+  usa `AGY_BIN`.
+- **Modelo:** `AGY_MODEL` en el entorno o en `.env.local` (por defecto
+  `gemini-4-argon-medium`). `GEMINI_MODEL` no aplica a este motor.
+- **Seguridad de `agy`:** corre siempre en `--mode plan`, desde una carpeta
+  temporal y con el material dentro del prompt. Sin `plan` puede escribir,
+  incluso fuera de la carpeta de trabajo. Si el árbol cambia, el informe se
+  descarta. Una respuesta vacía o sin el formato de `_formato.md` se reintenta
+  hasta 3 veces y luego falla: nunca cuenta como aprobación.
+- **Con clave (opcional):** `GEMINI_MOTOR=api`, `GEMINI_API_KEY` y
+  `GEMINI_MODEL` en el entorno o en `.env.local` (ignorado por git). Nunca en
+  el repo, en un `.md` ni en el chat. Los modelos Pro requieren facturación
+  activa: en la capa gratuita responden 429 con `limit: 0`.
+- **Errores de la API:** `gemini.mjs` reintenta hasta 3 veces los 503 y los 429
+  por minuto (backoff con jitter, o la espera que pida la API). Con `limit: 0`,
   cuota diaria agotada o 404 falla de inmediato y dice qué hacer.
+- **Cuota agotada (cualquier motor, también Claude):** la fábrica sale con `3`
+  y dice con qué orden relanzar cuando se reinicie; no gasta ronda.
 - **Qué sale a Google:** `_contexto.md`, la constitución del carril, la spec,
-  la fila de la tarea en `planner.md §4` (auditor de spec), el diff, los
-  archivos nuevos y las capturas.
-  El script aborta si el diff incluye `local_privado/` o archivos `.env`. Con
-  la capa gratuita de la API, Google puede usar el contenido para mejorar sus
-  productos; para código privado conviene una clave con facturación activa.
-- `.env.local` de ejemplo:
+  la fila de la tarea en `planner.md §4` (auditor de spec), el diff y los
+  archivos nuevos. Las capturas no: las lee `revisor-ui` (Claude).
+  El script aborta si el diff incluye `local_privado/` o archivos `.env`.
+  Antes de enviar código privado o de clientes, revisa los términos de tu
+  plan: con la capa gratuita de la API, Google puede usar el contenido para
+  mejorar sus productos.
+- `.env.local` de ejemplo (todo opcional con `agy`):
   ```
-  GEMINI_API_KEY=<tu clave>
-  GEMINI_MODEL=<id del modelo>
+  AGY_MODEL=gemini-4-argon-medium
   ```

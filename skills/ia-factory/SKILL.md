@@ -344,8 +344,8 @@ con TDD contra la spec), un **Auditor de spec** que, antes de construir,
 contrasta la spec con la fila del backlog de forma adversarial (chequeos
 deterministas + un proveedor distinto: alcance extra y requisitos ambiguos
 son HIGH y vuelven al planificador), **cuatro revisores por especialidad** en paralelo
-(Seguridad/Datos, Lógica/Métricas y UI/Visión con un proveedor distinto —
-Gemini—; Código/Estilo con otro modelo de Claude) y un **Approver** que
+(Seguridad/Datos y Lógica/Métricas con un proveedor distinto —Gemini, con la
+cuenta personal vía `agy`—; UI/Visión y Código/Estilo con Claude Sonnet) y un **Approver** que
 verifica los hallazgos graves y decide APROBADO / CAMBIOS REQUERIDOS /
 BLOQUEADO. Reglas: la spec referencia decisiones por `Dn`, no las crea; un
 APROBADO no autoriza el commit (lo confirma el humano, §7); máximo 3 rondas
@@ -449,8 +449,10 @@ puntero o un ancla.
 3. En los agentes, reemplazar `<doc-codigo>.md` por el doc de dominio de código.
 4. Registrar la decisión `Dn` (con sus alternativas rechazadas) y completar la
    sección §9 de `agente.md`.
-5. El usuario pone `GEMINI_API_KEY` y `GEMINI_MODEL` en `.env.local` (nunca en
-   el chat ni en el repo); verificar con `node scripts/revision/gemini.mjs --modelos`.
+5. El usuario inicia sesión en `agy` (Antigravity CLI); verificar con
+   `node scripts/revision/gemini.mjs --modelos`. Quien prefiera clave pone
+   `GEMINI_MOTOR=api`, `GEMINI_API_KEY` y `GEMINI_MODEL` en `.env.local` (nunca
+   en el chat ni en el repo).
 
 ## Cómo mantenerlo vivo (durante el trabajo, no solo al instalar)
 

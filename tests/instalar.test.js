@@ -32,6 +32,7 @@ const ARCHIVOS_1_0 = [
 ];
 // Lo que 1.1 añade: constitución del carril (T1.2), auditor de spec (T1.3), clasificador de vía (T1.4) y worktree por tarea (T1.5).
 const NUEVOS_1_1 = [
+  ".claude/agents/revisor-ui.md",
   "constitucion-software.md",
   "scripts/fabrica/fabrica.mjs",
   "scripts/fabrica/worktree.sh",

@@ -53,6 +53,7 @@ Dueño: `skills/ia-factory/SKILL.md`. Criterio de salida (`manager.md`).
 | ✅ T1.5 | Worktree aislado por tarea | T1.2 | 1 | propuesta §2.3 | `scripts/fabrica/worktree.sh` | Crear / listar / limpiar worktree por `TX.Y`; probado en repo temporal |
 | ✅ T1.6 | Orquestador CLI: spec → construir → revisar (agentes amnésicos `claude -p`) | T1.3, T1.5 | 1 | `revision.md ## 3` | `scripts/fabrica/` | `fabrica TX.Y` corre el pipeline completo en un repo de prueba sin intervención hasta el veredicto |
 | ✅ T1.7 | Bucle de corrección (máx. 3 rondas) y escalamiento al humano | T1.6 | 1 | propuesta §5 Fase 5 | `scripts/fabrica/` | CAMBIOS REQUERIDOS reenvía al constructor; a la 3.ª falla deja informe para el humano |
+| ✅ T1.8 | Revisores sin API key: motor `agy` en `gemini.mjs`, UI en Claude, salida al usuario por cuota (`D13`) | T1.7 | 1 | `memoria.md D13`, `learn.md L8` | `gemini.mjs`, `fabrica.mjs`, `revisor-ui.md`, `revision.md ## 6`, `tests/` | Tests en verde + revisor real por `agy` en el repo de prueba |
 
 **Riesgo de la fase:** `claude -p` en modo no interactivo puede no tener los
 mismos permisos/herramientas que la sesión principal; si bloquea, el
@@ -67,7 +68,7 @@ orquestador sigue siendo la sesión principal y `T1.6` se redefine.
 | ⬜ T2.4 | Radio de impacto por carril (rutas de núcleo) | T2.3 | 1 | Clasifica cambios de prueba en bajo / núcleo |
 | 🔒 ⬜ T2.5 | CI (GitHub Actions) con checks obligatorios + protección de rama | T2.4 | 1 | `P2` → `Dn`; workflow plantilla probado en repo de prueba |
 | ⬜ T2.6 | Merge automático o PR según radio; prueba E2E | T2.5 | 1 | Bajo riesgo → merge; núcleo → PR |
-| 🔒 ⬜ T2.7 | Medir revisores Gemini con defectos sembrados (`D12`): misma tarea con 4-5 bugs conocidos, un modelo por corrida (3.5 Flash, 3.8 Flash, 3.1 Pro si hay facturación) | T1.7 | 1 | Tabla de detectados / falsos positivos por modelo → `Dn` del modelo de la Fase 2; bloquea `T2.6` |
+| 🔒 ⬜ T2.7 | Medir revisores Gemini con defectos sembrados (`D12`): misma tarea con 4-5 bugs conocidos, un modelo por corrida (Argon y 3.8 Flash por `agy`, `D13`) y una corrida solo Claude | T1.7 | 1 | Tabla de detectados / falsos positivos por modelo → `Dn` del modelo de la Fase 2; bloquea `T2.6` |
 
 ### Fase 3 — Carril ML ⬜
 **Riesgo (S-03):** los roles de cada carril se instalan en
@@ -95,7 +96,7 @@ en un mismo proyecto los nombres chocarían. Resolver en `T3.2`.
 |---|---|---|---|---|
 | ⬜ T5.1 | `constitution.md` multimedia | T4.5 | 1 | Constitución |
 | ⬜ T5.2 | Herramientas FFmpeg por CLI (render, audio, subtítulos) | T5.1 | 1 | Scripts probados |
-| ⬜ T5.3 | Extracción de frames para el revisor de visión | T5.2 | 1 | Frames enviados a Gemini |
+| ⬜ T5.3 | Extracción de frames para el revisor de visión | T5.2 | 1 | Frames revisados por un agente Claude (`D13`: `agy` en `plan` no lee imágenes) |
 | ⬜ T5.4 | Revisor de safe zones y calidad de render | T5.3 | 1 | Prompt + tests |
 | ⬜ T5.5 | Prueba en un video de prueba | T5.4 | 1 | Pipeline completo en verde |
 
@@ -136,6 +137,7 @@ repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
 | S-07 | 2026-11-03 | T1.6 | ✅ | `D10`: agentes amnésicos `claude -p --agent` con `acceptEdits` + Bash solo para tests (`FABRICA_TESTS`), git de lectura y `FABRICA_PERMITIDOS`; commit/push/merge negados. `scripts/fabrica/fabrica.mjs TX.Y` en el worktree: spec → auditoría (2 rondas, `P5` provisional) → constructor → `via.mjs` → revisores en paralelo → aprobador; deja `fabrica.md` con pasos y costo; salida 0/2/3/1. 87 tests en verde (20 nuevos: pipeline completo en repo temporal con `claude` y Gemini simulados). **Sin corrida real todavía** (no hay `GEMINI_API_KEY`) | **T1.7 — Bucle de corrección** (antes: corrida real en repo de prueba, `P4`) |
 | S-08 | 2026-11-03 | T1.7 | ✅ | Bucle en `fabrica.mjs` (`RONDAS_REVISION = 3`): CAMBIOS REQUERIDOS → informes a `.revision/TX.Y/ronda-N/` → constructor corrige contra ese `veredicto.md` y deja `correcciones.md` → vía → revisores → aprobador (sabe la ronda y lee las anteriores). BLOQUEADO corta; a la 3.ª sale con 2 y `fabrica.md` trae el veredicto por ronda + el último completo para el usuario. `D11` (elegida por el usuario tras comparar prácticas: SRE retry budget, AWS, `backoffLimit` de Kubernetes, circuit breaker): presupuesto de rondas **por tarea**, contado con las `ronda-N/`; gastado → salida 3 sin llamar agentes; `--reiniciar-rondas` → `intento-K/`. 94 tests en verde (7 nuevos). T1.1-T1.7 ✅. Repo de prueba `/home/renzo/IA_Factory_Test` (sintético, `P4`) creado: destapó `L3` (worktree sin dependencias) → `FABRICA_PREPARAR` en `worktree.sh`. Primera corrida real de `T1.1`: el planificador escribió la spec; cortó en la auditoría por `L5` (Pro sin cuota en la capa gratuita de Gemini) y destapó `L4` (falso HIGH de alcance, corregido). 100 tests en verde. Tercera corrida (`--solo-revision`, vía FTD): **T1.1 APROBADO en la ronda 1**, costo Claude ≈ US$ 1.74 en total (aprobador US$ 0.98); `L6` y `L7` abiertos. **Fase 1 sin cerrar: falta T1.2 (SDD)** | **Corrida real en repo de prueba** (`P4`, `GEMINI_API_KEY`) para cerrar la Fase 1 |
 | S-09 | 2026-11-03 | `L5` | ✅ | `gemini.mjs`: `clasificarError` + `pedirConReintentos` (3 reintentos con backoff y jitter o la espera de `RetryInfo` en 503 y 429 por minuto; fallo inmediato con qué hacer en `limit: 0`, cuota diaria, 404 o espera > 90 s). `revision.md` ya no asume Pro. Comparados Gemini y OpenAI: `D6` y `D12` sin cambios; el modelo se elige con `T2.7` | **T1.2 — corrida real SDD** para cerrar la Fase 1 |
+| S-10 | 2026-11-03 | T1.8 | ✅ | `D13`: sin API keys; Gemini vía `agy` en `plan`, UI en Claude (`revisor-ui`), cuota → usuario. 143 tests en verde; Seguridad, Lógica y spec probados con `agy` real en un clon; `revisor-ui` y la corrida completa sin probar en real. `L8` resuelto, `P6` abierta | **Corrida real completa con `agy`** para cerrar la Fase 1 |
 
 ## 7. Cómo se mantiene vivo
 Al cerrar tarea: ✅ + fila en §6. Al cerrar fase: recalcular §2 y §5, colapsar

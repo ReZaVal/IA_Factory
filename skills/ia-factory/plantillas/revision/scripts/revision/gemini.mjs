@@ -1,19 +1,23 @@
 #!/usr/bin/env node
 // Revisores Gemini (revision.md ## 3, IA Factory): envía la constitución del carril
-// + spec + diff (+ capturas) a la API de Gemini y guarda el informe en
-// .revision/<tarea>/<rol>.md. El rol `spec` audita la spec antes de construir:
-// recibe spec + fila del backlog + chequeos deterministas (spec.mjs), sin diff.
-// Uso: node scripts/revision/gemini.mjs <spec|seguridad|logica|ui> --tarea TX.Y [--carril software] [--base REF] [--imagen f.png ...]
+// + spec + diff a Gemini y guarda el informe en .revision/<tarea>/<rol>.md. El
+// motor por defecto es `agy` (Antigravity CLI con la cuenta personal, sin clave,
+// D13 de IA Factory); GEMINI_MOTOR=api usa la API con clave. El rol `spec` audita
+// la spec antes de construir: recibe spec + fila del backlog + chequeos
+// deterministas (spec.mjs), sin diff. UI la revisa el agente `revisor-ui`.
+// Uso: node scripts/revision/gemini.mjs <spec|seguridad|logica> --tarea TX.Y [--carril software] [--base REF]
 //      node scripts/revision/gemini.mjs --modelos
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, mkdtemp, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { filaBacklog, precheckSpec, tablaChequeos, buildSpecPrompt } from "./spec.mjs";
 
-export const ROLES = ["spec", "seguridad", "logica", "ui"];
+export const ROLES = ["spec", "seguridad", "logica"];
 const API = "https://generativelanguage.googleapis.com/v1beta";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // Nunca salen a la API: datos reales de inspección y secretos (agente.md §4).
@@ -23,20 +27,25 @@ const CARRIL = /^[a-z0-9-]+$/;
 const MAX_REINTENTOS = 3;
 const BACKOFF_MS = 1000;
 const MAX_ESPERA_MS = 90_000;
+const MOTORES = ["agy", "api"];
+const MODELO_AGY = "gemini-4-argon-medium";
+const LIMITE_AGY = "600s";
+const INFORME_VALIDO = /^##\s*Veredicto:\s*(SIN|CON) BLOQUEANTES\s*$/im;
+const CUOTA_AGY = /quota|cuota|rate.?limit|resource.?exhausted|\b429\b/i;
+const TRANSITORIO_AGY = /\b503\b|overloaded|unavailable|high demand|timed? ?out|deadline/i;
 
 /**
  * @param {string[]} argv
- * @returns {{ rol: string | undefined, tarea: string | undefined, base: string, carril: string, imagenes: string[], modelos: boolean }}
+ * @returns {{ rol: string | undefined, tarea: string | undefined, base: string, carril: string, modelos: boolean }}
  */
 export function parseArgs(argv) {
-  const args = { rol: undefined, tarea: undefined, base: "HEAD", carril: "software", imagenes: [], modelos: false };
+  const args = { rol: undefined, tarea: undefined, base: "HEAD", carril: "software", modelos: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--modelos") args.modelos = true;
     else if (a === "--tarea") args.tarea = argv[++i];
     else if (a === "--base") args.base = argv[++i];
     else if (a === "--carril") args.carril = argv[++i];
-    else if (a === "--imagen") args.imagenes = [...args.imagenes, argv[++i]];
     else if (!a.startsWith("--") && !args.rol) args.rol = a;
     else throw new Error(`Argumento desconocido: ${a}`);
   }
@@ -77,9 +86,14 @@ export function parseDotenv(dotenvText) {
  */
 export function loadConfig(env, dotenvText) {
   const file = parseDotenv(dotenvText);
+  const valor = (k) => env[k] || file[k] || "";
+  const motor = valor("GEMINI_MOTOR") || "agy";
+  if (!MOTORES.includes(motor)) throw new Error(`GEMINI_MOTOR inválido "${motor}"; usa: ${MOTORES.join(", ")}`);
   return {
-    apiKey: env.GEMINI_API_KEY || file.GEMINI_API_KEY || "",
-    model: env.GEMINI_MODEL || file.GEMINI_MODEL || ""
+    motor,
+    agy: valor("AGY_BIN") || "agy",
+    apiKey: valor("GEMINI_API_KEY"),
+    model: motor === "agy" ? valor("AGY_MODEL") || MODELO_AGY : valor("GEMINI_MODEL")
   };
 }
 
@@ -109,19 +123,62 @@ export function buildSystem({ contexto, carril, constitucion, rol, formato }) {
   return [contexto, reglas, rol, formato].filter(Boolean).join("\n\n");
 }
 
-/** @param {string} file */
-export function mimeFor(file) {
-  const ext = path.extname(file).toLowerCase();
-  if (ext === ".png") return "image/png";
-  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
-  throw new Error(`imagen no soportada: ${file} (usa .png o .jpg)`);
+/** Informe con la cabecera de `_formato.md`; sin ella, fabrica.mjs lo leería como aprobado. @param {string} informe */
+export const cumpleFormato = (informe) => INFORME_VALIDO.test(informe);
+
+/**
+ * `--mode plan` es lo único que impidió escribir: sin él agy edita, incluso fuera
+ * de la carpeta de trabajo (learn.md L8). El prompt va por stdin: como argumento
+ * Linux lo corta en 128 KB.
+ * @param {string} model
+ */
+export function argsAgy(model) {
+  return ["--print=", "--mode", "plan", "--model", model, "--input-format", "stream-json", "--output-format", "stream-json", "--print-timeout", LIMITE_AGY];
+}
+
+/** @param {string} system @param {string} prompt */
+export function mensajeAgy(system, prompt) {
+  return `${JSON.stringify({ event: "user", message: { role: "user", content: `${system}\n\n${prompt}` } })}\n`;
+}
+
+/** Evento final de la salida stream-json; las demás líneas no interesan. @param {string} salida */
+function resultadoAgy(salida) {
+  for (const linea of salida.trim().split("\n").reverse()) {
+    try {
+      const evento = JSON.parse(linea);
+      if (evento.event === "result") return evento.result;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Traduce una corrida de agy al contrato de pedirConReintentos. `SUCCESS` no basta:
+ * si le niega una herramienta responde éxito vacío, y a veces se sale de tema (L8).
+ * @param {{ codigo: number, salida: string, error: string }} corrida
+ */
+export function interpretarAgy({ codigo, salida, error }) {
+  const r = resultadoAgy(salida);
+  const texto = r?.response?.trim() ? r.response : "";
+  const fallo = (message, reintentar) => ({ ok: false, status: 0, body: { error: { message, reintentar } } });
+  const pista = error.trim().slice(0, 300);
+  if (codigo === 0 && r?.status === "SUCCESS") {
+    if (cumpleFormato(texto)) return { ok: true, status: 200, body: { texto } };
+    return fallo(texto ? "agy respondió sin el formato de _formato.md" : `agy terminó sin respuesta${pista ? `: ${pista}` : ""}`, true);
+  }
+  const detalle = r?.error || pista || `código ${codigo}`;
+  if (CUOTA_AGY.test(detalle)) return fallo(`Cuota de agy agotada: ${detalle}`, false);
+  return fallo(`agy falló: ${detalle}`, TRANSITORIO_AGY.test(detalle));
 }
 
 /**
  * Separa lo transitorio (503, 429 por minuto) de lo permanente (`limit: 0`,
  * cuota diaria, 404), que no se arregla reintentando (learn.md L5).
+ * Status 0: error sin HTTP (agy), que ya dice si se reintenta.
  * @param {number} status
- * @param {{ message?: string, details?: { retryDelay?: string }[] }} [error]
+ * @param {{ message?: string, reintentar?: boolean, details?: { retryDelay?: string }[] }} [error]
  * @returns {{ reintentar: boolean, esperaMs: number | null, ayuda: string }}
  */
 export function clasificarError(status, error = {}) {
@@ -129,6 +186,7 @@ export function clasificarError(status, error = {}) {
   const segundos = parseFloat(retryDelay);
   const esperaMs = Number.isFinite(segundos) ? segundos * 1000 : null;
   const permanente = (ayuda) => ({ reintentar: false, esperaMs: null, ayuda });
+  if (status === 0) return error.reintentar ? { reintentar: true, esperaMs: null, ayuda: "" } : permanente("");
   if (status === 503) return { reintentar: true, esperaMs, ayuda: "" };
   if (status === 404) return permanente("El modelo no existe o está retirado para tu clave: elige otro con --modelos (revision.md ## 6).");
   if (status !== 429) return permanente("");
@@ -143,18 +201,19 @@ export function clasificarError(status, error = {}) {
  * Repite `hacer` ante errores transitorios, con backoff exponencial y jitter;
  * si la API dice cuánto esperar, espera eso.
  * @param {() => Promise<{ ok: boolean, status: number, body: any }>} hacer
- * @param {{ dormir?: (ms: number) => Promise<unknown>, azar?: () => number, avisar?: (mensaje: string) => void }} [opciones]
+ * @param {{ dormir?: (ms: number) => Promise<unknown>, azar?: () => number, avisar?: (mensaje: string) => void, backoffMs?: number }} [opciones]
  */
-export async function pedirConReintentos(hacer, { dormir = sleep, azar = Math.random, avisar = (m) => process.stderr.write(`${m}\n`) } = {}) {
+export async function pedirConReintentos(hacer, { dormir = sleep, azar = Math.random, avisar = (m) => process.stderr.write(`${m}\n`), backoffMs = BACKOFF_MS } = {}) {
   for (let intento = 0; ; intento++) {
     const { ok, status, body } = await hacer();
     if (ok) return body;
     const { reintentar, esperaMs, ayuda } = clasificarError(status, body.error);
-    const detalle = `Gemini respondió ${status}: ${body.error?.message ?? "sin detalle"}`;
+    const mensaje = body.error?.message ?? "sin detalle";
+    const detalle = status ? `Gemini respondió ${status}: ${mensaje}` : mensaje;
     if (!reintentar) throw new Error([detalle, ayuda].filter(Boolean).join("\n"));
     if (intento === MAX_REINTENTOS) throw new Error(`${detalle}\nSigue fallando tras ${MAX_REINTENTOS} reintentos: prueba más tarde o con otro modelo.`);
-    const espera = esperaMs === null ? BACKOFF_MS * 2 ** intento * (1 + azar()) : esperaMs + BACKOFF_MS * azar();
-    avisar(`Gemini respondió ${status}; reintento ${intento + 1}/${MAX_REINTENTOS} en ${Math.ceil(espera / 1000)} s`);
+    const espera = esperaMs === null ? backoffMs * 2 ** intento * (1 + azar()) : esperaMs + backoffMs * azar();
+    avisar(`${status ? `Gemini respondió ${status}` : mensaje}; reintento ${intento + 1}/${MAX_REINTENTOS} en ${Math.ceil(espera / 1000)} s`);
     await dormir(espera);
   }
 }
@@ -191,27 +250,67 @@ async function collectDiff(base) {
   return [tracked, ...nuevos].filter(Boolean).join("\n");
 }
 
-async function callGemini({ apiKey, model, system, prompt, imagenes }) {
-  const imageParts = await Promise.all(
-    imagenes.map(async (f) => ({
-      inline_data: { mime_type: mimeFor(f), data: (await readFile(path.resolve(f))).toString("base64") }
-    }))
-  );
+/** Huella del árbol de trabajo: diff y archivos nuevos (.revision/ está ignorado). */
+async function huellaArbol() {
+  const hash = createHash("sha256").update(git(["status", "--porcelain"])).update(git(["diff", "HEAD"]));
+  for (const f of git(["ls-files", "--others", "--exclude-standard"]).split("\n").filter(Boolean)) {
+    hash.update(f).update(await readFile(path.join(ROOT, f)));
+  }
+  return hash.digest("hex");
+}
+
+/** @returns {Promise<{ codigo: number, salida: string, error: string }>} */
+function correrAgy(agy, args, { cwd, entrada = "" }) {
+  return new Promise((resolve, reject) => {
+    const hijo = spawn(agy, args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
+    let salida = "";
+    let error = "";
+    hijo.stdout.on("data", (d) => (salida += d));
+    hijo.stderr.on("data", (d) => (error += d));
+    hijo.on("error", (e) => reject(new Error(`No pude ejecutar ${agy} (${e.message}): instala Antigravity CLI e inicia sesión (revision.md ## 6)`)));
+    hijo.on("close", (codigo) => resolve({ codigo: codigo ?? 1, salida, error }));
+    hijo.stdin.on("error", () => {}); // Un agy que muere antes de leer ya se reporta en "error" y "close".
+    hijo.stdin.end(entrada);
+  });
+}
+
+/** Corre desde una carpeta vacía: agy no ve `.env.local` ni el árbol, solo el prompt. */
+async function callAgy({ agy, model, system, prompt }) {
+  const cwd = await mkdtemp(path.join(tmpdir(), "ia-factory-agy-"));
+  const antes = await huellaArbol();
+  try {
+    const entrada = mensajeAgy(system, prompt);
+    const backoffMs = Number(process.env.AGY_REINTENTO_MS) || undefined;
+    const { texto } = await pedirConReintentos(async () => interpretarAgy(await correrAgy(agy, argsAgy(model), { cwd, entrada })), { backoffMs });
+    if ((await huellaArbol()) !== antes) throw new Error("agy modificó el árbol de trabajo: revisa el diff; el informe se descarta (learn.md L8)");
+    return texto;
+  } finally {
+    await rm(cwd, { recursive: true, force: true });
+  }
+}
+
+async function callGemini({ apiKey, model, system, prompt }) {
   const body = await pedirGemini(`${API}/models/${model}:generateContent`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
-      contents: [{ role: "user", parts: [{ text: prompt }, ...imageParts] }],
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.2 }
     })
   });
   const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
   if (!text) throw new Error(`Gemini no devolvió texto (finishReason: ${body.candidates?.[0]?.finishReason ?? "?"})`);
+  if (!cumpleFormato(text)) throw new Error("Gemini respondió sin el formato de _formato.md");
   return text;
 }
 
-async function listModels(apiKey) {
+async function listModels({ motor, agy, apiKey }) {
+  if (motor === "agy") {
+    const r = await correrAgy(agy, ["models"], { cwd: ROOT });
+    if (r.codigo !== 0) throw new Error(`agy models falló: ${r.error.trim()}`);
+    return r.salida.trim().split("\n");
+  }
   const body = await pedirGemini(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": apiKey } });
   return (body.models ?? [])
     .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
@@ -234,14 +333,14 @@ async function specInput(tarea, spec) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const dotenvPath = path.join(ROOT, ".env.local");
-  const { apiKey, model } = loadConfig(process.env, existsSync(dotenvPath) ? await readFile(dotenvPath, "utf8") : "");
-  if (!apiKey) throw new Error("Falta GEMINI_API_KEY: expórtala en tu shell o ponla en .env.local (ver revision.md ## 6)");
+  const cfg = loadConfig(process.env, existsSync(dotenvPath) ? await readFile(dotenvPath, "utf8") : "");
+  if (cfg.motor === "api" && !cfg.apiKey) throw new Error("Falta GEMINI_API_KEY: expórtala en tu shell o ponla en .env.local (ver revision.md ## 6)");
 
   if (args.modelos) {
-    process.stdout.write(`${(await listModels(apiKey)).join("\n")}\n`);
+    process.stdout.write(`${(await listModels(cfg)).join("\n")}\n`);
     return;
   }
-  if (!model) throw new Error("Falta GEMINI_MODEL (lista los disponibles con --modelos; ver revision.md ## 6)");
+  if (!cfg.model) throw new Error("Falta GEMINI_MODEL (lista los disponibles con --modelos; ver revision.md ## 6)");
 
   const roles = path.join(ROOT, "scripts/revision/roles");
   const constitucionPath = path.join(ROOT, `constitucion-${args.carril}.md`);
@@ -256,12 +355,12 @@ async function main() {
   const specPath = path.join(ROOT, "specs", `${args.tarea}.md`);
   const spec = existsSync(specPath) ? await readFile(specPath, "utf8") : "";
   const { prompt, previo, base } = args.rol === "spec" ? await specInput(args.tarea, spec) : { prompt: buildPrompt({ tarea: args.tarea, spec, diff: await collectDiff(args.base) }), previo: "", base: args.base };
-  const informe = await callGemini({ apiKey, model, system, prompt, imagenes: args.imagenes });
+  const informe = await (cfg.motor === "agy" ? callAgy : callGemini)({ ...cfg, system, prompt });
 
   const outDir = path.join(ROOT, ".revision", args.tarea);
   await mkdir(outDir, { recursive: true });
   const out = path.join(outDir, `${args.rol}.md`);
-  await writeFile(out, `<!-- revisor: ${args.rol} · carril: ${args.carril} · modelo: ${model} · base: ${base} -->\n\n${previo}${informe}\n`);
+  await writeFile(out, `<!-- revisor: ${args.rol} · carril: ${args.carril} · modelo: ${cfg.motor === "agy" ? "agy/" : ""}${cfg.model} · base: ${base} -->\n\n${previo}${informe}\n`);
   process.stdout.write(`Informe guardado en ${path.relative(ROOT, out)}\n`);
 }
 

@@ -85,5 +85,5 @@ echo
 echo "Listo: $copiados copiados, $omitidos ya existían."
 echo "Siguiente paso: abre el proyecto con tu agente y pídele \"instala IA Factory\""
 echo "para que adapte las plantillas (reemplazar <...>, fases, D1/D2, planner)."
-[ -n "$carril" ] && echo "Revisión: llena scripts/revision/roles/_contexto.md, constitucion-$carril.md y los <...> de los roles, y pon GEMINI_API_KEY / GEMINI_MODEL en .env.local."
+[ -n "$carril" ] && echo "Revisión: llena scripts/revision/roles/_contexto.md, constitucion-$carril.md y los <...> de los roles, e inicia sesión en agy (Antigravity CLI; ver revision.md ## 6)."
 exit 0

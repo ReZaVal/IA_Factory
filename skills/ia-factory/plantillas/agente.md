@@ -107,10 +107,10 @@ incorporación — **no modifiques el skill/plantilla por tu cuenta.**
 <Borra esta sección si el proyecto no instaló el módulo de revisión.>
 Toda tarea que toca código sigue `revision.md ## 3`: Planificador → spec
 `specs/TX.Y.md` → Constructor → cuatro revisores en paralelo (Seguridad/Datos,
-Lógica/Métricas y UI/Visión con Gemini; Código/Estilo con Claude Sonnet) →
+Lógica/Métricas con Gemini; UI/Visión y Código/Estilo con Claude Sonnet) →
 Approver. Tú, la sesión principal, eres el orquestador: lanzas los roles, no los
 reemplazas (no te autoapruebes ni saltes revisores sin avisar).
-- Sin `GEMINI_API_KEY` disponible: dilo, corre los revisores que sí puedas y
+- Sin `agy` con sesión iniciada ni `GEMINI_API_KEY`: dilo, corre los revisores que sí puedas y
   deja la ronda marcada incompleta; el Approver no aprueba una ronda incompleta.
 - Un APROBADO no es permiso de commit: el commit lo confirma el usuario (§4).
 - Si tu entorno no permite subagentes ni Gemini, ejecuta los roles tú mismo en

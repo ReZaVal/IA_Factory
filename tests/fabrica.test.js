@@ -144,6 +144,8 @@ else if (agente === "constructor") {
   for (const f of (process.env.FAKE_CODIGO || "src/suma.js").split(",")) escribir(f, "export const suma = (a, b) => a + b;\\n");
   escribir("tests/suma.test.js", "// test\\n");
 }
+if (process.env.FAKE_CLAUDE_CUOTA === agente) { process.stdout.write(JSON.stringify({ result: "Claude usage limit reached", is_error: true })); process.exit(1); }
+if (agente === "revisor-ui") escribir(".revision/" + t + "/ui.md", "## Veredicto: SIN BLOQUEANTES\\n");
 if (agente === "revisor-codigo") escribir(".revision/" + t + "/codigo.md", "## Veredicto: SIN BLOQUEANTES\\n");
 // FAKE_VEREDICTO: uno por ronda separados por coma; el último se repite.
 const ronda = fs.readFileSync(process.env.FAKE_LOG, "utf8").split("\\n").filter((l) => l.includes('"agente":"aprobador"')).length;
@@ -160,6 +162,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const rol = process.argv[2];
   const tarea = process.argv[process.argv.indexOf("--tarea") + 1];
   fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ agente: "gemini " + rol, args: process.argv.slice(2), cwd: process.cwd() }) + "\\n");
+  if (process.env.FAKE_GEMINI_CUOTA === rol) { process.stderr.write("Error: Cuota agotada en agy\\n"); process.exit(1); }
   const bloquea = rol === "spec" && process.env.FAKE_SPEC_BLOQUEA === "1";
   fs.mkdirSync(".revision/" + tarea, { recursive: true });
   fs.writeFileSync(".revision/" + tarea + "/" + rol + ".md", "## Veredicto: " + (bloquea ? "CON BLOQUEANTES" : "SIN BLOQUEANTES") + "\\n");
@@ -173,13 +176,15 @@ function git(...args) {
 }
 
 /** Repo de prueba con la fábrica instalada y commiteada (el worktree sale de HEAD). */
-function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes = false } = {}) {
+function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes = false, sinRevisorUi = false } = {}) {
   execFileSync(path.resolve(import.meta.dirname, "../instalar.sh"), [repo, "--carril", "software"], { encoding: "utf8" });
   const scripts = path.join(repo, "scripts/revision");
   renameSync(path.join(scripts, "gemini.mjs"), path.join(scripts, "gemini-real.mjs"));
   writeFileSync(path.join(scripts, "gemini.mjs"), FAKE_GEMINI);
   writeFileSync(path.join(repo, "planner.md"), PLANNER(tocar));
   if (sinAgentes) rmSync(path.join(repo, ".claude/agents/aprobador.md"));
+  if (sinRevisorUi) rmSync(path.join(repo, ".claude/agents/revisor-ui.md"));
+  writeFileSync(path.join(repo, "scripts/revision/capturas.sh"), "#!/bin/sh\nexit 0\n");
   git("add", ".");
   git("commit", "--quiet", "-m", "fábrica");
 }
@@ -292,6 +297,49 @@ describe("fabrica TX.Y: pipeline completo", () => {
     const r2 = fabrica(["T9.1", "--solo-revision"], env);
     expect(r2.codigo).toBe(SALIDA.usuario);
     expect(llamadas().map((l) => l.agente)).toEqual([]);
+  });
+
+  it("tarea visible con --url: UI la revisa el agente Claude con las capturas, no Gemini (D13)", () => {
+    montarRepo({ tocar: "`src/suma.js`, `css/app.css`, `tests/suma.test.js`" });
+    const r = fabrica(["T9.1", "--url", "http://x/"], { FAKE_SPEC: SPEC(["src/suma.js", "css/app.css", "tests/suma.test.js"]), FAKE_CODIGO: "src/suma.js,css/app.css" });
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    const ui = llamadas().find((l) => l.agente === "revisor-ui");
+    expect(ui.prompt).toMatch(/\.revision\/T9\.1\/captura-360-claro\.png/);
+    expect(llamadas().map((l) => l.agente)).not.toContain("gemini ui");
+  });
+
+  it("tarea visible sin el agente revisor-ui: error claro antes de capturar", () => {
+    montarRepo({ tocar: "`src/suma.js`, `css/app.css`, `tests/suma.test.js`", sinRevisorUi: true });
+    const r = fabrica(["T9.1", "--url", "http://x/"], { FAKE_SPEC: SPEC(["src/suma.js", "css/app.css", "tests/suma.test.js"]), FAKE_CODIGO: "src/suma.js,css/app.css" });
+    expect(r.codigo).toBe(SALIDA.error);
+    expect(r.salida).toMatch(/revisor-ui/);
+  });
+
+  it("cuota agotada en un revisor → al usuario con --solo-revision, sin gastar ronda", () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_GEMINI_CUOTA: "seguridad" });
+    expect(r.codigo).toBe(SALIDA.usuario);
+    expect(r.salida).toMatch(/[Cc]uota/);
+    expect(r.salida).toMatch(/--solo-revision/);
+    expect(llamadas().map((l) => l.agente)).not.toContain("aprobador");
+    rmSync(log);
+    expect(fabrica(["T9.1", "--solo-revision"]).codigo).toBe(SALIDA.APROBADO);
+    expect(llamadas().map((l) => l.agente)).not.toContain("constructor");
+  });
+
+  it("cuota agotada en la auditoría de spec → relanzar sin --solo-revision", () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_GEMINI_CUOTA: "spec" });
+    expect(r.codigo).toBe(SALIDA.usuario);
+    expect(r.salida).toMatch(/[Cc]uota/);
+    expect(r.salida).not.toMatch(/--solo-revision/);
+  });
+
+  it("límite de Claude en el constructor → al usuario, no error", () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_CLAUDE_CUOTA: "constructor" });
+    expect(r.codigo).toBe(SALIDA.usuario);
+    expect(r.salida).toMatch(/[Cc]uota|límite/);
   });
 
   it("CAMBIOS REQUERIDOS → el constructor corrige y una nueva ronda aprueba", () => {

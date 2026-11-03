@@ -7,8 +7,8 @@ que el usuario pida revisarlo.
 - **Qué es:** IA Factory 1.0.0 (2026-11-02) — plugin de Claude Code + 
   `instalar.sh` que instala en otros proyectos el harness multi-sesión (SDD) y
   un módulo de revisión multi-agente (planificador, constructor y approver
-  Claude Opus 5.5; revisor de código Claude Sonnet 5.5; revisores de
-  seguridad, lógica y UI con Gemini Pro). Nació del skill
+  Claude Opus 5.5; revisores de código y UI Claude Sonnet 5.5; auditor de spec
+  y revisores de seguridad y lógica con Gemini vía `agy`, `D13`). Nació del skill
   `harness-agente-multisesion` y del caso Supervisión de Contratistas (D15 allí).
 - **Repo:** `/home/renzo/IA Factory` (WSL), remoto privado
   `github.com/ReZaVal/IA_Factory`, rama `main`.
@@ -189,7 +189,7 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
 - **Impacto:** `fabrica.mjs` (`--reiniciar-rondas`), `revision.md ## 3`,
   `tests/fabrica.test.js`.
 
-### D12 — Modelo de los revisores Gemini: Flash 3.5 para validar; medir antes del auto-merge
+### D12 — Modelo de los revisores Gemini: Flash 3.5 para validar; medir antes del auto-merge (modelo reemplazado por `D13`)
 - **Decisión:** para cerrar la Fase 1 en el repo sintético,
   `GEMINI_MODEL=gemini-3.5-flash` (capa gratuita). Antes de la Fase 2
   (auto-merge, `D4`) se mide la cobertura de los revisores con defectos
@@ -206,6 +206,29 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
 - **Impacto:** `.env.local` del repo de prueba; `T2.7` bloquea `T2.6`. Código
   de clientes: no con la capa gratuita (Google puede usar el contenido,
   `revision.md ## 6`).
+
+### D13 — Sin API keys: revisores externos con la cuenta personal vía Antigravity CLI
+- **Decisión:** el usuario no tiene API keys; usa sus cuentas personales
+  (Claude Pro y Google AI Pro). Auditor de spec, Seguridad y Lógica corren por
+  defecto con `agy` (Antigravity CLI), `AGY_MODEL` = `gemini-4-argon-medium`,
+  siempre en `--mode plan`, desde una carpeta temporal y con todo el material
+  en el prompt. El **Revisor UI pasa a Claude** (agente `revisor-ui`, Sonnet),
+  porque `agy` en `plan` no lee imágenes. `GEMINI_MOTOR=api` conserva la ruta
+  por clave para quien la tenga, sin imágenes. Si se agota una cuota, la
+  fábrica sale al usuario y dice cómo relanzar.
+- **Razón:** elegido por el usuario (S-10, 2026-11-03). Probado en real
+  (`learn.md L8`): corre sin intervención, fija modelo y procesa 166 KB por
+  `stream-json`. Conserva la revisión cruzada Claude + Gemini sin clave.
+- **Alternativas rechazadas:** solo Claude (se pierde la familia cruzada);
+  relevo manual entre cuentas (hasta 11 pasos por tarea, rompe el criterio de
+  la Fase 1 y `D4`); Gemini CLI (no instalado; `agy` ya tenía sesión); UI con
+  clave gratuita (20 peticiones al día); `agy` sin `plan` para leer imágenes
+  (escribió fuera de la carpeta de trabajo).
+- **Impacto:** reemplaza a `D12` en el modelo de validación; `T2.7` compara
+  Argon y Flash por `agy`. `D6` sigue vigente, aunque GPT-OSS 120B en la
+  cuenta queda como candidato sin probar. El Revisor UI pierde la revisión
+  cruzada. Código de clientes: **no** por `agy` hasta leer sus términos de
+  privacidad y uso automatizado (`P6`). Cuota de `agy` sin medir.
 
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
@@ -236,6 +259,11 @@ gatekeeper → `T2.1`.
   `T1.7` (S-08) añadió `RONDAS_REVISION = 3` (propuesta §5 Fase 5); su
   forma (presupuesto por tarea) quedó decidida en `D11`. Sigue abierto solo
   lo del auditor de spec.
+
+- [ ] **P6 — Términos y cuota de Antigravity CLI.** ¿Permiten uso automatizado
+  y código de clientes con Google AI Pro? ¿Cuánta cuota da por día? La FAQ de
+  Gemini CLI no aplica a esta herramienta. Bloquea usar `agy` con código de
+  clientes (`D13`).
 
 > Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
 > `T2.5`; P4, el cierre de cada fase de carril.

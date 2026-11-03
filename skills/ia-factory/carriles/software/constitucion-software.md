@@ -3,8 +3,8 @@
 <!-- IA Factory: reemplaza cada <...> al instalar y borra los ejemplos que no
 apliquen. Es la ÚNICA fuente de las reglas duras del código (memoria.md D<n>):
 el planificador la lee al escribir la spec, el constructor la respeta y
-`scripts/revision/gemini.mjs` la envía a los revisores externos. Sale a la API
-de Google: nada sensible aquí (rutas privadas, nombres reales, claves). Corta:
+`scripts/revision/gemini.mjs` la envía a los revisores externos. Sale a
+Google: nada sensible aquí (rutas privadas, nombres reales, claves). Corta:
 si una regla necesita más de dos líneas, el detalle va al doc de dominio de
 código y aquí queda la regla. -->
 
