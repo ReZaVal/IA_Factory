@@ -30,8 +30,14 @@ const ARCHIVOS_1_0 = [
   "scripts/revision/roles/seguridad.md",
   "scripts/revision/roles/ui.md"
 ];
-// Lo que 1.1 añade: constitución del carril (T1.2) y auditor de spec (T1.3).
-const NUEVOS_1_1 = ["constitucion-software.md", "scripts/revision/roles/spec.md", "scripts/revision/spec.mjs"];
+// Lo que 1.1 añade: constitución del carril (T1.2), auditor de spec (T1.3), clasificador de vía (T1.4) y worktree por tarea (T1.5).
+const NUEVOS_1_1 = [
+  "constitucion-software.md",
+  "scripts/fabrica/worktree.sh",
+  "scripts/revision/roles/spec.md",
+  "scripts/revision/spec.mjs",
+  "scripts/revision/via.mjs"
+];
 
 function archivos(dir, base = dir) {
   return readdirSync(dir).flatMap((f) => {
@@ -56,6 +62,7 @@ describe("instalar.sh", () => {
     const { lista, dir } = instalar("--carril", "software");
     expect(lista).toEqual([...ARCHIVOS_1_0, ...NUEVOS_1_1].sort());
     expect(statSync(path.join(dir, "scripts/revision/capturas.sh")).mode & 0o111).toBeTruthy();
+    expect(statSync(path.join(dir, "scripts/fabrica/worktree.sh")).mode & 0o111).toBeTruthy();
     expect(readFileSync(path.join(dir, ".gitignore"), "utf8")).toMatch(/^\.revision\/$/m);
     rmSync(dir, { recursive: true, force: true });
   });

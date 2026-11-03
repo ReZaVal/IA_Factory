@@ -9,6 +9,7 @@ Flujo multi-agente de IA Factory (`memoria.md D<n>`). Las decisiones viven en
 |---|---|---|---|
 | Planificador (Spec / SDD) | Claude Opus 5.5 | `.claude/agents/planificador.md` | `specs/TX.Y.md` |
 | Auditor de spec | Gemini Pro + chequeos deterministas | `scripts/revision/roles/spec.md`, `spec.mjs` | `.revision/TX.Y/spec.md` |
+| Clasificador de vía (FTD / SDD) | determinista | `scripts/revision/via.mjs` | `.revision/TX.Y/via.md` |
 | Constructor | Claude Opus 5.5 | `.claude/agents/constructor.md` | código + tests |
 | Revisor 1 — Seguridad/Datos | Gemini Pro (`GEMINI_MODEL`) | `scripts/revision/roles/seguridad.md` | `.revision/TX.Y/seguridad.md` |
 | Revisor 2 — Lógica/Métricas | Gemini Pro | `scripts/revision/roles/logica.md` | `.revision/TX.Y/logica.md` |
@@ -34,6 +35,28 @@ y UI y `capturas.sh` son los del carril software.
 - Tareas 🔒: el planificador no puede cerrar decisiones; la spec se escribe
   después de que el usuario decidió.
 
+### Vía rápida (FTD) o cadena completa (SDD)
+Las dos vías escriben y auditan la spec (pasos 1-2) y construyen con TDD. Lo
+que cambia es la revisión (paso 4) y el merge:
+
+| Vía | Revisores | Merge |
+|---|---|---|
+| **FTD** — arreglo menor | Seguridad + Código (+ UI si cambia algo visible); **no** corre Lógica | nunca automático: PR o confirmación del humano |
+| **SDD** — todo lo demás | los 4 (UI «no aplica» si nada es visible) | automático solo con 4/4 y radio de impacto bajo (si el proyecto lo activó) |
+
+Una tarea va por **FTD** solo si cumple **todo** (si no, SDD; ante la duda,
+SDD):
+- tiene fila en `planner.md §4` y no es 🔒;
+- «Tocar» no incluye carpetas de código (alcance abierto), solo de tests;
+- ≤ 3 archivos de código planeados (fila + «Archivos» de la spec) y, tras
+  construir, ≤ 3 archivos y ≤ 60 líneas de código cambiadas (tests y
+  `specs/` no cuentan), todas en archivos planeados;
+- no toca el núcleo: dependencias (`package.json`, lockfiles…), CI
+  (`.github/`), migraciones / esquemas / `db`, autenticación, sesiones,
+  permisos, cifrado, secretos o tokens, `.env*`, `local_privado/`, la propia
+  fábrica (`scripts/revision/`, `scripts/fabrica/`, `.claude/`) ni la
+  constitución.
+
 ## 3. Flujo de una tarea
 1. **Spec:** subagente `planificador` → `specs/TX.Y.md`. Si deja preguntas
    abiertas, se resuelven con el usuario antes de seguir.
@@ -54,8 +77,24 @@ y UI y `capturas.sh` son los del carril software.
      razón en el informe; el aprobador lo verá.
    - Si el alcance extra es legítimo, se corrige primero la fila de
      `planner.md §4` (con el usuario), no la auditoría.
-3. **Construcción:** subagente `constructor` con TDD hasta la suite de tests en verde.
-4. **Revisión (ronda N), en paralelo:**
+3. **Construcción:** subagente `constructor` con TDD hasta la suite de tests en
+   verde, dentro de un worktree aislado de la tarea:
+   ```bash
+   scripts/fabrica/worktree.sh crear TX.Y      # rama fabrica/TX.Y; imprime la ruta
+   scripts/fabrica/worktree.sh listar          # tareas en curso: ruta y limpio/sucio
+   scripts/fabrica/worktree.sh limpiar TX.Y    # al cerrar; --forzar descarta cambios
+   ```
+   Por defecto en `<padre>/<repo>.fabrica/TX.Y` (fuera del repo, para que tests
+   y búsquedas del principal no lo recorran; `FABRICA_WORKTREES` lo cambia).
+   `.env.local` se enlaza, no se copia. Revisión y veredicto (pasos 4-5) corren
+   en ese worktree. `limpiar` conserva la rama si tiene commits fuera de `HEAD`.
+4. **Revisión (ronda N).** Primero la vía, con el código ya construido (en
+   cada ronda: si el diff crece, una FTD escala a SDD):
+   ```bash
+   node scripts/revision/via.mjs --tarea TX.Y   # → .revision/TX.Y/via.md
+   ```
+   Luego, en paralelo, los revisores que diga `via.md` (`## 2`; en FTD se
+   omite `logica`):
    ```bash
    node scripts/revision/gemini.mjs seguridad --tarea TX.Y
    node scripts/revision/gemini.mjs logica --tarea TX.Y

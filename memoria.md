@@ -127,6 +127,26 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   Riesgo: la constitución sale a la API de Google, así que no puede llevar
   nada sensible (§17).
 
+### D9 — Vía rápida FTD: menos revisores, misma auditoría de spec, nunca merge solo
+- **Decisión:** las dos vías (propuesta §5 Fase 1) escriben y auditan la spec
+  y construyen con TDD. FTD (arreglo menor) corre Seguridad + Código (+ UI si
+  es visible) y se salta Lógica; SDD corre los 4. Una FTD **nunca** hace merge
+  automático: los revisores no corridos no cuentan como aprobación, así que no
+  llega a 4/4 (`D4`) y siempre va a PR / confirmación humana. Criterios
+  deterministas en `revision.md ## 2` (`via.mjs`): fila en el backlog y no 🔒,
+  sin carpetas de código en «Tocar», ≤ 3 archivos y ≤ 60 líneas de código
+  (sin tests ni `specs/`), todo planeado, nada de núcleo; ante la duda, SDD.
+  Se reclasifica en cada ronda con el diff real (una FTD que crece escala).
+- **Razón:** elegido por el usuario (S-06, 2026-11-03).
+- **Alternativas rechazadas:** FTD sin auditor Gemini de spec y con menos
+  revisores (recomendación inicial del agente); FTD sin auditoría pero con los
+  4 revisores; contar a los omitidos como «no aplica» aprobado y permitir que
+  una FTD entre sola a `main`.
+- **Impacto:** `revision.md ## 2-3`, `scripts/revision/via.mjs`, aprobador;
+  `T1.6` lo invoca antes de revisar; `T2.x` (radio de impacto) puede mover la
+  lista de núcleo a la constitución de cada carril. Umbrales (3 / 60) son
+  provisionales del agente: se ajustan con uso real.
+
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
 gatekeeper → `T2.1`.

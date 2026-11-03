@@ -54,7 +54,9 @@ sensibles), llena las plantillas y registra `D1`/`D2`.
 `scripts/revision/roles/_contexto.md` y `constitucion-software.md` (las reglas
 duras que se envían a los revisores), y los huecos `<...>` de los roles. Antes
 de construir, `node scripts/revision/gemini.mjs spec --tarea TX.Y` audita la
-spec contra el backlog.
+spec contra el backlog, y con el código construido
+`node scripts/revision/via.mjs --tarea TX.Y` decide vía rápida (FTD) o
+completa (SDD) y qué revisores corren.
 ```
 GEMINI_API_KEY=<tu clave>
 GEMINI_MODEL=<id del modelo Pro>

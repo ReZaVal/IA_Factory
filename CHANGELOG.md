@@ -24,6 +24,21 @@
   `planner.md §4` + esos chequeos, con el rol común `roles/spec.md`. Alcance
   extra y requisitos ambiguos son HIGH; vuelven al planificador (máx. 2
   rondas). Planificador y aprobador lo conocen. Tests en `tests/spec.test.js`.
+- Worktree aislado por tarea (`revision.md ## 3`, paso 3):
+  `scripts/fabrica/worktree.sh crear | listar | limpiar TX.Y`, instalado con
+  cualquier carril. Rama `fabrica/TX.Y` en `<padre>/<repo>.fabrica/TX.Y`
+  (`FABRICA_WORKTREES` lo cambia), idempotente, funciona desde dentro de otro
+  worktree, enlaza `.env.local`; `limpiar` se niega con cambios sin commitear
+  (salvo `--forzar`) y solo borra la rama si ya está integrada en `HEAD`.
+  Tests en `tests/worktree.test.js`.
+- Vía rápida FTD o cadena completa SDD (`revision.md ## 2`, paso 4):
+  `node scripts/revision/via.mjs --tarea TX.Y` clasifica con la fila del
+  backlog, la sección «Archivos» de la spec y el diff real, y escribe
+  `.revision/TX.Y/via.md`. FTD (≤ 3 archivos y ≤ 60 líneas de código, todo
+  planeado, nada de núcleo, no 🔒) corre Seguridad + Código (+ UI si es
+  visible) y se salta Lógica; nunca habilita merge automático. Ambas vías
+  auditan la spec. Se reclasifica en cada ronda. El aprobador acepta la falta
+  de `logica` en FTD (`D9` de IA Factory). Tests en `tests/via.test.js`.
 - Roles de seguridad, lógica y UI del carril software sin contenido del
   proyecto de origen: los ejemplos pasan a huecos `<...>` (`L2` de IA Factory).
 

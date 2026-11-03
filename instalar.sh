@@ -75,7 +75,7 @@ if [ -n "$carril" ]; then
   echo "Carril $carril"
   copiar "$skill/carriles/$carril/constitucion-$carril.md" "constitucion-$carril.md"
   [ ! -d "$skill/carriles/$carril/revision" ] || copiar_arbol "$skill/carriles/$carril/revision"
-  find "$destino/scripts/revision" -name '*.sh' -exec chmod +x {} + 2>/dev/null || true
+  find "$destino/scripts/revision" "$destino/scripts/fabrica" -name '*.sh' -exec chmod +x {} + 2>/dev/null || true
   grep -q "^# IA Factory" "$destino/.gitignore" 2>/dev/null || printf '\n# IA Factory — revisión multi-agente: informes efímeros y clave de Gemini\n' >> "$destino/.gitignore"
   ignorar ".revision/"
   ignorar ".env.local"

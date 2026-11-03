@@ -47,7 +47,16 @@ function seccion(spec, nombre) {
   return m ? m[1].replace(/<!--[\s\S]*?-->/g, "").trim() : null;
 }
 
-const cubierta = (ruta, tocar) => tocar.some((t) => ruta === t || (t.endsWith("/") && ruta.startsWith(t)));
+/**
+ * Rutas de la sección «Archivos» de la spec (lo que el planificador dice que tocará).
+ * @param {string} spec
+ * @returns {string[]}
+ */
+export function archivosDeSpec(spec) {
+  return rutas(seccion(spec, "Archivos") ?? "");
+}
+
+export const cubierta = (ruta, tocar) => tocar.some((t) => ruta === t || (t.endsWith("/") && ruta.startsWith(t)));
 
 /** @param {string} texto */
 const vagos = (texto) => [...new Set([...texto.matchAll(VAGOS)].map((m) => m[1].toLowerCase()))];

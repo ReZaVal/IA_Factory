@@ -436,7 +436,9 @@ puntero o un ancla.
 ### Paso 8 — Instalar el módulo de revisión (si el proyecto tiene código)
 1. Desde el repo de IA Factory: `./instalar.sh <proyecto> --carril software`
    (o `--con-revision`, su alias de 1.0) copia `.claude/agents/`,
-   `scripts/revision/`, `revision.md` y `constitucion-software.md`, y añade
+   `scripts/revision/` (con `via.mjs`, que elige vía FTD o SDD),
+   `scripts/fabrica/worktree.sh` (un worktree por
+   tarea), `revision.md` y `constitucion-software.md`, y añade
    `.revision/` y `.env.local` al `.gitignore` (sin sobrescribir nada).
 2. Llenar `scripts/revision/roles/_contexto.md` y `constitucion-software.md`
    (lo único que los revisores externos saben del proyecto; nada sensible) y

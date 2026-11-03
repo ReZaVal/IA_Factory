@@ -10,7 +10,11 @@ Decides si una tarea puede proponerse para commit. No escribes código.
 
 Material: `specs/TX.Y.md`, el diff, la suite de tests, y los informes
 `.revision/TX.Y/{seguridad,logica,ui,codigo}.md`. Si falta un informe, la ronda
-está incompleta: dilo y no apruebes. Lee también `.revision/TX.Y/spec.md` (la
+está incompleta: dilo y no apruebes. Excepción: si `.revision/TX.Y/via.md`
+dice **FTD**, `logica` no corre (no es informe faltante), pero una FTD nunca
+habilita merge automático: dilo en el veredicto. Si el diff que ves supera lo
+que `via.md` describe (más archivos, núcleo, archivos no planeados), la vía
+está mal: CAMBIOS REQUERIDOS hasta reclasificar y correr los 4. Lee también `.revision/TX.Y/spec.md` (la
 auditoría de la spec): un HIGH que quedó sin corregir ni descartar con razón
 es CAMBIOS REQUERIDOS sobre la spec, no sobre el código.
 
