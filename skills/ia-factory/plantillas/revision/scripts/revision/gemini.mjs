@@ -8,6 +8,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { setTimeout as sleep } from "node:timers/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { filaBacklog, precheckSpec, tablaChequeos, buildSpecPrompt } from "./spec.mjs";
@@ -19,6 +20,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const FORBIDDEN = [/^local_privado\//, /(^|\/)\.env/];
 const MAX_UNTRACKED_BYTES = 200_000;
 const CARRIL = /^[a-z0-9-]+$/;
+const MAX_REINTENTOS = 3;
+const BACKOFF_MS = 1000;
+const MAX_ESPERA_MS = 90_000;
 
 /**
  * @param {string[]} argv
@@ -113,6 +117,56 @@ export function mimeFor(file) {
   throw new Error(`imagen no soportada: ${file} (usa .png o .jpg)`);
 }
 
+/**
+ * Separa lo transitorio (503, 429 por minuto) de lo permanente (`limit: 0`,
+ * cuota diaria, 404), que no se arregla reintentando (learn.md L5).
+ * @param {number} status
+ * @param {{ message?: string, details?: { retryDelay?: string }[] }} [error]
+ * @returns {{ reintentar: boolean, esperaMs: number | null, ayuda: string }}
+ */
+export function clasificarError(status, error = {}) {
+  const retryDelay = error.details?.find((d) => d.retryDelay)?.retryDelay;
+  const segundos = parseFloat(retryDelay);
+  const esperaMs = Number.isFinite(segundos) ? segundos * 1000 : null;
+  const permanente = (ayuda) => ({ reintentar: false, esperaMs: null, ayuda });
+  if (status === 503) return { reintentar: true, esperaMs, ayuda: "" };
+  if (status === 404) return permanente("El modelo no existe o está retirado para tu clave: elige otro con --modelos (revision.md ## 6).");
+  if (status !== 429) return permanente("");
+  const texto = JSON.stringify(error);
+  if (/limit:\s*0\b/.test(texto)) return permanente("Este modelo no tiene cuota en tu plan (limit: 0): usa un modelo de la capa gratuita o activa la facturación (revision.md ## 6).");
+  if (/PerDay/.test(texto)) return permanente("Cuota diaria agotada: espera a que se reinicie o activa la facturación (revision.md ## 6).");
+  if (esperaMs > MAX_ESPERA_MS) return permanente(`La API pide esperar ${Math.round(esperaMs / 1000)} s: prueba más tarde (revision.md ## 6).`);
+  return { reintentar: true, esperaMs, ayuda: "" };
+}
+
+/**
+ * Repite `hacer` ante errores transitorios, con backoff exponencial y jitter;
+ * si la API dice cuánto esperar, espera eso.
+ * @param {() => Promise<{ ok: boolean, status: number, body: any }>} hacer
+ * @param {{ dormir?: (ms: number) => Promise<unknown>, azar?: () => number, avisar?: (mensaje: string) => void }} [opciones]
+ */
+export async function pedirConReintentos(hacer, { dormir = sleep, azar = Math.random, avisar = (m) => process.stderr.write(`${m}\n`) } = {}) {
+  for (let intento = 0; ; intento++) {
+    const { ok, status, body } = await hacer();
+    if (ok) return body;
+    const { reintentar, esperaMs, ayuda } = clasificarError(status, body.error);
+    const detalle = `Gemini respondió ${status}: ${body.error?.message ?? "sin detalle"}`;
+    if (!reintentar) throw new Error([detalle, ayuda].filter(Boolean).join("\n"));
+    if (intento === MAX_REINTENTOS) throw new Error(`${detalle}\nSigue fallando tras ${MAX_REINTENTOS} reintentos: prueba más tarde o con otro modelo.`);
+    const espera = esperaMs === null ? BACKOFF_MS * 2 ** intento * (1 + azar()) : esperaMs + BACKOFF_MS * azar();
+    avisar(`Gemini respondió ${status}; reintento ${intento + 1}/${MAX_REINTENTOS} en ${Math.ceil(espera / 1000)} s`);
+    await dormir(espera);
+  }
+}
+
+/** @param {string} url @param {RequestInit} init */
+function pedirGemini(url, init) {
+  return pedirConReintentos(async () => {
+    const res = await fetch(url, init);
+    return { ok: res.ok, status: res.status, body: await res.json().catch(() => ({})) };
+  });
+}
+
 function git(args) {
   return execFileSync("git", args, { cwd: ROOT, encoding: "utf8", maxBuffer: 20 * 1024 * 1024 });
 }
@@ -143,7 +197,7 @@ async function callGemini({ apiKey, model, system, prompt, imagenes }) {
       inline_data: { mime_type: mimeFor(f), data: (await readFile(path.resolve(f))).toString("base64") }
     }))
   );
-  const res = await fetch(`${API}/models/${model}:generateContent`, {
+  const body = await pedirGemini(`${API}/models/${model}:generateContent`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
     body: JSON.stringify({
@@ -152,17 +206,13 @@ async function callGemini({ apiKey, model, system, prompt, imagenes }) {
       generationConfig: { temperature: 0.2 }
     })
   });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`Gemini respondió ${res.status}: ${body.error?.message ?? "sin detalle"}`);
   const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
   if (!text) throw new Error(`Gemini no devolvió texto (finishReason: ${body.candidates?.[0]?.finishReason ?? "?"})`);
   return text;
 }
 
 async function listModels(apiKey) {
-  const res = await fetch(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": apiKey } });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`Gemini respondió ${res.status}: ${body.error?.message ?? "sin detalle"}`);
+  const body = await pedirGemini(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": apiKey } });
   return (body.models ?? [])
     .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
     .map((m) => m.name.replace(/^models\//, ""));

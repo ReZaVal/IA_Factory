@@ -6,7 +6,9 @@ import {
   loadConfig,
   buildPrompt,
   buildSystem,
-  mimeFor
+  mimeFor,
+  clasificarError,
+  pedirConReintentos
 } from "../skills/ia-factory/plantillas/revision/scripts/revision/gemini.mjs";
 
 describe("parseArgs", () => {
@@ -95,5 +97,104 @@ describe("mimeFor", () => {
     expect(mimeFor("a.PNG")).toBe("image/png");
     expect(mimeFor("a.jpeg")).toBe("image/jpeg");
     expect(() => mimeFor("a.gif")).toThrow(/imagen/);
+  });
+});
+
+const RETRY_34S = { "@type": "type.googleapis.com/google.rpc.RetryInfo", retryDelay: "34s" };
+const cuota = (quotaId) => ({ "@type": "type.googleapis.com/google.rpc.QuotaFailure", violations: [{ quotaId }] });
+const fallo = (status, error = {}) => ({ ok: false, status, body: { error } });
+const exito = { ok: true, status: 200, body: { candidates: [] } };
+
+describe("clasificarError", () => {
+  it("503 es transitorio", () => {
+    expect(clasificarError(503, { message: "high demand" }).reintentar).toBe(true);
+  });
+
+  it("429 por minuto es transitorio y trae la espera del servidor", () => {
+    const error = { message: "Quota exceeded, limit: 20", details: [cuota("GenerateRequestsPerMinutePerProjectPerModel-FreeTier"), RETRY_34S] };
+    expect(clasificarError(429, error)).toMatchObject({ reintentar: true, esperaMs: 34_000 });
+  });
+
+  it("429 con limit: 0 es permanente y dice qué hacer", () => {
+    const c = clasificarError(429, { message: "Quota exceeded for metric: x, limit: 0, model: y", details: [RETRY_34S] });
+    expect(c.reintentar).toBe(false);
+    expect(c.ayuda).toMatch(/facturación/);
+  });
+
+  it("429 de cuota diaria no se reintenta", () => {
+    const c = clasificarError(429, { message: "Quota exceeded, limit: 20", details: [cuota("GenerateRequestsPerDayPerProjectPerModel-FreeTier"), RETRY_34S] });
+    expect(c.reintentar).toBe(false);
+    expect(c.ayuda).toMatch(/diaria/);
+  });
+
+  it("429 que pide esperar más que el tope no se reintenta", () => {
+    const error = { message: "Quota exceeded", details: [{ ...RETRY_34S, retryDelay: "3600s" }] };
+    expect(clasificarError(429, error).reintentar).toBe(false);
+  });
+
+  it("404 es permanente y apunta a --modelos", () => {
+    const c = clasificarError(404, { message: "not found" });
+    expect(c.reintentar).toBe(false);
+    expect(c.ayuda).toMatch(/--modelos/);
+  });
+
+  it("ignora un retryDelay ilegible", () => {
+    expect(clasificarError(503, { details: [{ retryDelay: "pronto" }] }).esperaMs).toBeNull();
+  });
+
+  it("otros errores no se reintentan", () => {
+    expect(clasificarError(400, { message: "bad request" }).reintentar).toBe(false);
+  });
+});
+
+describe("pedirConReintentos", () => {
+  /** Responde en orden y anota cuántas veces se llamó y cuánto durmió. */
+  function escenario(respuestas, azar = () => 0) {
+    const r = { llamadas: 0, esperas: [], avisos: [] };
+    r.opciones = { dormir: async (ms) => r.esperas.push(ms), azar, avisar: (m) => r.avisos.push(m) };
+    r.hacer = async () => respuestas[Math.min(r.llamadas++, respuestas.length - 1)];
+    return r;
+  }
+
+  it("devuelve el cuerpo sin esperar si la primera llamada sale bien", async () => {
+    const e = escenario([exito]);
+    await expect(pedirConReintentos(e.hacer, e.opciones)).resolves.toBe(exito.body);
+    expect(e.llamadas).toBe(1);
+    expect(e.esperas).toEqual([]);
+  });
+
+  it("se recupera de un 503 y avisa del reintento", async () => {
+    const e = escenario([fallo(503), fallo(503), exito]);
+    await expect(pedirConReintentos(e.hacer, e.opciones)).resolves.toBe(exito.body);
+    expect(e.llamadas).toBe(3);
+    expect(e.avisos).toHaveLength(2);
+  });
+
+  it("el backoff crece y el jitter lo varía dentro de un rango", async () => {
+    const sinAzar = escenario([fallo(503)], () => 0);
+    const conAzar = escenario([fallo(503)], () => 1);
+    await pedirConReintentos(sinAzar.hacer, sinAzar.opciones).catch(() => {});
+    await pedirConReintentos(conAzar.hacer, conAzar.opciones).catch(() => {});
+    expect(sinAzar.esperas).toEqual([1000, 2000, 4000]);
+    expect(conAzar.esperas).toEqual([2000, 4000, 8000]);
+  });
+
+  it("respeta la espera que pide el servidor", async () => {
+    const e = escenario([fallo(429, { message: "Quota exceeded", details: [RETRY_34S] }), exito]);
+    await pedirConReintentos(e.hacer, e.opciones);
+    expect(e.esperas).toEqual([34_000]);
+  });
+
+  it("se rinde tras 3 reintentos con el error de la API", async () => {
+    const e = escenario([fallo(503, { message: "high demand" })]);
+    await expect(pedirConReintentos(e.hacer, e.opciones)).rejects.toThrow(/503: high demand.*3 reintentos/s);
+    expect(e.llamadas).toBe(4);
+  });
+
+  it("falla a la primera con un error permanente, con la ayuda en el mensaje", async () => {
+    const e = escenario([fallo(429, { message: "Quota exceeded, limit: 0" })]);
+    await expect(pedirConReintentos(e.hacer, e.opciones)).rejects.toThrow(/429.*facturación/s);
+    expect(e.llamadas).toBe(1);
+    expect(e.esperas).toEqual([]);
   });
 });

@@ -8,12 +8,12 @@ Flujo multi-agente de IA Factory (`memoria.md D<n>`). Las decisiones viven en
 | Rol | Modelo | Dónde vive | Entrega |
 |---|---|---|---|
 | Planificador (Spec / SDD) | Claude Opus 5.5 | `.claude/agents/planificador.md` | `specs/TX.Y.md` |
-| Auditor de spec | Gemini Pro + chequeos deterministas | `scripts/revision/roles/spec.md`, `spec.mjs` | `.revision/TX.Y/spec.md` |
+| Auditor de spec | Gemini + chequeos deterministas | `scripts/revision/roles/spec.md`, `spec.mjs` | `.revision/TX.Y/spec.md` |
 | Clasificador de vía (FTD / SDD) | determinista | `scripts/revision/via.mjs` | `.revision/TX.Y/via.md` |
 | Constructor | Claude Opus 5.5 | `.claude/agents/constructor.md` | código + tests |
-| Revisor 1 — Seguridad/Datos | Gemini Pro (`GEMINI_MODEL`) | `scripts/revision/roles/seguridad.md` | `.revision/TX.Y/seguridad.md` |
-| Revisor 2 — Lógica/Métricas | Gemini Pro | `scripts/revision/roles/logica.md` | `.revision/TX.Y/logica.md` |
-| Revisor 3 — UI/Visión | Gemini Pro + capturas | `scripts/revision/roles/ui.md` | `.revision/TX.Y/ui.md` |
+| Revisor 1 — Seguridad/Datos | Gemini (`GEMINI_MODEL`) | `scripts/revision/roles/seguridad.md` | `.revision/TX.Y/seguridad.md` |
+| Revisor 2 — Lógica/Métricas | Gemini | `scripts/revision/roles/logica.md` | `.revision/TX.Y/logica.md` |
+| Revisor 3 — UI/Visión | Gemini + capturas | `scripts/revision/roles/ui.md` | `.revision/TX.Y/ui.md` |
 | Revisor 4 — Código/Estilo | Claude Sonnet 5.5 | `.claude/agents/revisor-codigo.md` | `.revision/TX.Y/codigo.md` |
 | Approver (Gatekeeper) | Claude Opus 5.5 | `.claude/agents/aprobador.md` | `.revision/TX.Y/veredicto.md` |
 
@@ -203,7 +203,12 @@ Formato común de informes: `scripts/revision/roles/_formato.md`
 - **Clave:** `GEMINI_API_KEY` en el entorno o en `.env.local` en la raíz
   (ignorado por git). Nunca en el repo, en un `.md` ni en el chat.
 - **Modelo:** `GEMINI_MODEL` (mismo lugar). Para ver los disponibles con tu
-  clave: `node scripts/revision/gemini.mjs --modelos`; usar el Pro más reciente.
+  clave: `node scripts/revision/gemini.mjs --modelos`. Los modelos Pro requieren
+  facturación activa: en la capa gratuita responden 429 con `limit: 0`; sin
+  facturación, usar un Flash.
+- **Errores:** `gemini.mjs` reintenta hasta 3 veces los 503 y los 429 por
+  minuto (backoff con jitter, o la espera que pida la API). Con `limit: 0`,
+  cuota diaria agotada o 404 falla de inmediato y dice qué hacer.
 - **Qué sale a Google:** `_contexto.md`, la constitución del carril, la spec,
   la fila de la tarea en `planner.md §4` (auditor de spec), el diff, los
   archivos nuevos y las capturas.
@@ -213,5 +218,5 @@ Formato común de informes: `scripts/revision/roles/_formato.md`
 - `.env.local` de ejemplo:
   ```
   GEMINI_API_KEY=<tu clave>
-  GEMINI_MODEL=<id del modelo Pro>
+  GEMINI_MODEL=<id del modelo>
   ```

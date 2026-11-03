@@ -17,6 +17,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 | L2 | Prompts de revisor con contenido del cliente de origen | Todo ejemplo de dominio en el producto va como hueco `<...>`; al portar algo de un proyecto cliente, `grep` sus nombres propios antes de cerrar | `agente.md §1`; roles del carril software |
 | L3 | El worktree salía sin dependencias (lo ignorado por git no viaja) | Probar la fábrica con una suite que dependa de algo ignorado por git, dentro del worktree; preparar con `FABRICA_PREPARAR` | `worktree.sh`, `revision.md ## 3`, `tests/worktree.test.js` |
 | L4 | Nombres de función en «Archivos» contados como alcance extra | Los chequeos deterministas se prueban también con specs escritas por el planificador real, no solo con las sintéticas | `spec.mjs` (`archivosDeSpec`), `tests/spec.test.js` |
+| L5 | Un error de Gemini cortaba la fábrica, fuese transitorio o permanente | Al llamar a una API externa, separar transitorio de permanente: reintentar con tope lo primero y fallar rápido con qué hacer lo segundo; no asumir en la plantilla un plan de pago | `gemini.mjs` (`clasificarError`, `pedirConReintentos`), `revision.md ## 6`, `tests/revision.test.js` |
 
 ## 2. Log de errores
 ### L1 — `instalar.sh` reportaba menos archivos copiados
@@ -78,20 +79,22 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 - **Regla derivada:** ver §1.
 
 ### L5 — Gemini: capa gratuita sin cuota para Pro y 503 sin reintento
-- **Estado:** 🔴 Abierto (S-08, primera corrida real)
+- **Estado:** ✅ Resuelto (S-09)
 - **Síntoma:** con `gemini-3.1-pro-preview`, 429 con `limit: 0` en todas las
   métricas de la capa gratuita (no es cuota agotada: Pro no está en el plan
   gratuito). `gemini-2.5-pro` → 404 (retirado para cuentas nuevas).
   `gemini-3.8-flash` → 503 por alta demanda. `gemini-3.5-flash` sí respondió.
   Cada error corta la fábrica con salida 1.
-- **Causa raíz probable:** `revision.md ## 6` asume acceso a Pro;
-  `gemini.mjs` no distingue error transitorio (503, 429 por minuto) de error
+- **Causa raíz:** `revision.md ## 6` asumía acceso a Pro;
+  `gemini.mjs` no distinguía error transitorio (503, 429 por minuto) de error
   permanente (`limit: 0`, 404).
-- **Solución propuesta:** (1) decidir con el usuario el modelo: Pro con
-  facturación o Flash gratis; (2) `gemini.mjs` reintenta 503 y 429 por minuto
-  con *backoff* y *jitter* (máx. 3) y falla rápido con `limit: 0` o 404, con
-  un mensaje que diga qué hacer; (3) `revision.md ## 6` avisa que Pro
-  requiere facturación.
+- **Solución aplicada:** (1) modelo elegido por el usuario (`D12`); (2)
+  `gemini.mjs` reintenta 503 y 429 por minuto hasta 3 veces, con *backoff* y
+  *jitter* o la espera de `RetryInfo`, y falla rápido con `limit: 0`, cuota
+  diaria, 404 o una espera mayor a 90 s, con un mensaje que dice qué hacer;
+  (3) `revision.md` deja de asumir Pro y avisa que requiere facturación.
+  Probado con respuestas simuladas; falta verlo contra un 503 real.
+- **Regla derivada:** ver §1.
 
 ### L6 — `fabrica.md` de una corrida fallida confunde a la siguiente
 - **Estado:** 🔴 Abierto (S-08, tercera corrida de `T1.1`)

@@ -15,6 +15,10 @@
   `constitucion-<c>.md` a los revisores; si no existe (proyecto 1.0), avisa y
   sigue con `_contexto.md`. `_contexto.md` ya no lleva reglas duras.
 - Planificador, constructor y revisor de código leen la constitución.
+- `gemini.mjs` reintenta hasta 3 veces los 503 y los 429 por minuto (backoff
+  con jitter o la espera de `RetryInfo`) y falla de inmediato, con qué hacer,
+  ante `limit: 0`, cuota diaria, 404 o esperas de más de 90 s. `revision.md`
+  ya no asume Gemini Pro: avisa que requiere facturación.
 - Tests nuevos de `instalar.sh` (`tests/instalar.test.js`).
 - Auditor adversarial de la spec antes de construir (`revision.md ## 3`,
   paso 2): `gemini.mjs spec --tarea TX.Y` corre chequeos deterministas
