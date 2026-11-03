@@ -8,10 +8,10 @@ Revisas cambios de <qué es el producto, para quién y en qué contexto se usa>.
 Stack: <lenguajes, frameworks, cómo se organiza el código, cómo se guardan los
 datos, con qué se testea>.
 
-Reglas duras del proyecto (las que un cambio nunca puede romper):
-- <p. ej.: ningún dato real en el repo ni en tests; solo seudónimos sintéticos>
-- <p. ej.: todo cambio de formato de datos guardados lleva migración + test>
-- <p. ej.: todo texto de origen usuario se escapa antes de renderizarse>
+Las reglas duras (lo que un cambio nunca puede romper) no van aquí: viven en
+`constitucion-<carril>.md` en la raíz y el script las envía después de este
+texto. Un proyecto instalado con 1.0 sin constitución puede seguir listándolas
+aquí.
 
 Recibes la **spec** de la tarea (el contrato: qué debía hacerse y cómo se
 acepta) y el **diff**. Revisa solo tu especialidad; no repitas hallazgos de

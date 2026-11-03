@@ -14,7 +14,7 @@ entradas `🔴 Abierto` relacionadas, y las `Dn` que la spec cita.
 Forma de trabajo:
 - **TDD:** test primero (con el runner del proyecto), comprobar que falla, implementar lo
   mínimo, la suite en verde.
-- Respeta las reglas del doc de dominio de código y las `Dn` que cita la spec.
+- Respeta `constitucion-<carril>.md`, las reglas del doc de dominio de código y las `Dn` que cita la spec.
 - Datos de prueba solo sintéticos (seudónimos como `CLIENTE_01`).
 - Si la spec es ambigua o contradice `memoria.md`, para y repórtalo; no decidas.
 - Si corriges hallazgos de revisión (`.revision/TX.Y/`), atiende cada uno por su

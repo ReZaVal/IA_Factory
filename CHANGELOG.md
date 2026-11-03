@@ -5,6 +5,17 @@
   del carril, única fuente; se envía a los revisores externos). El "Brain" de
   la propuesta Universal AI Factory se mapea sobre el harness, sin `wiki/` ni
   `index.md` aparte (`D8` de IA Factory).
+- Carriles: lo propio de cada carril vive en `skills/ia-factory/carriles/<c>/`.
+  El carril software trae `constitucion-software.md` (plantilla de reglas
+  duras) y se lleva los roles de seguridad, lógica y UI y `capturas.sh`.
+- `instalar.sh --carril <c>`: núcleo de revisión + lo del carril +
+  `constitucion-<c>.md` en la raíz. `--con-revision` sigue funcionando como
+  alias de `--carril software` (mismos archivos que 1.0 + la constitución).
+- `gemini.mjs --carril <c>` (por defecto `software`) envía
+  `constitucion-<c>.md` a los revisores; si no existe (proyecto 1.0), avisa y
+  sigue con `_contexto.md`. `_contexto.md` ya no lleva reglas duras.
+- Planificador, constructor y revisor de código leen la constitución.
+- Tests nuevos de `instalar.sh` (`tests/instalar.test.js`).
 
 ## 1.0.0 — 2026-11-02
 - Nace IA Factory a partir del skill `harness-agente-multisesion` (principios

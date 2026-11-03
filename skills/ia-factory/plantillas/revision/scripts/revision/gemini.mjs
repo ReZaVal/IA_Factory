@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Revisores Gemini (revision.md ## 3, IA Factory): envía spec + diff (+ capturas)
-// a la API de Gemini y guarda el informe en .revision/<tarea>/<rol>.md.
-// Uso: node scripts/revision/gemini.mjs <seguridad|logica|ui> --tarea TX.Y [--base REF] [--imagen f.png ...]
+// Revisores Gemini (revision.md ## 3, IA Factory): envía la constitución del carril
+// + spec + diff (+ capturas) a la API de Gemini y guarda el informe en
+// .revision/<tarea>/<rol>.md.
+// Uso: node scripts/revision/gemini.mjs <seguridad|logica|ui> --tarea TX.Y [--carril software] [--base REF] [--imagen f.png ...]
 //      node scripts/revision/gemini.mjs --modelos
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -15,18 +16,20 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 // Nunca salen a la API: datos reales de inspección y secretos (agente.md §4).
 const FORBIDDEN = [/^local_privado\//, /(^|\/)\.env/];
 const MAX_UNTRACKED_BYTES = 200_000;
+const CARRIL = /^[a-z0-9-]+$/;
 
 /**
  * @param {string[]} argv
- * @returns {{ rol: string | undefined, tarea: string | undefined, base: string, imagenes: string[], modelos: boolean }}
+ * @returns {{ rol: string | undefined, tarea: string | undefined, base: string, carril: string, imagenes: string[], modelos: boolean }}
  */
 export function parseArgs(argv) {
-  const args = { rol: undefined, tarea: undefined, base: "HEAD", imagenes: [], modelos: false };
+  const args = { rol: undefined, tarea: undefined, base: "HEAD", carril: "software", imagenes: [], modelos: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--modelos") args.modelos = true;
     else if (a === "--tarea") args.tarea = argv[++i];
     else if (a === "--base") args.base = argv[++i];
+    else if (a === "--carril") args.carril = argv[++i];
     else if (a === "--imagen") args.imagenes = [...args.imagenes, argv[++i]];
     else if (!a.startsWith("--") && !args.rol) args.rol = a;
     else throw new Error(`Argumento desconocido: ${a}`);
@@ -34,6 +37,7 @@ export function parseArgs(argv) {
   if (args.modelos) return args;
   if (!ROLES.includes(args.rol)) throw new Error(`rol inválido "${args.rol}"; usa: ${ROLES.join(", ")}`);
   if (!args.tarea) throw new Error("falta --tarea TX.Y");
+  if (!CARRIL.test(args.carril ?? "")) throw new Error(`carril inválido "${args.carril}"; usa un nombre como software o ml`);
   return args;
 }
 
@@ -75,6 +79,19 @@ export function buildPrompt({ tarea, spec, diff }) {
     diff || "(diff vacío)",
     "```"
   ].join("\n\n");
+}
+
+/**
+ * Instrucción de sistema: contexto del proyecto, reglas duras del carril
+ * (`constitucion-<carril>.md`, memoria.md D8 de IA Factory), rol y formato.
+ * Sin constitución (proyecto instalado con 1.0) las reglas siguen en `_contexto.md`.
+ * @param {{ contexto: string, carril: string, constitucion: string, rol: string, formato: string }} partes
+ */
+export function buildSystem({ contexto, carril, constitucion, rol, formato }) {
+  const reglas = constitucion
+    ? `# Reglas duras del carril (constitucion-${carril}.md)\n\nUn cambio que rompe una de estas reglas es al menos HIGH, aunque la spec lo pida.\n\n${constitucion}`
+    : "";
+  return [contexto, reglas, rol, formato].filter(Boolean).join("\n\n");
 }
 
 /** @param {string} file */
@@ -153,11 +170,15 @@ async function main() {
   if (!model) throw new Error("Falta GEMINI_MODEL (lista los disponibles con --modelos; ver revision.md ## 6)");
 
   const roles = path.join(ROOT, "scripts/revision/roles");
-  const system = [
-    await readFile(path.join(roles, "_contexto.md"), "utf8"),
-    await readFile(path.join(roles, `${args.rol}.md`), "utf8"),
-    await readFile(path.join(roles, "_formato.md"), "utf8")
-  ].join("\n\n");
+  const constitucionPath = path.join(ROOT, `constitucion-${args.carril}.md`);
+  if (!existsSync(constitucionPath)) process.stderr.write(`Aviso: no hay constitucion-${args.carril}.md; las reglas duras salen solo de _contexto.md\n`);
+  const system = buildSystem({
+    contexto: await readFile(path.join(roles, "_contexto.md"), "utf8"),
+    carril: args.carril,
+    constitucion: existsSync(constitucionPath) ? await readFile(constitucionPath, "utf8") : "",
+    rol: await readFile(path.join(roles, `${args.rol}.md`), "utf8"),
+    formato: await readFile(path.join(roles, "_formato.md"), "utf8")
+  });
   const specPath = path.join(ROOT, "specs", `${args.tarea}.md`);
   const spec = existsSync(specPath) ? await readFile(specPath, "utf8") : "";
   const diff = await collectDiff(args.base);
@@ -166,7 +187,7 @@ async function main() {
   const outDir = path.join(ROOT, ".revision", args.tarea);
   await mkdir(outDir, { recursive: true });
   const out = path.join(outDir, `${args.rol}.md`);
-  await writeFile(out, `<!-- revisor: ${args.rol} · modelo: ${model} · base: ${args.base} -->\n\n${informe}\n`);
+  await writeFile(out, `<!-- revisor: ${args.rol} · carril: ${args.carril} · modelo: ${model} · base: ${args.base} -->\n\n${informe}\n`);
   process.stdout.write(`Informe guardado en ${path.relative(ROOT, out)}\n`);
 }
 

@@ -19,7 +19,9 @@ La sesión principal (quien lee `agente.md`) es el **orquestador**: lanza cada
 rol, pasa el material y lleva el resultado a `planner.md`. Los revisores Gemini
 no son subagentes: los ejecuta el orquestador con
 `node scripts/revision/gemini.mjs` (`## 3`). Los prompts comunes están en
-`scripts/revision/roles/_contexto.md` y `_formato.md`.
+`scripts/revision/roles/_contexto.md` y `_formato.md`; las reglas duras, en
+`constitucion-<carril>.md` (raíz), que el script envía a cada revisor. Los
+roles de revisor y `capturas.sh` son los del carril software.
 
 ## 2. Cuándo se aplica
 - **Siempre** en tareas que tocan código o tests (`<carpetas de código>`).
@@ -46,6 +48,8 @@ no son subagentes: los ejecuta el orquestador con
    ```
    y subagente `revisor-codigo`. `--base` (por defecto `HEAD`) define contra
    qué se compara; los archivos nuevos sin `git add` también se envían.
+   `--carril` (por defecto `software`) elige qué `constitucion-<carril>.md`
+   se envía.
 4. **Veredicto:** subagente `aprobador` → `.revision/TX.Y/veredicto.md`.
    - CAMBIOS REQUERIDOS → `constructor` corrige → nueva ronda (máx. 3; si a la
      tercera no aprueba, la tarea está mal partida o falta una decisión: se
@@ -101,7 +105,8 @@ Formato común de informes: `scripts/revision/roles/_formato.md`
   (ignorado por git). Nunca en el repo, en un `.md` ni en el chat.
 - **Modelo:** `GEMINI_MODEL` (mismo lugar). Para ver los disponibles con tu
   clave: `node scripts/revision/gemini.mjs --modelos`; usar el Pro más reciente.
-- **Qué sale a Google:** la spec, el diff, los archivos nuevos y las capturas.
+- **Qué sale a Google:** `_contexto.md`, la constitución del carril, la spec,
+  el diff, los archivos nuevos y las capturas.
   El script aborta si el diff incluye `local_privado/` o archivos `.env`. Con
   la capa gratuita de la API, Google puede usar el contenido para mejorar sus
   productos; para código privado conviene una clave con facturación activa.

@@ -40,7 +40,8 @@ El repo es privado: tu git debe tener acceso a GitHub (SSH o `gh auth`).
 Gemini CLI, etc.):
 ```bash
 ./instalar.sh /ruta/al/proyecto                 # solo el harness
-./instalar.sh /ruta/al/proyecto --con-revision  # + módulo de revisión
+./instalar.sh /ruta/al/proyecto --carril software  # + módulo de revisión del carril software
+./instalar.sh /ruta/al/proyecto --con-revision     # alias de 1.0 de --carril software
 ```
 No sobrescribe nada que ya exista.
 
@@ -48,9 +49,10 @@ No sobrescribe nada que ya exista.
 el agente entrevista lo justo (objetivo, fases, ritmo, deadline, datos
 sensibles), llena las plantillas y registra `D1`/`D2`.
 
-**4. Revisores Gemini** (solo con `--con-revision`): crea `.env.local` en el
-proyecto (queda ignorado por git) y llena
-`scripts/revision/roles/_contexto.md`.
+**4. Revisores Gemini** (solo con `--carril`/`--con-revision`): crea
+`.env.local` en el proyecto (queda ignorado por git) y llena
+`scripts/revision/roles/_contexto.md` y `constitucion-software.md` (las reglas
+duras que se envían a los revisores).
 ```
 GEMINI_API_KEY=<tu clave>
 GEMINI_MODEL=<id del modelo Pro>
@@ -60,7 +62,7 @@ Para ver los modelos disponibles: `node scripts/revision/gemini.mjs --modelos`.
 ## Desarrollo de IA Factory
 ```bash
 npm install
-npm test      # tests del script de revisión Gemini
+npm test      # tests del script de revisión Gemini y de instalar.sh
 ```
 Las mejoras nacen en los proyectos que lo usan: se registran como propuesta en
 `learn.md §4` del proyecto y se incorporan aquí con su caso real. Historial en

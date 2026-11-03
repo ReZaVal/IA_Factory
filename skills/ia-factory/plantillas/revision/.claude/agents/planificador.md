@@ -12,7 +12,7 @@ Antes de escribir, lee en cirugía (no archivos completos):
 1. `agente.md` §3-§4 (qué no puedes decidir solo).
 2. `planner.md` §4: la fila de la tarea (dependencias, leer, tocar, criterio).
 3. Las anclas que esa fila lista en "Leer" y las `Dn` vigentes de `memoria.md`.
-4. `revision.md ## 4` (plantilla de spec) y el doc de dominio de código (`<doc-codigo>.md`, el que `manager.md` lista como dueño del código).
+4. `revision.md ## 4` (plantilla de spec), el doc de dominio de código (`<doc-codigo>.md`, el que `manager.md` lista como dueño del código) y `constitucion-<carril>.md` (reglas duras: la spec no puede pedir romperlas; si choca, va a "Preguntas abiertas").
 
 Reglas:
 - La spec **no** repite decisiones: las referencia por `Dn`. Si para especificar

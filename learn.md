@@ -25,6 +25,19 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   instalaciones seguidas (19 copiados / 0 copiados).
 - **Regla derivada:** ver §1.
 
+### L2 — Los prompts de revisor traen contenido de un proyecto cliente
+- **Estado:** 🔴 Abierto (detectado en S-03, `T1.2`)
+- **Síntoma:** `carriles/software/revision/scripts/revision/roles/logica.md`
+  menciona `FACILITIES`, `NORM_INFO`, prechecks y checklists; `seguridad.md` y
+  `ui.md` hablan de "checklists en curso" y OK / N/A / No cumple. Es el
+  dominio de Supervisión de Contratistas, no genérico (`agente.md §1`: nada de
+  un cliente en el producto).
+- **Causa raíz probable:** los roles se copiaron del proyecto de origen al
+  crear 1.0 sin pasar los ejemplos a huecos `<...>`.
+- **Solución propuesta:** reescribir los ejemplos como `<...>` genéricos (o
+  moverlos a la constitución del cliente). No se hizo en `T1.2` para no
+  cambiar el contenido instalado; candidato para `T1.3`, que ya toca `roles/`.
+
 ## 3. Errores de comportamiento del agente
 > (vacío)
 

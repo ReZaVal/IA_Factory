@@ -20,14 +20,15 @@ Regla de oro: decisión que cambia → `memoria.md` primero, luego producto y
 plan. Error detectado → `learn.md` antes de corregirlo.
 
 ## Contexto activo
-- **En qué estoy:** Fase 1. Próxima tarea `T1.2`: carril software
-  (`constitucion-software.md` + roles del carril; `gemini.mjs` envía la
-  constitución). Vigentes: `D3` propuesta por fases, `D4` auto-merge con 4/4
+- **En qué estoy:** Fase 1. Próxima tarea `T1.3`: auditor adversarial de la
+  spec (rol `spec` en `gemini.mjs`). Vigentes: `D3` propuesta por fases, `D4` auto-merge con 4/4
   + bajo riesgo, `D5` cuatro carriles, `D6` sin Codex, `D7` ingesta al final,
   `D8` Brain mapeado sobre el harness.
-- **Cambió en la última sesión (S-02):** `T1.1` cerrada → `D8`; `P3` resuelta;
-  `SKILL.md` documenta `constitucion-<carril>.md`.
-- **Próximos pasos:** `T1.2` carril software → `T1.3` auditor de spec.
+- **Cambió en la última sesión (S-03):** `T1.2` cerrada: existe
+  `skills/ia-factory/carriles/software/`, `instalar.sh --carril`, y
+  `gemini.mjs` envía la constitución. `L2` abierto (roles con contenido de un
+  cliente).
+- **Próximos pasos:** `T1.3` auditor de spec → `T1.4` FTD/SDD o `T1.5` worktree.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline
@@ -35,7 +36,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 |---|---|---|
 | T1.1 | `memoria.md H4, P3`; propuesta §3, §6 | `memoria.md §3`; `SKILL.md` («Los cinco documentos», «Plantillas») |
 | T1.2 | `memoria.md D8`; `plantillas/revision.md`; `gemini.mjs` (armado del prompt) | `skills/ia-factory/carriles/software/`; `gemini.mjs`; `roles/_contexto.md`; `instalar.sh`; `tests/` |
-| T1.3 | propuesta §5 Fase 2; `plantillas/revision/scripts/revision/` | `gemini.mjs`, `roles/`, `tests/` |
+| T1.3 | propuesta §5 Fase 2; `plantillas/revision/scripts/revision/gemini.mjs` (`buildSystem`, `ROLES`); `learn.md L2` | `gemini.mjs`, `roles/` (¿núcleo o `carriles/software/`?), `tests/` |
 
 ## Fases del proyecto
 ### Fase 0 — Instalación del harness ✅
@@ -64,7 +65,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, `T1.1` ✅ (`D8`) |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.2` ✅ |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |

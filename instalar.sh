@@ -1,15 +1,31 @@
 #!/usr/bin/env bash
 # IA Factory — copia las plantillas del harness a un proyecto. Nunca sobrescribe:
 # si un archivo ya existe, lo deja y lo reporta.
-# Uso: ./instalar.sh <ruta-del-proyecto> [--con-revision]
+# Uso: ./instalar.sh <ruta-del-proyecto> [--carril <software>] [--con-revision]
+#   --carril <c>    módulo de revisión + lo propio del carril (roles, herramientas,
+#                   constitucion-<c>.md); carriles en skills/ia-factory/carriles/
+#   --con-revision  igual que --carril software (compatibilidad con 1.0)
 set -euo pipefail
 
-destino="${1:?Uso: ./instalar.sh <ruta-del-proyecto> [--con-revision]}"
-revision="${2:-}"
-[ -z "$revision" ] || [ "$revision" = "--con-revision" ] || { echo "Error: opción desconocida $revision" >&2; exit 1; }
+uso="Uso: ./instalar.sh <ruta-del-proyecto> [--carril <software>] [--con-revision]"
+destino="${1:?$uso}"
+shift
+skill="$(cd "$(dirname "$0")" && pwd)/skills/ia-factory"
+origen="$skill/plantillas"
+carril=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --con-revision) carril="software" ;;
+    --carril) carril="${2:?$uso}"; shift ;;
+    *) echo "Error: opción desconocida $1" >&2; exit 1 ;;
+  esac
+  shift
+done
 [ -d "$destino" ] || { echo "Error: $destino no es una carpeta" >&2; exit 1; }
-
-origen="$(cd "$(dirname "$0")" && pwd)/skills/ia-factory/plantillas"
+if [ -n "$carril" ] && { [[ ! "$carril" =~ ^[a-z0-9-]+$ ]] || [ ! -d "$skill/carriles/$carril" ]; }; then
+  echo "Error: carril desconocido \"$carril\"; disponibles: $(ls "$skill/carriles" | tr '\n' ' ')" >&2
+  exit 1
+fi
 copiados=0
 omitidos=0
 
@@ -46,13 +62,20 @@ for f in CLAUDE.md AGENTS.md; do
   fi
 done
 
-if [ "$revision" = "--con-revision" ]; then
+copiar_arbol() { # copiar_arbol <carpeta-origen>: copia su contenido respetando rutas
+  while read -r f; do
+    copiar "$1/$f" "$f"
+  done < <(cd "$1" && find . -type f | sed 's#^\./##' | sort)
+}
+
+if [ -n "$carril" ]; then
   echo "Módulo de revisión multi-agente"
   copiar "$origen/revision.md" "revision.md"
-  while read -r f; do
-    copiar "$origen/revision/$f" "$f"
-  done < <(cd "$origen/revision" && find . -type f | sed 's#^\./##' | sort)
-  chmod +x "$destino/scripts/revision/capturas.sh" 2>/dev/null || true
+  copiar_arbol "$origen/revision"
+  echo "Carril $carril"
+  copiar "$skill/carriles/$carril/constitucion-$carril.md" "constitucion-$carril.md"
+  [ ! -d "$skill/carriles/$carril/revision" ] || copiar_arbol "$skill/carriles/$carril/revision"
+  find "$destino/scripts/revision" -name '*.sh' -exec chmod +x {} + 2>/dev/null || true
   grep -q "^# IA Factory" "$destino/.gitignore" 2>/dev/null || printf '\n# IA Factory — revisión multi-agente: informes efímeros y clave de Gemini\n' >> "$destino/.gitignore"
   ignorar ".revision/"
   ignorar ".env.local"
@@ -62,5 +85,5 @@ echo
 echo "Listo: $copiados copiados, $omitidos ya existían."
 echo "Siguiente paso: abre el proyecto con tu agente y pídele \"instala IA Factory\""
 echo "para que adapte las plantillas (reemplazar <...>, fases, D1/D2, planner)."
-[ "$revision" = "--con-revision" ] && echo "Revisión: llena scripts/revision/roles/_contexto.md y pon GEMINI_API_KEY / GEMINI_MODEL en .env.local."
+[ -n "$carril" ] && echo "Revisión: llena scripts/revision/roles/_contexto.md y constitucion-$carril.md, y pon GEMINI_API_KEY / GEMINI_MODEL en .env.local."
 exit 0

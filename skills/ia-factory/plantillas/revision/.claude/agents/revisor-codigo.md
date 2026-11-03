@@ -8,7 +8,8 @@ model: claude-sonnet-5-5
 Eres el **Revisor 4 — Código y estilo** del proyecto. No modificas código: solo informas.
 
 Material: `specs/TX.Y.md`, el diff (`git diff <base>` + archivos nuevos sin
-seguimiento) y el doc de dominio de código (`<doc-codigo>.md`, el que `manager.md` lista como dueño del código).
+seguimiento), el doc de dominio de código (`<doc-codigo>.md`, el que `manager.md` lista como dueño del código) y
+`constitucion-<carril>.md` (romper una regla dura es al menos HIGH).
 
 Revisa solo tu especialidad:
 - Que el código siga las convenciones del doc de dominio de código

@@ -5,6 +5,7 @@ import {
   forbiddenPaths,
   loadConfig,
   buildPrompt,
+  buildSystem,
   mimeFor
 } from "../skills/ia-factory/plantillas/revision/scripts/revision/gemini.mjs";
 
@@ -12,7 +13,16 @@ describe("parseArgs", () => {
   it("lee rol, tarea, base e imágenes repetidas", () => {
     expect(
       parseArgs(["ui", "--tarea", "T2.5", "--base", "main~1", "--imagen", "a.png", "--imagen", "b.jpg"])
-    ).toEqual({ rol: "ui", tarea: "T2.5", base: "main~1", imagenes: ["a.png", "b.jpg"], modelos: false });
+    ).toEqual({ rol: "ui", tarea: "T2.5", base: "main~1", carril: "software", imagenes: ["a.png", "b.jpg"], modelos: false });
+  });
+
+  it("carril por defecto software; --carril lo cambia", () => {
+    expect(parseArgs(["logica", "--tarea", "T1.2"]).carril).toBe("software");
+    expect(parseArgs(["logica", "--tarea", "T1.2", "--carril", "ml"]).carril).toBe("ml");
+  });
+
+  it("rechaza un carril que no es un nombre simple (no sale de la raíz)", () => {
+    expect(() => parseArgs(["logica", "--tarea", "T1.2", "--carril", "../x"])).toThrow(/carril/);
   });
 
   it("base por defecto HEAD y modo listar modelos", () => {
@@ -60,6 +70,23 @@ describe("buildPrompt", () => {
     expect(p).toContain("T2.5");
     expect(p).toContain("+ cambio");
     expect(p).toMatch(/no hay spec/i);
+  });
+});
+
+describe("buildSystem", () => {
+  const partes = { contexto: "CTX", rol: "ROL", formato: "FMT" };
+
+  it("envía la constitución del carril entre el contexto y el rol", () => {
+    const s = buildSystem({ ...partes, carril: "software", constitucion: "C1 nunca datos reales" });
+    expect(s).toContain("C1 nunca datos reales");
+    expect(s).toContain("constitucion-software.md");
+    expect(s.indexOf("CTX")).toBeLessThan(s.indexOf("C1 nunca"));
+    expect(s.indexOf("C1 nunca")).toBeLessThan(s.indexOf("ROL"));
+    expect(s.indexOf("ROL")).toBeLessThan(s.indexOf("FMT"));
+  });
+
+  it("sin constitución (proyecto 1.0) queda contexto + rol + formato", () => {
+    expect(buildSystem({ ...partes, carril: "software", constitucion: "" })).toBe("CTX\n\nROL\n\nFMT");
   });
 });
 

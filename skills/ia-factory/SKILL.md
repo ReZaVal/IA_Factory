@@ -431,11 +431,14 @@ puntero o un ancla.
 ---
 
 ### Paso 8 — Instalar el módulo de revisión (si el proyecto tiene código)
-1. Desde el repo de IA Factory: `./instalar.sh <proyecto> --con-revision`
-   copia `.claude/agents/`, `scripts/revision/` y `revision.md`, y añade
+1. Desde el repo de IA Factory: `./instalar.sh <proyecto> --carril software`
+   (o `--con-revision`, su alias de 1.0) copia `.claude/agents/`,
+   `scripts/revision/`, `revision.md` y `constitucion-software.md`, y añade
    `.revision/` y `.env.local` al `.gitignore` (sin sobrescribir nada).
-2. Llenar `scripts/revision/roles/_contexto.md` (lo único que los revisores
-   externos saben del proyecto) y ajustar `revision.md ## 2-3`.
+2. Llenar `scripts/revision/roles/_contexto.md` y `constitucion-software.md`
+   (lo único que los revisores externos saben del proyecto; nada sensible),
+   registrar la constitución en el «Mapa de documentos» y ajustar
+   `revision.md ## 2-3`.
 3. En los agentes, reemplazar `<doc-codigo>.md` por el doc de dominio de código.
 4. Registrar la decisión `Dn` (con sus alternativas rechazadas) y completar la
    sección §9 de `agente.md`.
@@ -492,7 +495,8 @@ borra los ejemplos que no apliquen y mantén las anclas (`§`, `D`, `L`, `TX.Y`)
 | `plantillas/learn.md` | Bitácora de errores y propuestas de mejora |
 | `plantillas/dominio-datos.md` | Secciones mínimas del doc de dominio en proyectos de datos/ML |
 | `plantillas/revision.md` | Flujo multi-agente (principio §21) |
-| `plantillas/revision/` | Agentes de Claude, script de Gemini y prompts de los revisores |
+| `plantillas/revision/` | Núcleo de revisión compartido: agentes de Claude, script de Gemini, `_contexto.md` y `_formato.md` |
+| `carriles/<carril>/` | Lo propio de cada carril: `constitucion-<carril>.md` y, en `revision/`, sus roles de revisor y herramientas (software: seguridad, lógica, UI, `capturas.sh`) |
 
 ## Errores comunes al instalar el harness (evítalos)
 

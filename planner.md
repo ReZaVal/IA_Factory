@@ -47,7 +47,7 @@ Dueño: `skills/ia-factory/SKILL.md`. Criterio de salida (`manager.md`).
 | ID | Tarea | Dep. | Ses. | Leer | Tocar | Criterio de salida |
 |---|---|---|---|---|---|---|
 | ✅ T1.1 | Mapa Brain ↔ harness y estructura de carriles | — | 1 | `memoria.md H4, P3`, propuesta §3 y §6 | `memoria.md §3`, `SKILL.md` | `P3` → `D8` |
-| ⬜ T1.2 | Carril software: plantilla `constitucion-software.md` + roles propios del carril; `gemini.mjs` envía la constitución | T1.1 | 1 | `memoria.md D8`, `plantillas/revision.md` | `skills/ia-factory/carriles/software/`, `gemini.mjs`, `_contexto.md`, `instalar.sh` | `instalar.sh --carril software` produce lo mismo que 1.0 `--con-revision` + `constitucion-software.md`; `--con-revision` sigue funcionando |
+| ✅ T1.2 | Carril software: plantilla `constitucion-software.md` + roles propios del carril; `gemini.mjs` envía la constitución | T1.1 | 1 | `memoria.md D8`, `plantillas/revision.md` | `skills/ia-factory/carriles/software/`, `gemini.mjs`, `_contexto.md`, `instalar.sh` | `instalar.sh --carril software` produce lo mismo que 1.0 `--con-revision` + `constitucion-software.md`; `--con-revision` sigue funcionando |
 | ⬜ T1.3 | Auditor adversarial de la spec (Gemini) antes de construir | T1.2 | 1 | propuesta §5 Fase 2 | `gemini.mjs` (rol `spec`), prompt, `revision.md` | Spec con alcance extra o requisito ambiguo → hallazgo HIGH (test con specs sintéticas) |
 | ⬜ T1.4 | Clasificador FTD (vía rápida) vs SDD | T1.3 | 1 | propuesta §5 Fase 1 | `revision.md`, script de clasificación | Criterios escritos + script que decide y qué revisores corre cada vía; tests |
 | ⬜ T1.5 | Worktree aislado por tarea | T1.2 | 1 | propuesta §2.3 | `scripts/fabrica/worktree.sh` | Crear / listar / limpiar worktree por `TX.Y`; probado en repo temporal |
@@ -69,6 +69,10 @@ orquestador sigue siendo la sesión principal y `T1.6` se redefine.
 | ⬜ T2.6 | Merge automático o PR según radio; prueba E2E | T2.5 | 1 | Bajo riesgo → merge; núcleo → PR |
 
 ### Fase 3 — Carril ML ⬜
+**Riesgo (S-03):** los roles de cada carril se instalan en
+`scripts/revision/roles/` y `gemini.mjs` tiene `ROLES` fijo; con dos carriles
+en un mismo proyecto los nombres chocarían. Resolver en `T3.2`.
+
 | ID | Tarea | Dep. | Ses. | Criterio de salida |
 |---|---|---|---|---|
 | ⬜ T3.1 | `constitution.md` ML (EDD, semillas, partición) desde `dominio-datos.md` | T2.6 | 1 | Constitución + doc de dominio |
@@ -124,6 +128,7 @@ repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
 |---|---|---|---|---|---|
 | S-01 | 2026-11-02 | — (T0.1) | ✅ | Análisis de la propuesta (`memoria.md §2`); harness instalado; `D1`-`D7`; `P1`-`P4` abiertas | **T1.1 — Mapa Brain ↔ harness** (🔒, `P3`) |
 | S-02 | 2026-11-02 | T1.1 | ✅ | `D8`: Brain mapeado sobre el harness, `constitucion-<carril>.md` en la raíz, log a `T2.1`; `P3` cerrada; `SKILL.md` actualizado | **T1.2 — Carril software** |
+| S-03 | 2026-11-02 | T1.2 | ✅ | `carriles/software/` (constitución + roles seguridad/lógica/UI + `capturas.sh`); `instalar.sh --carril software` = 1.0 `--con-revision` + `constitucion-software.md` (verificado contra 8b5f7db); `--con-revision` queda como alias; `gemini.mjs --carril` envía la constitución (sin ella, aviso y sigue: proyectos 1.0); 19 tests en verde; `L2` abierto | **T1.3 — Auditor de spec** |
 
 ## 7. Cómo se mantiene vivo
 Al cerrar tarea: ✅ + fila en §6. Al cerrar fase: recalcular §2 y §5, colapsar
