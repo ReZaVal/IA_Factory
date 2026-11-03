@@ -93,6 +93,28 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   un mensaje que diga qué hacer; (3) `revision.md ## 6` avisa que Pro
   requiere facturación.
 
+### L6 — `fabrica.md` de una corrida fallida confunde a la siguiente
+- **Estado:** 🔴 Abierto (S-08, tercera corrida de `T1.1`)
+- **Síntoma:** `fabrica.md` solo se escribe al terminar, así que durante la
+  corrida siguiente el que hay en el worktree es el de la anterior (que
+  falló). El aprobador lo leyó, vio un «1 HIGH» cuyo informe ya estaba
+  sobrescrito y aprobó «con reservas» sin poder comprobarlo.
+- **Causa raíz probable:** las corridas que terminan en error no archivan
+  sus informes (solo `CAMBIOS REQUERIDOS` mueve a `ronda-N/`).
+- **Solución propuesta:** al empezar, mover `fabrica.md` y los informes de
+  una ronda incompleta a `.revision/TX.Y/corrida-K/`, y decirle al aprobador
+  que `fabrica.md` no es material de la ronda.
+
+### L7 — El aprobador no puede probar casos borde con `node`
+- **Estado:** 🔴 Abierto (S-08, riesgo anotado en `D10`)
+- **Síntoma:** a `claude -p --agent aprobador` se le negaron sondas con
+  `node -e` y un `grep` fuera del worktree; marcó criterios como verificados
+  «por lectura».
+- **Causa raíz probable:** la lista blanca de `D10` solo permite la suite y
+  git de lectura. Permitir `Bash(node:*)` equivale a shell libre.
+- **Solución propuesta:** decidir con el usuario: dejarlo así (el aprobador
+  verifica con la suite) o permitir un comando acotado de sondas.
+
 ## 3. Errores de comportamiento del agente
 
 ### B1 — Una edición con reemplazo borró un encabezado de este archivo
@@ -102,6 +124,21 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 - **Regla derivada:** al insertar con reemplazo de texto, el texto de anclaje
   va también en el reemplazo; revisar `git diff` buscando líneas `-` que no
   debían irse.
+
+### B2 — Copié un arreglo del harness dentro de un worktree de tarea
+- **Estado:** ✅ Resuelto (S-08, segunda corrida de `T1.1`)
+- **Síntoma:** copié `spec.mjs` corregido al worktree de `T1.1` sin
+  commitear; el diff de la tarea lo incluyó, `via.mjs` pasó a SDD («toca el
+  núcleo») y el revisor de código dio HIGH de alcance extra. La fábrica
+  detectó bien el cambio colado; el error fue mío.
+- **Solución aplicada:** commit del arreglo en el repo principal y
+  `git merge --ff-only main` en la rama `fabrica/TX.Y` (con `stash` del
+  trabajo del constructor); `via.mjs` volvió a FTD.
+- **Efecto lateral:** el `stash` reescribió `src/`, `tests/` y `specs/`
+  (mismo contenido, nuevo mtime); el aprobador lo notó y pidió explicarlo.
+- **Regla derivada:** nunca editar a mano un worktree de tarea; un arreglo
+  de la fábrica va al repo principal, se commitea y la rama de la tarea se
+  avanza.
 
 ## 4. Propuestas de mejora (desde proyectos cliente)
 Cada propuesta llega con el caso real que la motivó.
