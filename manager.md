@@ -20,20 +20,21 @@ Regla de oro: decisión que cambia → `memoria.md` primero, luego producto y
 plan. Error detectado → `learn.md` antes de corregirlo.
 
 ## Contexto activo
-- **En qué estoy:** Fase 1. Próxima tarea `T1.1` (🔒): decidir cómo se mapea
-  el "Brain" de la propuesta sobre el harness (`P3`). Vigentes: `D3`
-  propuesta por fases, `D4` auto-merge con 4/4 + bajo riesgo, `D5` cuatro
-  carriles, `D6` sin Codex, `D7` ingesta al final.
-- **Cambió en la última sesión (S-01):** análisis de la propuesta
-  (`memoria.md §2`, H1-H6) e instalación de este harness.
-- **Próximos pasos:** `T1.1` → `T1.2` carril software → `T1.3` auditor de spec.
+- **En qué estoy:** Fase 1. Próxima tarea `T1.2`: carril software
+  (`constitucion-software.md` + roles del carril; `gemini.mjs` envía la
+  constitución). Vigentes: `D3` propuesta por fases, `D4` auto-merge con 4/4
+  + bajo riesgo, `D5` cuatro carriles, `D6` sin Codex, `D7` ingesta al final,
+  `D8` Brain mapeado sobre el harness.
+- **Cambió en la última sesión (S-02):** `T1.1` cerrada → `D8`; `P3` resuelta;
+  `SKILL.md` documenta `constitucion-<carril>.md`.
+- **Próximos pasos:** `T1.2` carril software → `T1.3` auditor de spec.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline
 | Tarea | Leer | Tocar |
 |---|---|---|
 | T1.1 | `memoria.md H4, P3`; propuesta §3, §6 | `memoria.md §3`; `SKILL.md` («Los cinco documentos», «Plantillas») |
-| T1.2 | `Dn` de T1.1; `plantillas/revision.md` | `skills/ia-factory/carriles/software/`; `instalar.sh` |
+| T1.2 | `memoria.md D8`; `plantillas/revision.md`; `gemini.mjs` (armado del prompt) | `skills/ia-factory/carriles/software/`; `gemini.mjs`; `roles/_contexto.md`; `instalar.sh`; `tests/` |
 | T1.3 | propuesta §5 Fase 2; `plantillas/revision/scripts/revision/` | `gemini.mjs`, `roles/`, `tests/` |
 
 ## Fases del proyecto
@@ -63,7 +64,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, sin tareas cerradas |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1` ✅ (`D8`) |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |

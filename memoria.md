@@ -102,6 +102,31 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
 - **Alternativas rechazadas:** diseñar el motor y su hosting desde el inicio.
 - **Impacto:** Fase 7 del plan.
 
+### D8 — El "Brain" se mapea sobre el harness; constitución por carril en la raíz
+- **Decisión:** en el proyecto cliente no se crea `02-DOCS/wiki/`. Mapeo:
+  memoria y reglas → `memoria.md` + docs de dominio; `index.md` → «Mapa de
+  documentos» y mapa de extractos de `manager.md`; `spec`/`plan`/`tasks` →
+  `specs/TX.Y.md` + `planner.md` (`D3`); carpetas por carril y
+  `constitution.md` → **`constitucion-<carril>.md` en la raíz**, uno por carril
+  activo, registrado en el «Mapa de documentos» como doc de dominio. La
+  constitución es la única fuente de las reglas duras del carril: el script de
+  revisores la envía a Gemini y `_contexto.md` deja de repetirlas. `log.md` de
+  despliegues: se decide en `T2.1` junto con el dictamen JSON. En el producto,
+  lo propio de cada carril (plantilla de constitución, prompts de revisores,
+  herramientas) vive en `skills/ia-factory/carriles/<carril>/`; el núcleo de
+  revisión compartido sigue en `plantillas/revision/`.
+- **Razón:** elegido por el usuario (S-02). Cada hecho en un solo lugar (§3 del
+  harness), sin carpetas nuevas en el cliente, compatible con proyectos 1.0.
+- **Alternativas rechazadas:** carpeta `carriles/<carril>/constitucion.md` en
+  el cliente (una ruta más que recorrer); reglas del carril dentro de
+  `memoria.md` (mezcla reglas permanentes con decisiones y engorda la lectura
+  de cada sesión); `index.md` propio (duplica el mapa de `manager.md`);
+  `fabrica-log.md` ya (aún no hay nada que registrar).
+- **Impacto:** `T1.2` (plantilla + `gemini.mjs` + `_contexto.md` +
+  `instalar.sh`); `SKILL.md` («Los cinco documentos»); `T2.1` decide el log.
+  Riesgo: la constitución sale a la API de Google, así que no puede llevar
+  nada sensible (§17).
+
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
 gatekeeper → `T2.1`.
@@ -113,11 +138,12 @@ gatekeeper → `T2.1`.
 - [ ] **P2 — Protección de rama en repos privados.** El auto-merge seguro (`D4`)
   necesita checks obligatorios en GitHub: ¿GitHub Pro/Team, o repos cliente
   públicos? Bloquea `T2.5`.
-- [ ] **P3 — Estructura del Brain.** Cómo se mapean `02-DOCS/wiki/` (index, log,
-  carpetas por carril) y `constitution.md` sobre el harness. Bloquea `T1.1`.
+- [x] **P3 — Estructura del Brain.** Cómo se mapean `02-DOCS/wiki/` (index, log,
+  carpetas por carril) y `constitution.md` sobre el harness. → Resuelta en
+  `D8` (S-02).
 - [ ] **P4 — Proyecto de prueba por carril.** Qué repo de prueba usa cada carril
   para validarse (software: ¿Supervisión de Contratistas o uno sintético?).
   Bloquea el cierre de cada fase de carril.
 
-> Pregunta viva que bloquea la fase activa: **P3** (`T1.1`). P1 afecta solo
-> fechas.
+> Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
+> `T2.5`; P4, el cierre de cada fase de carril.

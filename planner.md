@@ -46,8 +46,8 @@ Dueño: `skills/ia-factory/SKILL.md`. Criterio de salida (`manager.md`).
 
 | ID | Tarea | Dep. | Ses. | Leer | Tocar | Criterio de salida |
 |---|---|---|---|---|---|---|
-| 🔒 ⬜ T1.1 | Mapa Brain ↔ harness y estructura de carriles | — | 1 | `memoria.md H4, P3`, propuesta §3 y §6 | `memoria.md §3`, `SKILL.md` | `P3` → `Dn`: dónde viven `constitution.md`, `index`/`log` y docs por carril |
-| ⬜ T1.2 | Carril software: `constitution.md` + mover el módulo de revisión al carril | T1.1 | 1 | `Dn` de T1.1, `plantillas/revision.md` | `skills/ia-factory/carriles/software/`, `instalar.sh` | `instalar.sh --carril software` produce lo mismo que 1.0 `--con-revision` |
+| ✅ T1.1 | Mapa Brain ↔ harness y estructura de carriles | — | 1 | `memoria.md H4, P3`, propuesta §3 y §6 | `memoria.md §3`, `SKILL.md` | `P3` → `D8` |
+| ⬜ T1.2 | Carril software: plantilla `constitucion-software.md` + roles propios del carril; `gemini.mjs` envía la constitución | T1.1 | 1 | `memoria.md D8`, `plantillas/revision.md` | `skills/ia-factory/carriles/software/`, `gemini.mjs`, `_contexto.md`, `instalar.sh` | `instalar.sh --carril software` produce lo mismo que 1.0 `--con-revision` + `constitucion-software.md`; `--con-revision` sigue funcionando |
 | ⬜ T1.3 | Auditor adversarial de la spec (Gemini) antes de construir | T1.2 | 1 | propuesta §5 Fase 2 | `gemini.mjs` (rol `spec`), prompt, `revision.md` | Spec con alcance extra o requisito ambiguo → hallazgo HIGH (test con specs sintéticas) |
 | ⬜ T1.4 | Clasificador FTD (vía rápida) vs SDD | T1.3 | 1 | propuesta §5 Fase 1 | `revision.md`, script de clasificación | Criterios escritos + script que decide y qué revisores corre cada vía; tests |
 | ⬜ T1.5 | Worktree aislado por tarea | T1.2 | 1 | propuesta §2.3 | `scripts/fabrica/worktree.sh` | Crear / listar / limpiar worktree por `TX.Y`; probado en repo temporal |
@@ -61,7 +61,7 @@ orquestador sigue siendo la sesión principal y `T1.6` se redefine.
 ### Fase 2 — Gatekeeper determinista y auto-merge ⬜
 | ID | Tarea | Dep. | Ses. | Criterio de salida |
 |---|---|---|---|---|
-| 🔒 ⬜ T2.1 | Formato de dictamen (JSON) + auto-merge como opt-in por proyecto | T1.7 | 1 | `Dn`; esquema en `memoria.md §4` |
+| 🔒 ⬜ T2.1 | Formato de dictamen (JSON) + auto-merge como opt-in por proyecto + si hay log de despliegues (`D8`) | T1.7 | 1 | `Dn`; esquema en `memoria.md §4` |
 | ⬜ T2.2 | Revisores y approver emiten JSON validado contra el esquema | T2.1 | 1 | Tests de esquema |
 | ⬜ T2.3 | Script gatekeeper: 4/4 + tests en verde, sin confiar en el agente (`H6`) | T2.2 | 1 | Rechaza dictámenes faltantes, alterados o con tests rojos |
 | ⬜ T2.4 | Radio de impacto por carril (rutas de núcleo) | T2.3 | 1 | Clasifica cambios de prueba en bajo / núcleo |
@@ -123,6 +123,7 @@ repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
 | Sesión | Fecha | Tarea | Estado | Qué quedó | Siguiente |
 |---|---|---|---|---|---|
 | S-01 | 2026-11-02 | — (T0.1) | ✅ | Análisis de la propuesta (`memoria.md §2`); harness instalado; `D1`-`D7`; `P1`-`P4` abiertas | **T1.1 — Mapa Brain ↔ harness** (🔒, `P3`) |
+| S-02 | 2026-11-02 | T1.1 | ✅ | `D8`: Brain mapeado sobre el harness, `constitucion-<carril>.md` en la raíz, log a `T2.1`; `P3` cerrada; `SKILL.md` actualizado | **T1.2 — Carril software** |
 
 ## 7. Cómo se mantiene vivo
 Al cerrar tarea: ✅ + fila en §6. Al cerrar fase: recalcular §2 y §5, colapsar
