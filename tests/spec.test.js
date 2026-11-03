@@ -70,6 +70,11 @@ describe("precheckSpec", () => {
     expect(altos(precheckSpec({ spec, planner: PLANNER, tarea: "T2.5" }))).toMatch(/js\/login\.js/);
   });
 
+  it("nombres de función o código en «Archivos» no son alcance extra (corrida real T1.1, learn L4)", () => {
+    const spec = SPEC_OK.replace("- `js/export.js` (nuevo)", "- `js/export.js` — agrega `exportarCsv` y la auxiliar `escapar()`; el bloque `describe(\"exportarCsv\")` va al test");
+    expect(altos(precheckSpec({ spec, planner: PLANNER, tarea: "T2.5" }))).toBe("");
+  });
+
   it("alcance abierto: sin «No incluye» → HIGH", () => {
     const spec = SPEC_OK.replace("- No incluye: exportar a PDF.\n", "");
     expect(altos(precheckSpec({ spec, planner: PLANNER, tarea: "T2.5" }))).toMatch(/No incluye/);

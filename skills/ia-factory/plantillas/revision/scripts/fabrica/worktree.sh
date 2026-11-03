@@ -6,6 +6,9 @@
 #   crear    rama fabrica/TX.Y desde <ref> (por defecto HEAD) en
 #            <padre>/<repo>.fabrica/TX.Y (o $FABRICA_WORKTREES/TX.Y). Si ya existe,
 #            lo reutiliza. Enlaza .env.local del repo principal (no se copia la clave).
+#            Al crearlo corre $FABRICA_PREPARAR dentro (p. ej. `npm ci`: lo ignorado
+#            por git, como node_modules/, no viaja al worktree); se lee del entorno o
+#            de .env.local. Si falla, quita el worktree para que se reintente.
 #            Imprime la ruta del worktree en stdout (última línea).
 #   listar   TX.Y, ruta y estado (limpio/sucio) de los worktrees de la fábrica.
 #   limpiar  quita el worktree; con cambios sin commitear se niega salvo --forzar.
@@ -23,6 +26,28 @@ base_dir="${FABRICA_WORKTREES:-$(dirname "$repo")/$(basename "$repo").fabrica}"
 
 validar_tarea() {
   [[ "${1:-}" =~ ^T[0-9]+\.[0-9]+$ ]] || error "tarea inválida \"${1:-}\"; formato TX.Y (ej. T1.5)"
+}
+
+# Variable del entorno; si está vacía, la última línea VAR=... de .env.local (sin comillas).
+config() {
+  local valor="${!1:-}"
+  if [ -z "$valor" ] && [ -f "$repo/.env.local" ]; then
+    valor="$(sed -n "s/^$1=//p" "$repo/.env.local" | tail -n 1)"
+    valor="${valor%\"}"; valor="${valor#\"}"; valor="${valor%\'}"; valor="${valor#\'}"
+  fi
+  printf '%s' "$valor"
+}
+
+# Corre FABRICA_PREPARAR en el worktree recién creado; si falla, lo deshace.
+preparar() {
+  local ruta="$1" rama="$2" rama_nueva="$3" cmd
+  cmd="$(config FABRICA_PREPARAR)"
+  [ -n "$cmd" ] || return 0
+  echo "  + preparando: $cmd" >&2
+  if (cd "$ruta" && bash -c "$cmd") >&2; then return 0; fi
+  git -C "$repo" worktree remove --force "$ruta"
+  [ -z "$rama_nueva" ] || git -C "$repo" branch --quiet -D "$rama"
+  error "FABRICA_PREPARAR falló ($cmd): se quitó el worktree; corrígelo y vuelve a crear"
 }
 
 # Ruta registrada del worktree de la rama fabrica/<tarea>, vacía si no hay.
@@ -43,7 +68,7 @@ crear() {
     shift
   done
   validar_tarea "$tarea"
-  local rama="fabrica/$tarea" ruta
+  local rama="fabrica/$tarea" ruta nuevo="" rama_nueva=""
   ruta="$(ruta_de "$tarea")"
   if [ -n "$ruta" ]; then
     echo "  = ya existe: $rama en $ruta" >&2
@@ -51,12 +76,14 @@ crear() {
     ruta="$base_dir/$tarea"
     [ ! -e "$ruta" ] || error "$ruta ya existe y no es el worktree de $rama"
     mkdir -p "$base_dir"
+    nuevo=1
     if git -C "$repo" show-ref --verify --quiet "refs/heads/$rama"; then
       git -C "$repo" worktree add --quiet "$ruta" "$rama"
       echo "  + worktree de $rama (rama existente) en $ruta" >&2
     else
       git -C "$repo" rev-parse --verify --quiet "$ref^{commit}" >/dev/null || error "ref base \"$ref\" no existe"
       git -C "$repo" worktree add --quiet -b "$rama" "$ruta" "$ref"
+      rama_nueva=1
       echo "  + worktree de $rama desde $ref en $ruta" >&2
     fi
   fi
@@ -64,6 +91,7 @@ crear() {
     ln -s "$repo/.env.local" "$ruta/.env.local"
     echo "  + .env.local enlazado al del repo principal" >&2
   fi
+  [ -z "$nuevo" ] || preparar "$ruta" "$rama" "$rama_nueva"
   echo "$ruta"
 }
 

@@ -13,6 +13,9 @@ const SIN_PREGUNTAS = /^(ninguna|ninguno|—|-|n\/a)?\.?$/i;
 const escapar = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const celdas = (linea) => linea.split("|").slice(1, -1).map((c) => c.trim());
 // `memoria.md §3` → memoria.md: el ancla no es parte de la ruta.
+// En «Archivos» también se citan funciones y código (`totalConIva`, `describe("x")`):
+// solo cuenta lo que tiene forma de ruta, con carpeta o extensión (learn.md L4 de IA Factory).
+const pareceRuta = (t) => /^[\w.@\/-]+$/.test(t) && (t.includes("/") || /\.[a-z0-9]+$/i.test(t));
 const rutas = (texto) => [...texto.matchAll(/`([^`]+)`/g)].map((m) => m[1].trim().split(/\s/)[0]).filter(Boolean);
 
 /**
@@ -53,7 +56,7 @@ function seccion(spec, nombre) {
  * @returns {string[]}
  */
 export function archivosDeSpec(spec) {
-  return rutas(seccion(spec, "Archivos") ?? "");
+  return rutas(seccion(spec, "Archivos") ?? "").filter(pareceRuta);
 }
 
 export const cubierta = (ruta, tocar) => tocar.some((t) => ruta === t || (t.endsWith("/") && ruta.startsWith(t)));
@@ -94,7 +97,7 @@ export function precheckSpec({ spec, planner, tarea }) {
   if (tocar === null) {
     chequeos.push({ severidad: "MEDIUM", seccion: "Archivos", hallazgo: `No se encontró la fila de ${tarea} (con columna «Tocar») en el backlog de planner.md: el alcance no se verificó contra el plan` });
   } else {
-    const extra = rutas(seccion(spec, "Archivos") ?? "").filter((r) => !cubierta(r, tocar));
+    const extra = archivosDeSpec(spec).filter((r) => !cubierta(r, tocar));
     if (extra.length) chequeos.push({ severidad: "HIGH", seccion: "Archivos", hallazgo: `Alcance extra: ${extra.map((r) => `\`${r}\``).join(", ")} no está en «Tocar» del backlog (${tocar.map((r) => `\`${r}\``).join(", ") || "vacío"})` });
   }
 

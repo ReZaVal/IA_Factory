@@ -1,7 +1,8 @@
 // Worktree aislado por tarea (T1.5, propuesta §2.3): crear / listar / limpiar en un repo temporal.
+// FABRICA_PREPARAR (learn.md L3): dependencias del worktree con un comando configurable.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync, existsSync, lstatSync, realpathSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, lstatSync, realpathSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -20,9 +21,11 @@ function git(cwd, ...args) {
   return execFileSync("git", args, { cwd, env: ENV, encoding: "utf8" }).trim();
 }
 
-function wt(cwd, ...args) {
-  return execFileSync(WORKTREE, args, { cwd, env: { ...ENV, FABRICA_WORKTREES: worktrees }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+function wtCon(env, cwd, ...args) {
+  return execFileSync(WORKTREE, args, { cwd, env: { ...ENV, FABRICA_PREPARAR: "", FABRICA_WORKTREES: worktrees, ...env }, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
 }
+
+const wt = (cwd, ...args) => wtCon({}, cwd, ...args);
 
 function wtFalla(cwd, ...args) {
   try {
@@ -97,6 +100,64 @@ describe("worktree.sh crear", () => {
 
   it("fuera de un repo git falla con mensaje claro", () => {
     expect(wtFalla(raiz, "listar")).toMatch(/no estás dentro de un repo git/);
+  });
+});
+
+describe("worktree.sh crear con FABRICA_PREPARAR", () => {
+  // Suite que depende de algo ignorado por git (como node_modules/).
+  beforeEach(() => {
+    writeFileSync(path.join(repo, ".gitignore"), ".env.local\ndeps/\n");
+    writeFileSync(path.join(repo, "suite.sh"), "#!/bin/sh\ntest -f deps/lib.js\n");
+    git(repo, "add", ".");
+    git(repo, "commit", "--quiet", "-m", "suite");
+    mkdirSync(path.join(repo, "deps"));
+    writeFileSync(path.join(repo, "deps/lib.js"), "// dependencia\n");
+  });
+  const suite = (ruta) => {
+    try {
+      execFileSync("sh", ["suite.sh"], { cwd: ruta });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  it("sin preparar, la suite no corre en el worktree (L3)", () => {
+    expect(suite(ultimaLinea(wt(repo, "crear", "T1.5")))).toBe(false);
+  });
+
+  it("corre el comando dentro del worktree nuevo, una sola vez, sin ensuciar stdout", () => {
+    const env = { FABRICA_PREPARAR: `cp -r "${repo}/deps" deps && echo preparado && pwd >> "${raiz}/preparaciones"` };
+    const salida = wtCon(env, repo, "crear", "T1.5");
+    const ruta = ultimaLinea(salida);
+    expect(ruta).toBe(path.join(worktrees, "T1.5"));
+    expect(salida.trim().split("\n")).toEqual([ruta]);
+    expect(suite(ruta)).toBe(true);
+    expect(git(ruta, "status", "--porcelain")).toBe("");
+    wtCon(env, repo, "crear", "T1.5");
+    expect(readFileSync(path.join(raiz, "preparaciones"), "utf8").trim().split("\n")).toEqual([ruta]);
+  });
+
+  it("lo lee de .env.local si no está en el entorno, y el entorno manda", () => {
+    writeFileSync(path.join(repo, ".env.local"), `GEMINI_API_KEY=x\nFABRICA_PREPARAR="touch desde-archivo"\n`);
+    expect(existsSync(path.join(ultimaLinea(wt(repo, "crear", "T1.5")), "desde-archivo"))).toBe(true);
+    const ruta = ultimaLinea(wtCon({ FABRICA_PREPARAR: "touch desde-entorno" }, repo, "crear", "T1.6"));
+    expect(existsSync(path.join(ruta, "desde-entorno"))).toBe(true);
+    expect(existsSync(path.join(ruta, "desde-archivo"))).toBe(false);
+  });
+
+  it("si falla, quita el worktree y la rama nueva para que el siguiente crear reintente", () => {
+    let err;
+    try {
+      wtCon({ FABRICA_PREPARAR: "exit 7" }, repo, "crear", "T1.5");
+    } catch (e) {
+      err = e;
+    }
+    expect(err.status).not.toBe(0);
+    expect(err.stderr).toMatch(/FABRICA_PREPARAR falló.*exit 7/);
+    expect(existsSync(path.join(worktrees, "T1.5"))).toBe(false);
+    expect(git(repo, "branch", "--list", "fabrica/T1.5")).toBe("");
+    expect(suite(ultimaLinea(wtCon({ FABRICA_PREPARAR: `cp -r "${repo}/deps" deps` }, repo, "crear", "T1.5")))).toBe(true);
   });
 });
 

@@ -63,6 +63,13 @@
   IA Factory): relanzar no lo renueva y, gastado, sale con 3 sin llamar
   agentes; `--reiniciar-rondas` archiva el historial en `intento-K/` y da 3
   nuevas.
+- `worktree.sh crear` corre `FABRICA_PREPARAR` (entorno o `.env.local`, p. ej.
+  `npm ci`) dentro del worktree recién creado: lo ignorado por git, como
+  `node_modules/`, no viajaba y la suite fallaba en el worktree. Si el
+  comando falla, quita el worktree (y la rama nueva) para reintentar.
+- `spec.mjs`: en «Archivos» solo cuenta como archivo lo que tiene forma de
+  ruta. Antes, nombres de función citados (`totalConIva`, `describe("x")`)
+  daban un HIGH falso de alcance extra que trababa la spec y alteraba la vía.
 
 ## 1.0.0 — 2026-11-02
 - Nace IA Factory a partir del skill `harness-agente-multisesion` (principios

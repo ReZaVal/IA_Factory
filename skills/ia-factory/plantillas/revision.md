@@ -88,7 +88,11 @@ SDD):
    ```
    Por defecto en `<padre>/<repo>.fabrica/TX.Y` (fuera del repo, para que tests
    y búsquedas del principal no lo recorran; `FABRICA_WORKTREES` lo cambia).
-   `.env.local` se enlaza, no se copia. Revisión y veredicto (pasos 4-5) corren
+   `.env.local` se enlaza, no se copia. Lo ignorado por git (`node_modules/`,
+   entornos virtuales) no viaja: `FABRICA_PREPARAR` (entorno o `.env.local`,
+   p. ej. `npm ci` o `pip install -r requirements.txt`) corre dentro del
+   worktree al crearlo; si falla, el worktree se quita para reintentar.
+   Sin él, la suite del constructor suele fallar por dependencias. Revisión y veredicto (pasos 4-5) corren
    en ese worktree. `limpiar` conserva la rama si tiene commits fuera de `HEAD`.
 4. **Revisión (ronda N).** Primero la vía, con el código ya construido (en
    cada ronda: si el diff crece, una FTD escala a SDD):

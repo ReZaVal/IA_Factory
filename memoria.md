@@ -189,6 +189,24 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
 - **Impacto:** `fabrica.mjs` (`--reiniciar-rondas`), `revision.md ## 3`,
   `tests/fabrica.test.js`.
 
+### D12 — Modelo de los revisores Gemini: Flash 3.5 para validar; medir antes del auto-merge
+- **Decisión:** para cerrar la Fase 1 en el repo sintético,
+  `GEMINI_MODEL=gemini-3.5-flash` (capa gratuita). Antes de la Fase 2
+  (auto-merge, `D4`) se mide la cobertura de los revisores con defectos
+  sembrados (`T2.7`) y se elige el modelo con esos números.
+- **Razón:** elegido por el usuario (S-08, 2026-11-03). La clave está en la
+  capa gratuita: `gemini-3.1-pro-preview` tiene cuota 0 (429 `limit: 0`),
+  `gemini-2.5-pro` está retirado (404) y `gemini-3.8-flash` respondió 503
+  por demanda en tres intentos (`L5`). Flash 3.5 respondió y su auditoría de
+  `T1.1` encontró un caso borde real. El aprobador filtra falsos positivos,
+  pero no ve los bugs que un revisor no reporta: ese riesgo se mide, no se
+  supone.
+- **Alternativas rechazadas:** Pro con facturación ya (costo antes de saber
+  si la diferencia importa); 3.8 Flash (saturado hoy, sin reintento).
+- **Impacto:** `.env.local` del repo de prueba; `T2.7` bloquea `T2.6`. Código
+  de clientes: no con la capa gratuita (Google puede usar el contenido,
+  `revision.md ## 6`).
+
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
 gatekeeper → `T2.1`.
@@ -205,7 +223,10 @@ gatekeeper → `T2.1`.
   `D8` (S-02).
 - [ ] **P4 — Proyecto de prueba por carril.** Qué repo de prueba usa cada carril
   para validarse (software: ¿Supervisión de Contratistas o uno sintético?).
-  Bloquea el cierre de cada fase de carril.
+  Bloquea el cierre de cada fase de carril. Software (S-08): repo sintético
+  `/home/renzo/IA_Factory_Test` (carrito: IVA y cupones), elegido por el
+  usuario; una copia de un proyecto real queda como segunda prueba. Falta la
+  corrida real (clave de Gemini) y los otros carriles.
 
 - [ ] **P5 — Rondas y paso del auditor de spec.** `T1.3` dejó provisional:
   máx. 2 rondas planificador ↔ auditor y luego al usuario; el rol `spec` es

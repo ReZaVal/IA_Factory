@@ -23,6 +23,11 @@ describe("archivosDeSpec", () => {
   it("lee las rutas de la sección Archivos", () => {
     expect(archivosDeSpec(SPEC_25)).toEqual(["js/calculo.js", "tests/calculo.test.js"]);
   });
+
+  it("ignora nombres de función y código: solo lo que tiene forma de ruta", () => {
+    const spec = "## Archivos\n- `src/precio.js` — agrega `totalConIva`; los tests de `subtotal` quedan\n- `tests/precio.test.js` — bloque `describe(\"totalConIva\")`\n- `README.md`\n- `src/` (carpeta)\n\n## Criterios\n";
+    expect(archivosDeSpec(spec)).toEqual(["src/precio.js", "tests/precio.test.js", "README.md", "src/"]);
+  });
 });
 
 describe("clasificar: vía rápida (FTD)", () => {

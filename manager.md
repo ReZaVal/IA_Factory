@@ -25,7 +25,8 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   Vigentes: `D3` propuesta por fases, `D4` auto-merge con 4/4 + bajo riesgo,
   `D5` cuatro carriles, `D6` sin Codex, `D7` ingesta al final, `D8` Brain
   mapeado sobre el harness, `D9` vía rápida FTD, `D10` permisos de los
-  agentes amnésicos, `D11` tope de rondas por tarea.
+  agentes amnésicos, `D11` tope de rondas por tarea, `D12` Gemini 3.5 Flash
+  para validar y medición (`T2.7`) antes del auto-merge.
 - **Cambió en la última sesión (S-08):** `T1.7` cerrada: `fabrica.mjs`
   repite vía → revisores → aprobador hasta 3 rondas; con CAMBIOS REQUERIDOS
   archiva la ronda en `.revision/TX.Y/ronda-N/` y el constructor corrige
