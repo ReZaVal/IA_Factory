@@ -34,9 +34,13 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   `revisor-ui`; con cuota agotada la fábrica sale al usuario. Probados en real
   Seguridad, Lógica y spec; `revisor-ui` y la corrida completa, no. `P5` y `P6`
   abiertas.
-- **Próximos pasos:** corrida real completa con `agy` en el repo de prueba
-  (`P4`) para validar `D10`, `D13` y el bucle y cerrar la Fase 1; `P6` antes de
-  enviar código de clientes; luego `T2.1`.
+- **Corrida real (S-11):** `fabrica T1.2` con `agy` en `IA_Factory_Test` quedó
+  APROBADO en la ronda 1 (59/59 tests, 6 min 17 s, US$ 1,74 de Claude, sin
+  intervención). Cumple el criterio de salida de la Fase 1, con salvedades: la
+  spec ya existía (no corrió el planificador), no hubo rondas de corrección ni
+  `revisor-ui`, y la cuota de `agy` sigue sin medirse.
+- **Próximos pasos:** el usuario confirma el cierre de la Fase 1; `P6` antes de
+  enviar código de clientes; luego `T2.1` (🔒).
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

@@ -248,8 +248,9 @@ gatekeeper → `T2.1`.
   para validarse (software: ¿Supervisión de Contratistas o uno sintético?).
   Bloquea el cierre de cada fase de carril. Software (S-08): repo sintético
   `/home/renzo/IA_Factory_Test` (carrito: IVA y cupones), elegido por el
-  usuario; una copia de un proyecto real queda como segunda prueba. Falta la
-  corrida real (clave de Gemini) y los otros carriles.
+  usuario; una copia de un proyecto real queda como segunda prueba. Corrida
+  real hecha (S-11): `T1.1` y `T1.2` aprobadas por la fábrica con `agy`. Faltan
+  los otros carriles.
 
 - [ ] **P5 — Rondas y paso del auditor de spec.** `T1.3` dejó provisional:
   máx. 2 rondas planificador ↔ auditor y luego al usuario; el rol `spec` es
