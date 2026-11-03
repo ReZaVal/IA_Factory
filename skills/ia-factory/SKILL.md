@@ -438,7 +438,8 @@ puntero o un ancla.
    (o `--con-revision`, su alias de 1.0) copia `.claude/agents/`,
    `scripts/revision/` (con `via.mjs`, que elige vía FTD o SDD),
    `scripts/fabrica/worktree.sh` (un worktree por
-   tarea), `revision.md` y `constitucion-software.md`, y añade
+   tarea), `scripts/fabrica/fabrica.mjs` (orquestador: `node
+   scripts/fabrica/fabrica.mjs TX.Y` lleva la tarea de la spec al veredicto), `revision.md` y `constitucion-software.md`, y añade
    `.revision/` y `.env.local` al `.gitignore` (sin sobrescribir nada).
 2. Llenar `scripts/revision/roles/_contexto.md` y `constitucion-software.md`
    (lo único que los revisores externos saben del proyecto; nada sensible) y

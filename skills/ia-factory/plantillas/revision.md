@@ -17,8 +17,10 @@ Flujo multi-agente de IA Factory (`memoria.md D<n>`). Las decisiones viven en
 | Revisor 4 — Código/Estilo | Claude Sonnet 5.5 | `.claude/agents/revisor-codigo.md` | `.revision/TX.Y/codigo.md` |
 | Approver (Gatekeeper) | Claude Opus 5.5 | `.claude/agents/aprobador.md` | `.revision/TX.Y/veredicto.md` |
 
-La sesión principal (quien lee `agente.md`) es el **orquestador**: lanza cada
-rol, pasa el material y lleva el resultado a `planner.md`. Los revisores Gemini
+El **orquestador** lanza cada rol y pasa el material: puede ser la sesión
+principal (quien lee `agente.md`) o `scripts/fabrica/fabrica.mjs`, que corre
+los pasos 1-5 sin intervención (`## 3`, «Fábrica automática»). En los dos
+casos la sesión principal lleva el resultado a `planner.md`. Los revisores Gemini
 no son subagentes: los ejecuta el orquestador con
 `node scripts/revision/gemini.mjs` (`## 3`). Los prompts comunes están en
 `scripts/revision/roles/_contexto.md` y `_formato.md`; las reglas duras, en
@@ -115,6 +117,31 @@ SDD):
    - BLOQUEADO → se lleva al usuario.
    - APROBADO → el orquestador **propone** el commit; el usuario confirma
      (`agente.md §4`).
+### Fábrica automática (pasos 1-5 en una orden)
+```bash
+node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url <url>] [--solo-revision]
+```
+Crea (o reutiliza) el worktree y, dentro de él, corre: planificador (si no hay
+`specs/TX.Y.md`; la del repo principal sin commitear se copia) → auditoría
+(máx. 2 rondas con el planificador corrigiendo) → constructor → `via.mjs` →
+los revisores de la vía en paralelo (UI «no aplica» lo escribe él) →
+aprobador. Una ronda de revisión. Deja `.revision/TX.Y/fabrica.md` con cada
+paso y el costo de Claude. Salida: `0` APROBADO · `2` CAMBIOS REQUERIDOS ·
+`3` BLOQUEADO o hace falta el usuario (spec con «Preguntas abiertas», spec
+sin limpiar tras 2 rondas, o tarea visible sin `--url`: sirve la app del
+worktree y relanza con `--solo-revision --url <url>`) · `1` error.
+- La fábrica, `planner.md` y `.claude/agents/` deben estar commiteados: el
+  worktree sale de `HEAD`.
+- Cada rol Claude es un agente amnésico `claude -p --agent <rol>` con
+  `--permission-mode acceptEdits` y `--permission-prompts none`: edita
+  archivos del worktree; Bash solo para la suite (`FABRICA_TESTS`, por defecto
+  `npm test`), git de lectura y lo que liste `FABRICA_PERMITIDOS` (reglas
+  separadas por coma, p. ej. `Bash(make lint:*)`); `git commit`, `push`,
+  `merge`, `rebase` y `reset`, negados. Lo no permitido se niega solo. Las
+  variables van en el entorno o en `.env.local` (`FABRICA_CLAUDE` cambia el
+  binario de `claude`).
+- No hace commit ni merge: con APROBADO, el orquestador propone el commit.
+
 6. **Cierre:** fila en `planner.md §6` con el veredicto y el número de rondas.
    `.revision/` es efímera (ignorada por git); lo que importa queda en la
    bitácora, en `learn.md` (si salió un error) o en `memoria.md` (si salió una

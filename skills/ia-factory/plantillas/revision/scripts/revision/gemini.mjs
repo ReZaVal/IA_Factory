@@ -49,12 +49,12 @@ export function forbiddenPaths(files) {
 }
 
 /**
- * Variables de entorno primero; si faltan, `.env.local` (ignorado por git).
- * @param {Record<string, string | undefined>} env
+ * `CLAVE=valor` por línea; ignora comentarios y quita comillas.
  * @param {string} dotenvText
+ * @returns {Record<string, string>}
  */
-export function loadConfig(env, dotenvText) {
-  const file = Object.fromEntries(
+export function parseDotenv(dotenvText) {
+  return Object.fromEntries(
     dotenvText
       .split("\n")
       .map((l) => l.trim())
@@ -64,6 +64,15 @@ export function loadConfig(env, dotenvText) {
         return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^["']|["']$/g, "")];
       })
   );
+}
+
+/**
+ * Variables de entorno primero; si faltan, `.env.local` (ignorado por git).
+ * @param {Record<string, string | undefined>} env
+ * @param {string} dotenvText
+ */
+export function loadConfig(env, dotenvText) {
+  const file = parseDotenv(dotenvText);
   return {
     apiKey: env.GEMINI_API_KEY || file.GEMINI_API_KEY || "",
     model: env.GEMINI_MODEL || file.GEMINI_MODEL || ""

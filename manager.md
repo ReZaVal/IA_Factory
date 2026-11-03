@@ -20,18 +20,21 @@ Regla de oro: decisión que cambia → `memoria.md` primero, luego producto y
 plan. Error detectado → `learn.md` antes de corregirlo.
 
 ## Contexto activo
-- **En qué estoy:** Fase 1. Próxima tarea `T1.6` (orquestador), desbloqueada.
+- **En qué estoy:** Fase 1. Próxima tarea `T1.7` (bucle de corrección).
   Vigentes: `D3` propuesta por fases, `D4` auto-merge con 4/4 + bajo riesgo,
   `D5` cuatro carriles, `D6` sin Codex, `D7` ingesta al final, `D8` Brain
-  mapeado sobre el harness, `D9` vía rápida FTD.
-- **Cambió en la última sesión (S-06):** `T1.4` cerrada: `D9` (FTD audita la
-  spec, corre Seguridad + Código (+ UI) sin Lógica y nunca hace merge solo);
-  `scripts/revision/via.mjs --tarea TX.Y` decide la vía con backlog + spec +
-  diff y escribe `.revision/TX.Y/via.md`; criterios en `revision.md ## 2`.
-  `P5` sigue abierta.
-- **Próximos pasos:** `T1.6` orquestador: spec → auditoría → worktree →
-  construir → `via.mjs` → revisores que diga `via.md` → aprobador (la spec
-  tiene que estar en el worktree).
+  mapeado sobre el harness, `D9` vía rápida FTD, `D10` permisos de los
+  agentes amnésicos.
+- **Cambió en la última sesión (S-07):** `T1.6` cerrada: `D10` (agentes
+  `claude -p --agent` con `acceptEdits` + lista blanca; commit/push negados);
+  `scripts/fabrica/fabrica.mjs TX.Y` corre spec → auditoría → constructor →
+  vía → revisores → aprobador en el worktree, una ronda, y deja
+  `.revision/TX.Y/fabrica.md`. Probado solo con `claude`/Gemini simulados.
+  `P5` sigue abierta (usa 2 rondas provisionales).
+- **Próximos pasos:** corrida real en un repo de prueba (`P4`, necesita
+  `GEMINI_API_KEY`) para validar `D10`; luego `T1.7`: CAMBIOS REQUERIDOS
+  (salida 2) → constructor con `veredicto.md` → nueva ronda con
+  `--solo-revision`, máx. 3, y al usuario con informe.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline
@@ -42,6 +45,8 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 | T1.3 | propuesta §5 Fase 2; `plantillas/revision/scripts/revision/gemini.mjs` (`buildSystem`, `ROLES`); `learn.md L2` | `gemini.mjs`, `spec.mjs`, `roles/spec.md` (núcleo), `tests/` |
 | T1.4 | propuesta §5 Fase 1; `plantillas/revision.md ## 2-3` | `revision.md`, script de clasificación en `scripts/revision/`, `tests/` |
 | T1.5 | propuesta §2.3 | `plantillas/revision/scripts/fabrica/worktree.sh`, `instalar.sh`, `tests/` |
+| T1.6 | `revision.md ## 3`; `memoria.md D9, D10, P5` | `scripts/fabrica/fabrica.mjs`, `revision.md`, `tests/fabrica.test.js` |
+| T1.7 | propuesta §5 Fase 5; `fabrica.mjs` (`correrPipeline`, `SALIDA`) | `fabrica.mjs`, `constructor.md`, `revision.md ## 3`, `tests/fabrica.test.js` |
 
 ## Fases del proyecto
 ### Fase 0 — Instalación del harness ✅
@@ -70,7 +75,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.5` ✅ |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.6` ✅ |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |

@@ -147,6 +147,25 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   lista de núcleo a la constitución de cada carril. Umbrales (3 / 60) son
   provisionales del agente: se ajustan con uso real.
 
+### D10 — Agentes amnésicos de la fábrica: acceptEdits + lista blanca de Bash
+- **Decisión:** `fabrica.mjs` lanza planificador, constructor, revisor de
+  código y aprobador como `claude -p --agent <rol>` dentro del worktree con
+  `--permission-mode acceptEdits` y `--permission-prompts none`. Bash solo
+  para la suite del proyecto (`FABRICA_TESTS`, por defecto `npm test`), git
+  de lectura (`diff`, `status`, `log`, `show`, `ls-files`) y lo que el
+  proyecto liste en `FABRICA_PERMITIDOS`; `git commit`, `push`, `merge`,
+  `rebase` y `reset` siempre negados. Lo no permitido se niega sin preguntar.
+- **Razón:** elegido por el usuario (S-07, 2026-11-03): determinista y
+  acotado al worktree; la fábrica no puede integrar nada (`D4` sigue
+  pendiente de `T2.x`).
+- **Alternativas rechazadas:** `--permission-mode auto` (criterio no
+  determinista, depende de la cuenta); `bypassPermissions` (contra las reglas
+  del usuario; puede salir del worktree).
+- **Impacto:** `revision.md ## 3` («Fábrica automática»); cada proyecto
+  declara su comando de tests. Riesgo abierto: si la suite necesita otros
+  comandos (build, servidor), el constructor falla hasta que se añadan a
+  `FABRICA_PERMITIDOS`; se confirma en la primera corrida real.
+
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
 gatekeeper → `T2.1`.
@@ -168,7 +187,8 @@ gatekeeper → `T2.1`.
 - [ ] **P5 — Rondas y paso del auditor de spec.** `T1.3` dejó provisional:
   máx. 2 rondas planificador ↔ auditor y luego al usuario; el rol `spec` es
   común a todos los carriles (núcleo), no del carril software. Confirmar o
-  ajustar; lo consume `T1.6`/`T1.7` (orquestador y bucle).
+  ajustar; lo consume `T1.6`/`T1.7` (orquestador y bucle). `T1.6` (S-07)
+  lo implementó con el valor provisional (`RONDAS_SPEC = 2` en `fabrica.mjs`).
 
 > Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
 > `T2.5`; P4, el cierre de cada fase de carril.

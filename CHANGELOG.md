@@ -41,6 +41,17 @@
   de `logica` en FTD (`D9` de IA Factory). Tests en `tests/via.test.js`.
 - Roles de seguridad, lógica y UI del carril software sin contenido del
   proyecto de origen: los ejemplos pasan a huecos `<...>` (`L2` de IA Factory).
+- Orquestador (`revision.md ## 3`): `node scripts/fabrica/fabrica.mjs TX.Y
+  [--carril c] [--url URL] [--solo-revision]` corre en el worktree de la
+  tarea spec → auditoría (máx. 2 rondas; con «Preguntas abiertas» se detiene)
+  → constructor → `via.mjs` → revisores de la vía en paralelo → aprobador, y
+  deja `.revision/TX.Y/fabrica.md` (pasos y costo). Los roles Claude son
+  agentes amnésicos `claude -p --agent <rol>` con `acceptEdits`, Bash solo
+  para la suite (`FABRICA_TESTS`, por defecto `npm test`), git de lectura y
+  `FABRICA_PERMITIDOS`; commit, push, merge, rebase y reset negados (`D10` de
+  IA Factory). Salida 0 aprobado · 2 cambios requeridos · 3 bloqueado o al
+  usuario · 1 error. Una sola ronda de revisión (el bucle llega en `T1.7`).
+  `gemini.mjs` exporta `parseDotenv`. Tests en `tests/fabrica.test.js`.
 
 ## 1.0.0 — 2026-11-02
 - Nace IA Factory a partir del skill `harness-agente-multisesion` (principios
