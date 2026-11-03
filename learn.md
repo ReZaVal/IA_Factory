@@ -85,6 +85,10 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   gratuito). `gemini-2.5-pro` → 404 (retirado para cuentas nuevas).
   `gemini-3.8-flash` → 503 por alta demanda. `gemini-3.5-flash` sí respondió.
   Cada error corta la fábrica con salida 1.
+  Patrón: en las dos rondas SDD (T1.1 y T1.2) dio 503 justo Lógica, que corre
+  en paralelo con Seguridad; Seguridad pasó las dos veces y Lógica, corrida
+  sola minutos después, pasó a la primera. Son pocas muestras: el paralelismo
+  es hipótesis, no hecho.
 - **Causa raíz:** `revision.md ## 6` asumía acceso a Pro;
   `gemini.mjs` no distinguía error transitorio (503, 429 por minuto) de error
   permanente (`limit: 0`, 404).
