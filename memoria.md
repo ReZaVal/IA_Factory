@@ -230,6 +230,24 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   cruzada. Código de clientes: **no** por `agy` hasta leer sus términos de
   privacidad y uso automatizado (`P6`). Cuota de `agy` sin medir.
 
+### D14 — Evidencia verificable por el humano antes de seguir
+- **Decisión:** se adopta `docs/superpowers/specs/2026-11-03-evidencia-verificable-design.md`.
+  Todo agente que ejecuta tareas (incluidos Seguridad y UX/UI) entrega evidencia
+  que el dueño puede ver o repetir, y declara sus supuestos. La evidencia
+  numérica la produce un script, no un modelo. La fábrica se detiene ante el
+  dueño al terminar una tarea o un grupo de tareas dependientes, y antes si un
+  supuesto bloqueante afecta a las que siguen.
+- **Razón:** elegido por el usuario (S-12, 2026-11-04). `T1.2` se aprobó en la
+  ronda 1 sobre una suposición sin confirmar (descuento mayor que el subtotal
+  da `0`), que el veredicto solo avisó al final, y con dos criterios verificados
+  leyendo código.
+- **Alternativas rechazadas:** detenerse tarea por tarea o antes de construir;
+  dashboard o servidor permanente; un agente nuevo por tipo de evidencia (solo
+  se crea el probador).
+- **Impacto:** tareas `T1.9`-`T1.14`, antes de `T2.1` porque cambia el contrato
+  de los dictámenes. `D4`, `D10` y `D11` no cambian. `prueba.mjs` resuelve
+  `L7` al correr fuera de los permisos del agente. Abiertas: `P7` y `P8`.
+
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
 gatekeeper → `T2.1`.
@@ -265,6 +283,18 @@ gatekeeper → `T2.1`.
   y código de clientes con Google AI Pro? ¿Cuánta cuota da por día? La FAQ de
   Gemini CLI no aplica a esta herramienta. Bloquea usar `agy` con código de
   clientes (`D13`).
+
+- [x] **P9 — Tope en `0` de `T1.2`.** ¿Un descuento mayor que el subtotal da
+  `0` o un error? → Resuelta (S-12): da `0`. Registrada como `D5` en
+  `IA_Factory_Test/memoria.md`, porque solo afecta al repo de prueba.
+
+- [ ] **P7 — Tipos de producto de los próximos proyectos.** Decide si la
+  entrega visual sigue con pantallas o con APIs (`D14`). Bloquea el alcance de
+  `T1.14`, no el spike.
+
+- [ ] **P8 — Destino de la evidencia aprobada.** ¿Se versiona en el repo como
+  registro (`N-20`) o se descarta al aprobar? Recomendación del agente:
+  guardarla. Bloquea `T1.12`.
 
 > Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
 > `T2.5`; P4, el cierre de cada fase de carril.

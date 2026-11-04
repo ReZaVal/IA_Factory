@@ -1,0 +1,1378 @@
+{
+  "tarea": "T1.2",
+  "proyecto": "/home/renzo/IA_Factory_Test.fabrica/T1.2",
+  "zonas": [
+    "UTC",
+    "America/Lima",
+    "Asia/Tokyo"
+  ],
+  "node": "v24.14.0",
+  "huellas": {
+    "src/cupon.js": "71909c9522a670ed",
+    "src/precio.js": "38d1223214c45d4a",
+    "specs/T1.2.md": "3216eec4112bc857"
+  },
+  "total": 58,
+  "aprobados": 58,
+  "fallidos": 0,
+  "resultados": [
+    {
+      "id": "e01",
+      "criterio": 1,
+      "titulo": "Porcentaje 10 % sobre 100",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 90
+          },
+          "obtenido": {
+            "valor": 90,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"porcentaje\", \"valor\": 0.1, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e02",
+      "criterio": 2,
+      "titulo": "Monto fijo 5 sobre 100",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 95
+          },
+          "obtenido": {
+            "valor": 95,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e03",
+      "criterio": 3,
+      "titulo": "Porcentaje 15 % sobre 19.99 redondea a centavos",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 16.99
+          },
+          "obtenido": {
+            "valor": 16.99,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [19.99, { \"tipo\": \"porcentaje\", \"valor\": 0.15, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e04",
+      "criterio": 4,
+      "titulo": "Monto fijo 30 sobre 20 queda en 0",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 0
+          },
+          "obtenido": {
+            "valor": 0,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [20, { \"tipo\": \"monto\", \"valor\": 30, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e05",
+      "criterio": 5,
+      "titulo": "Vencido el día anterior",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "vencido"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon vencido",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-01-14T12:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e06",
+      "criterio": 6,
+      "titulo": "Mismo día, una hora antes",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 95
+          },
+          "obtenido": {
+            "valor": 95,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-01-15T12:00:00Z\") }, new Date(\"2026-01-15T11:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e07",
+      "criterio": 6,
+      "titulo": "Mismo día, una hora después",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 95
+          },
+          "obtenido": {
+            "valor": 95,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-01-15T12:00:00Z\") }, new Date(\"2026-01-15T13:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e08",
+      "criterio": 7,
+      "titulo": "subtotal \"100\"",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError",
+            "mensaje": "subtotal"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "subtotal debe ser number",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [\"100\", { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e09",
+      "criterio": 7,
+      "titulo": "subtotal null",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError",
+            "mensaje": "subtotal"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "subtotal debe ser number",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [null, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e10",
+      "criterio": 7,
+      "titulo": "subtotal -1",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "subtotal"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "subtotal debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [-1, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e11",
+      "criterio": 7,
+      "titulo": "subtotal NaN",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "subtotal"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "subtotal debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [NaN, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e12",
+      "criterio": 7,
+      "titulo": "subtotal Infinity",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "subtotal"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "subtotal debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [Infinity, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e13",
+      "criterio": 8,
+      "titulo": "cupon null",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "cupon debe ser un objeto",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, null, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e14",
+      "criterio": 8,
+      "titulo": "cupon \"x\"",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "cupon debe ser un objeto",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, \"x\", new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e15",
+      "criterio": 8,
+      "titulo": "valor de descuento \"10\"",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "cupon.valor debe ser number",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": \"10\", \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e16",
+      "criterio": 8,
+      "titulo": "valor de descuento -1",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon.valor debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": -1, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e17",
+      "criterio": 8,
+      "titulo": "valor de descuento NaN",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon.valor debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": NaN, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e18",
+      "criterio": 8,
+      "titulo": "valor de descuento Infinity",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon.valor debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": Infinity, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e19",
+      "criterio": 9,
+      "titulo": "hoy \"2026-01-15\"",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "hoy debe ser Date",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, \"2026-01-15\"]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e20",
+      "criterio": 9,
+      "titulo": "vencimiento \"2026-01-15\"",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "cupon.vence debe ser Date",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": \"2026-01-15\" }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e21",
+      "criterio": 9,
+      "titulo": "hoy null",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "hoy debe ser Date",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, null]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e22",
+      "criterio": 9,
+      "titulo": "vencimiento null",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "cupon.vence debe ser Date",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": null }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e23",
+      "criterio": 9,
+      "titulo": "hoy Date inválida",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "hoy es una Date inválida",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(NaN)]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e24",
+      "criterio": 9,
+      "titulo": "vencimiento Date inválida",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon.vence es una Date inválida",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(NaN) }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e25",
+      "criterio": 10,
+      "titulo": "Cupón congelado no se muta",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 90
+          },
+          "obtenido": {
+            "valor": 90,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, Object.freeze({ \"tipo\": \"porcentaje\", \"valor\": 0.1, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }), new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e26",
+      "criterio": 11,
+      "titulo": "IVA después del descuento: 108.9, no 111",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 108.9
+          },
+          "obtenido": {
+            "valor": 108.9,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"monto\", \"valor\": 10, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e27",
+      "criterio": 12,
+      "titulo": "Cupón de porcentaje en el carrito",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 108.9
+          },
+          "obtenido": {
+            "valor": 108.9,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"porcentaje\", \"valor\": 0.1, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e28",
+      "criterio": 13,
+      "titulo": "Monto fijo 500 deja el total en 0",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 0
+          },
+          "obtenido": {
+            "valor": 0,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"monto\", \"valor\": 500, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e29",
+      "criterio": 14,
+      "titulo": "Cupón vencido en el carrito",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "vencido"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon vencido",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-01-14T12:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e30",
+      "criterio": 15,
+      "titulo": "tasa -0.1",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "tasa"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "tasa debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": -0.1 }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e31",
+      "criterio": 15,
+      "titulo": "tasa \"0.21\"",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "tasa"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "tasa debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": \"0.21\" }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e32",
+      "criterio": 15,
+      "titulo": "tasa undefined",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "tasa"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "tasa debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": undefined }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e33",
+      "criterio": 15,
+      "titulo": "tasa NaN",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "tasa"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "tasa debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": NaN }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e34",
+      "criterio": 15,
+      "titulo": "tasa Infinity",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "tasa"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "tasa debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": Infinity }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e35",
+      "criterio": 16,
+      "titulo": "lineas null",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "lineas debe ser un array",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [null, { \"tasa\": 0.21 }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e36",
+      "criterio": 16,
+      "titulo": "precioUnitario -5",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "precioUnitario"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "lineas[0].precioUnitario debe ser un número finito no negativo",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 1, \"precioUnitario\": -5 }], { \"tasa\": 0.21 }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e37",
+      "criterio": 17,
+      "titulo": "segundo argumento undefined",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "el segundo argumento de totalCarrito debe ser un objeto",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], undefined]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e38",
+      "criterio": 17,
+      "titulo": "segundo argumento null",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "el segundo argumento de totalCarrito debe ser un objeto",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], null]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e39",
+      "criterio": 17,
+      "titulo": "segundo argumento \"x\"",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "TypeError"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "el segundo argumento de totalCarrito debe ser un objeto",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], \"x\"]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e40",
+      "criterio": 18,
+      "titulo": "Líneas y opciones congeladas, con cupón",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 108.9
+          },
+          "obtenido": {
+            "valor": 108.9,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [Object.freeze([Object.freeze({ \"cantidad\": 2, \"precioUnitario\": 50 })]), Object.freeze({ \"tasa\": 0.21, \"cupon\": Object.freeze({ \"tipo\": \"monto\", \"valor\": 10, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }), \"hoy\": new Date(\"2026-01-15T12:00:00Z\") })]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e41",
+      "criterio": 18,
+      "titulo": "Líneas y opciones congeladas, sin cupón",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 121
+          },
+          "obtenido": {
+            "valor": 121,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [Object.freeze([Object.freeze({ \"cantidad\": 2, \"precioUnitario\": 50 })]), Object.freeze({ \"tasa\": 0.21 })]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e42",
+      "criterio": 19,
+      "titulo": "npm test termina en 0",
+      "comando": "npm test --silent",
+      "espera": {
+        "codigo": 0
+      },
+      "salida": "RUN  v3.2.7 /home/renzo/IA_Factory_Test.fabrica/T1.2\n\n ✓ tests/cupon.test.js (27 tests) 17ms\n ✓ tests/precio.test.js (32 tests) 17ms\n\n Test Files  2 passed (2)\n      Tests  59 passed (59)\n   Start at  06:07:45\n   Duration  584ms (transform 101ms, setup 0ms, collect 117ms, tests 34ms, environment 0ms, prepare 328ms)",
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && npm test --silent"
+    },
+    {
+      "id": "e43",
+      "criterio": 19,
+      "titulo": "Los tests existentes no pierden líneas",
+      "comando": "git diff tests/precio.test.js | grep -c '^-[^-]'",
+      "espera": {
+        "codigo": 1,
+        "salida": "0"
+      },
+      "salida": "0",
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && git diff tests/precio.test.js | grep -c '^-[^-]'"
+    },
+    {
+      "id": "e44",
+      "criterio": 20,
+      "titulo": "src/ no lee reloj, red, disco ni entorno",
+      "comando": "grep -nE \"Date\\.now|new Date\\(\\s*\\)|fetch|from \\\"(node:)?(fs|http|https|net)\\\"|process\\.env\" src/cupon.js src/precio.js",
+      "espera": {
+        "codigo": 1,
+        "salida": ""
+      },
+      "salida": "",
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && grep -nE \"Date\\.now|new Date\\(\\s*\\)|fetch|from \\\"(node:)?(fs|http|https|net)\\\"|process\\.env\" src/cupon.js src/precio.js"
+    },
+    {
+      "id": "e45",
+      "criterio": 21,
+      "titulo": "Exactamente 4 exportaciones",
+      "comando": "grep -hoE \"^export function [a-zA-Z]+\" src/cupon.js src/precio.js | awk '{print $3}' | sort | tr '\\n' ' '",
+      "espera": {
+        "codigo": 0,
+        "salida": "aplicarCupon subtotal totalCarrito totalConIva"
+      },
+      "salida": "aplicarCupon subtotal totalCarrito totalConIva",
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && grep -hoE \"^export function [a-zA-Z]+\" src/cupon.js src/precio.js | awk '{print $3}' | sort | tr '\\n' ' '"
+    },
+    {
+      "id": "e46",
+      "criterio": 22,
+      "titulo": "package.json y lockfile sin cambios",
+      "comando": "git diff --exit-code package.json package-lock.json",
+      "espera": {
+        "codigo": 0
+      },
+      "salida": "",
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && git diff --exit-code package.json package-lock.json"
+    },
+    {
+      "id": "e47",
+      "criterio": 23,
+      "titulo": "Porcentaje 1.5 se rechaza",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "valor"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon.valor de un porcentaje no puede ser mayor que 1",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"porcentaje\", \"valor\": 1.5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e48",
+      "criterio": 23,
+      "titulo": "Porcentaje 1 deja 0",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 0
+          },
+          "obtenido": {
+            "valor": 0,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"porcentaje\", \"valor\": 1, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e49",
+      "criterio": 24,
+      "titulo": "Tipo \"regalo\" se rechaza",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "tipo"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon.tipo debe ser \"porcentaje\" o \"monto\"",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"regalo\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e50",
+      "criterio": 25,
+      "titulo": "Sirve el día que vence",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 95
+          },
+          "obtenido": {
+            "valor": 95,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-01-15T10:00:00Z\") }, new Date(\"2026-01-15T20:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e51",
+      "criterio": 26,
+      "titulo": "Días en UTC: 23:00 y 01:00 del día siguiente",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "vencido"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon vencido",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [100, { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-01-15T23:00:00Z\") }, new Date(\"2026-01-16T01:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e52",
+      "criterio": 27,
+      "titulo": "Sin cupón equivale a totalConIva",
+      "pasos": [
+        {
+          "id": "a",
+          "funcion": "totalConIva",
+          "espera": {
+            "valor": 121
+          },
+          "obtenido": {
+            "valor": 121,
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "b",
+          "funcion": "totalCarrito",
+          "espera": {
+            "igualA": "a"
+          },
+          "obtenido": {
+            "valor": 121,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], 0.21]; const antes = JSON.stringify(a); try { r[\"a\"] = { valor: m0.totalConIva(...a) }; } catch (e) { r[\"a\"] = { error: e.name, mensaje: e.message }; } r[\"a\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21 }]; const antes = JSON.stringify(a); try { r[\"b\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"b\"] = { error: e.name, mensaje: e.message }; } r[\"b\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e53",
+      "criterio": 28,
+      "titulo": "Con cupón exige hoy",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "TypeError",
+            "mensaje": "hoy"
+          },
+          "obtenido": {
+            "error": "TypeError",
+            "mensaje": "hoy debe ser Date",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"monto\", \"valor\": 5, \"vence\": new Date(\"2026-02-01T00:00:00Z\") } }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "e54",
+      "criterio": 29,
+      "titulo": "IVA sobre el monto redondeado: 0.96, no 0.95",
+      "pasos": [
+        {
+          "id": "r",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 0.96
+          },
+          "obtenido": {
+            "valor": 0.96,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 1, \"precioUnitario\": 1.05 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"porcentaje\", \"valor\": 0.25, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"r\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"r\"] = { error: e.name, mensaje: e.message }; } r[\"r\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "f1",
+      "flujo": true,
+      "criterio": null,
+      "titulo": "Cupón de porcentaje 10 %",
+      "supuesto": null,
+      "pasos": [
+        {
+          "id": "s",
+          "etiqueta": "Subtotal del carrito",
+          "funcion": "subtotal",
+          "espera": {
+            "valor": 100
+          },
+          "obtenido": {
+            "valor": 100,
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "c",
+          "etiqueta": "Aplica el cupón",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 90
+          },
+          "obtenido": {
+            "valor": 90,
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "t",
+          "etiqueta": "Total con IVA 21 %",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 108.9
+          },
+          "obtenido": {
+            "valor": 108.9,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst m1 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }]]; const antes = JSON.stringify(a); try { r[\"s\"] = { valor: m0.subtotal(...a) }; } catch (e) { r[\"s\"] = { error: e.name, mensaje: e.message }; } r[\"s\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [r[\"s\"].valor, { \"tipo\": \"porcentaje\", \"valor\": 0.1, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"c\"] = { valor: m1.aplicarCupon(...a) }; } catch (e) { r[\"c\"] = { error: e.name, mensaje: e.message }; } r[\"c\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"porcentaje\", \"valor\": 0.1, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"t\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"t\"] = { error: e.name, mensaje: e.message }; } r[\"t\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "f2",
+      "flujo": true,
+      "criterio": null,
+      "titulo": "Cupón de monto fijo 10",
+      "supuesto": null,
+      "pasos": [
+        {
+          "id": "s",
+          "etiqueta": "Subtotal del carrito",
+          "funcion": "subtotal",
+          "espera": {
+            "valor": 100
+          },
+          "obtenido": {
+            "valor": 100,
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "c",
+          "etiqueta": "Aplica el cupón",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 90
+          },
+          "obtenido": {
+            "valor": 90,
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "t",
+          "etiqueta": "Total con IVA 21 %",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 108.9
+          },
+          "obtenido": {
+            "valor": 108.9,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst m1 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }]]; const antes = JSON.stringify(a); try { r[\"s\"] = { valor: m0.subtotal(...a) }; } catch (e) { r[\"s\"] = { error: e.name, mensaje: e.message }; } r[\"s\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [r[\"s\"].valor, { \"tipo\": \"monto\", \"valor\": 10, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"c\"] = { valor: m1.aplicarCupon(...a) }; } catch (e) { r[\"c\"] = { error: e.name, mensaje: e.message }; } r[\"c\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"monto\", \"valor\": 10, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"t\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"t\"] = { error: e.name, mensaje: e.message }; } r[\"t\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "f3",
+      "flujo": true,
+      "criterio": null,
+      "titulo": "Descuento mayor que el subtotal (monto 500)",
+      "supuesto": "S1",
+      "pasos": [
+        {
+          "id": "s",
+          "etiqueta": "Subtotal del carrito",
+          "funcion": "subtotal",
+          "espera": {
+            "valor": 100
+          },
+          "obtenido": {
+            "valor": 100,
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "c",
+          "etiqueta": "Aplica el cupón",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "valor": 0
+          },
+          "obtenido": {
+            "valor": 0,
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "t",
+          "etiqueta": "Total con IVA 21 %",
+          "funcion": "totalCarrito",
+          "espera": {
+            "valor": 0
+          },
+          "obtenido": {
+            "valor": 0,
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst m1 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }]]; const antes = JSON.stringify(a); try { r[\"s\"] = { valor: m0.subtotal(...a) }; } catch (e) { r[\"s\"] = { error: e.name, mensaje: e.message }; } r[\"s\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [r[\"s\"].valor, { \"tipo\": \"monto\", \"valor\": 500, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"c\"] = { valor: m1.aplicarCupon(...a) }; } catch (e) { r[\"c\"] = { error: e.name, mensaje: e.message }; } r[\"c\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"monto\", \"valor\": 500, \"vence\": new Date(\"2026-02-01T00:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"t\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"t\"] = { error: e.name, mensaje: e.message }; } r[\"t\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    },
+    {
+      "id": "f4",
+      "flujo": true,
+      "criterio": null,
+      "titulo": "Cupón vencido",
+      "supuesto": null,
+      "pasos": [
+        {
+          "id": "s",
+          "etiqueta": "Subtotal del carrito",
+          "funcion": "subtotal",
+          "espera": {
+            "valor": 100
+          },
+          "obtenido": {
+            "valor": 100,
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "c",
+          "etiqueta": "Aplica el cupón",
+          "funcion": "aplicarCupon",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "vencido"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon vencido",
+            "mutado": false
+          },
+          "fallo": null
+        },
+        {
+          "id": "t",
+          "etiqueta": "Total con IVA 21 %",
+          "funcion": "totalCarrito",
+          "espera": {
+            "error": "RangeError",
+            "mensaje": "vencido"
+          },
+          "obtenido": {
+            "error": "RangeError",
+            "mensaje": "cupon vencido",
+            "mutado": false
+          },
+          "fallo": null
+        }
+      ],
+      "fallos": [],
+      "repetir": "cd /home/renzo/IA_Factory_Test.fabrica/T1.2 && TZ=UTC node --input-type=module --eval 'const m0 = await import(\"./src/precio.js\");\nconst m1 = await import(\"./src/cupon.js\");\nconst r = {};\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }]]; const antes = JSON.stringify(a); try { r[\"s\"] = { valor: m0.subtotal(...a) }; } catch (e) { r[\"s\"] = { error: e.name, mensaje: e.message }; } r[\"s\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [r[\"s\"].valor, { \"tipo\": \"monto\", \"valor\": 10, \"vence\": new Date(\"2026-01-14T12:00:00Z\") }, new Date(\"2026-01-15T12:00:00Z\")]; const antes = JSON.stringify(a); try { r[\"c\"] = { valor: m1.aplicarCupon(...a) }; } catch (e) { r[\"c\"] = { error: e.name, mensaje: e.message }; } r[\"c\"].mutado = JSON.stringify(a) !== antes; }\n{ const a = [[{ \"cantidad\": 2, \"precioUnitario\": 50 }], { \"tasa\": 0.21, \"cupon\": { \"tipo\": \"monto\", \"valor\": 10, \"vence\": new Date(\"2026-01-14T12:00:00Z\") }, \"hoy\": new Date(\"2026-01-15T12:00:00Z\") }]; const antes = JSON.stringify(a); try { r[\"t\"] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[\"t\"] = { error: e.name, mensaje: e.message }; } r[\"t\"].mutado = JSON.stringify(a) !== antes; }\nconsole.log(JSON.stringify(r, (k, v) => (typeof v === \"number\" && !Number.isFinite(v) ? String(v) : v === undefined ? \"undefined\" : v)));'"
+    }
+  ]
+}

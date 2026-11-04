@@ -148,6 +148,15 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   No detecta escrituras fuera del repo; ahí la defensa es solo `--mode plan`.
 - **Regla derivada:** ver §1.
 
+### L9 — La suite de cupones depende de la zona horaria de la máquina
+- **Estado:** 🔴 Abierto (S-12, spike `T1.9`)
+- **Síntoma:** con un bug sembrado que compara días en hora local, la suite de
+  `T1.2` falla en America/Lima y da 59/59 en UTC. Un CI en UTC no lo vería.
+- **Causa raíz probable:** los tests corren en una sola zona, la de la máquina.
+- **Solución propuesta:** `prueba.mjs` (`T1.11`) corre los escenarios con fechas
+  en varias zonas; la constitución del carril software lo pide para código con
+  fechas.
+
 ## 3. Errores de comportamiento del agente
 
 ### B1 — Una edición con reemplazo borró un encabezado de este archivo

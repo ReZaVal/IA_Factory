@@ -1,0 +1,1826 @@
+{
+ "tarea": "T1.2",
+ "archivos": [
+  "src/cupon.js",
+  "src/precio.js",
+  "specs/T1.2.md"
+ ],
+ "supuestos": [
+  {
+   "id": "S1",
+   "criterios": [
+    4,
+    13
+   ],
+   "titulo": "Un descuento mayor que el subtotal da 0, no un error",
+   "origen": "specs/T1.2.md, «Riesgos»: «Inferencia a confirmar». No está en D4.",
+   "opciones": [
+    "Tope en 0 (lo construido)",
+    "Lanzar error: cambian los criterios 4 y 13"
+   ],
+   "confirmado": "da 0, no un error (D5 de IA_Factory_Test, 2026-11-04)."
+  }
+ ],
+ "escenarios": [
+  {
+   "id": "e01",
+   "criterio": 1,
+   "titulo": "Porcentaje 10 % sobre 100",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "porcentaje",
+       "valor": 0.1,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 90
+     }
+    }
+   ]
+  },
+  {
+   "id": "e02",
+   "criterio": 2,
+   "titulo": "Monto fijo 5 sobre 100",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 95
+     }
+    }
+   ]
+  },
+  {
+   "id": "e03",
+   "criterio": 3,
+   "titulo": "Porcentaje 15 % sobre 19.99 redondea a centavos",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      19.99,
+      {
+       "tipo": "porcentaje",
+       "valor": 0.15,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 16.99
+     }
+    }
+   ]
+  },
+  {
+   "id": "e04",
+   "criterio": 4,
+   "titulo": "Monto fijo 30 sobre 20 queda en 0",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      20,
+      {
+       "tipo": "monto",
+       "valor": 30,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "e05",
+   "criterio": 5,
+   "titulo": "Vencido el día anterior",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-01-14T12:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "vencido"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e06",
+   "criterio": 6,
+   "titulo": "Mismo día, una hora antes",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T11:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 95
+     }
+    }
+   ]
+  },
+  {
+   "id": "e07",
+   "criterio": 6,
+   "titulo": "Mismo día, una hora después",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T13:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 95
+     }
+    }
+   ]
+  },
+  {
+   "id": "e08",
+   "criterio": 7,
+   "titulo": "subtotal \"100\"",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      "100",
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "TypeError",
+      "mensaje": "subtotal"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e09",
+   "criterio": 7,
+   "titulo": "subtotal null",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      null,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "TypeError",
+      "mensaje": "subtotal"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e10",
+   "criterio": 7,
+   "titulo": "subtotal -1",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      -1,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "subtotal"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e11",
+   "criterio": 7,
+   "titulo": "subtotal NaN",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      {
+       "$": "NaN"
+      },
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "subtotal"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e12",
+   "criterio": 7,
+   "titulo": "subtotal Infinity",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      {
+       "$": "Infinity"
+      },
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "subtotal"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e13",
+   "criterio": 8,
+   "titulo": "cupon null",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      null,
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e14",
+   "criterio": 8,
+   "titulo": "cupon \"x\"",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      "x",
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e15",
+   "criterio": 8,
+   "titulo": "valor de descuento \"10\"",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": "10",
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e16",
+   "criterio": 8,
+   "titulo": "valor de descuento -1",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": -1,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e17",
+   "criterio": 8,
+   "titulo": "valor de descuento NaN",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": {
+        "$": "NaN"
+       },
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e18",
+   "criterio": 8,
+   "titulo": "valor de descuento Infinity",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": {
+        "$": "Infinity"
+       },
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e19",
+   "criterio": 9,
+   "titulo": "hoy \"2026-01-15\"",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      "2026-01-15"
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e20",
+   "criterio": 9,
+   "titulo": "vencimiento \"2026-01-15\"",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": "2026-01-15"
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e21",
+   "criterio": 9,
+   "titulo": "hoy null",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      null
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e22",
+   "criterio": 9,
+   "titulo": "vencimiento null",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": null
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e23",
+   "criterio": 9,
+   "titulo": "hoy Date inválida",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$": "fechaInvalida"
+      }
+     ],
+     "espera": {
+      "error": "RangeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e24",
+   "criterio": 9,
+   "titulo": "vencimiento Date inválida",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$": "fechaInvalida"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e25",
+   "criterio": 10,
+   "titulo": "Cupón congelado no se muta",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "$congelar": {
+        "tipo": "porcentaje",
+        "valor": 0.1,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 90
+     }
+    }
+   ]
+  },
+  {
+   "id": "e26",
+   "criterio": 11,
+   "titulo": "IVA después del descuento: 108.9, no 111",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "monto",
+        "valor": 10,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "valor": 108.9
+     }
+    }
+   ]
+  },
+  {
+   "id": "e27",
+   "criterio": 12,
+   "titulo": "Cupón de porcentaje en el carrito",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "porcentaje",
+        "valor": 0.1,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "valor": 108.9
+     }
+    }
+   ]
+  },
+  {
+   "id": "e28",
+   "criterio": 13,
+   "titulo": "Monto fijo 500 deja el total en 0",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "monto",
+        "valor": 500,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "valor": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "e29",
+   "criterio": 14,
+   "titulo": "Cupón vencido en el carrito",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "monto",
+        "valor": 5,
+        "vence": {
+         "$fecha": "2026-01-14T12:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "vencido"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e30",
+   "criterio": 15,
+   "titulo": "tasa -0.1",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": -0.1
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "tasa"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e31",
+   "criterio": 15,
+   "titulo": "tasa \"0.21\"",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": "0.21"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "tasa"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e32",
+   "criterio": 15,
+   "titulo": "tasa undefined",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": {
+        "$": "undefined"
+       }
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "tasa"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e33",
+   "criterio": 15,
+   "titulo": "tasa NaN",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": {
+        "$": "NaN"
+       }
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "tasa"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e34",
+   "criterio": 15,
+   "titulo": "tasa Infinity",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": {
+        "$": "Infinity"
+       }
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "tasa"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e35",
+   "criterio": 16,
+   "titulo": "lineas null",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      null,
+      {
+       "tasa": 0.21
+      }
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e36",
+   "criterio": 16,
+   "titulo": "precioUnitario -5",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 1,
+        "precioUnitario": -5
+       }
+      ],
+      {
+       "tasa": 0.21
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "precioUnitario"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e37",
+   "criterio": 17,
+   "titulo": "segundo argumento undefined",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "$": "undefined"
+      }
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e38",
+   "criterio": 17,
+   "titulo": "segundo argumento null",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      null
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e39",
+   "criterio": 17,
+   "titulo": "segundo argumento \"x\"",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      "x"
+     ],
+     "espera": {
+      "error": "TypeError"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e40",
+   "criterio": 18,
+   "titulo": "Líneas y opciones congeladas, con cupón",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      {
+       "$congelar": [
+        {
+         "cantidad": 2,
+         "precioUnitario": 50
+        }
+       ]
+      },
+      {
+       "$congelar": {
+        "tasa": 0.21,
+        "cupon": {
+         "tipo": "monto",
+         "valor": 10,
+         "vence": {
+          "$fecha": "2026-02-01T00:00:00Z"
+         }
+        },
+        "hoy": {
+         "$fecha": "2026-01-15T12:00:00Z"
+        }
+       }
+      }
+     ],
+     "espera": {
+      "valor": 108.9
+     }
+    }
+   ]
+  },
+  {
+   "id": "e41",
+   "criterio": 18,
+   "titulo": "Líneas y opciones congeladas, sin cupón",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      {
+       "$congelar": [
+        {
+         "cantidad": 2,
+         "precioUnitario": 50
+        }
+       ]
+      },
+      {
+       "$congelar": {
+        "tasa": 0.21
+       }
+      }
+     ],
+     "espera": {
+      "valor": 121
+     }
+    }
+   ]
+  },
+  {
+   "id": "e42",
+   "criterio": 19,
+   "titulo": "npm test termina en 0",
+   "comando": "npm test --silent",
+   "espera": {
+    "codigo": 0
+   }
+  },
+  {
+   "id": "e43",
+   "criterio": 19,
+   "titulo": "Los tests existentes no pierden líneas",
+   "comando": "git diff tests/precio.test.js | grep -c '^-[^-]'",
+   "espera": {
+    "codigo": 1,
+    "salida": "0"
+   }
+  },
+  {
+   "id": "e44",
+   "criterio": 20,
+   "titulo": "src/ no lee reloj, red, disco ni entorno",
+   "comando": "grep -nE \"Date\\.now|new Date\\(\\s*\\)|fetch|from \\\"(node:)?(fs|http|https|net)\\\"|process\\.env\" src/cupon.js src/precio.js",
+   "espera": {
+    "codigo": 1,
+    "salida": ""
+   }
+  },
+  {
+   "id": "e45",
+   "criterio": 21,
+   "titulo": "Exactamente 4 exportaciones",
+   "comando": "grep -hoE \"^export function [a-zA-Z]+\" src/cupon.js src/precio.js | awk '{print $3}' | sort | tr '\\n' ' '",
+   "espera": {
+    "codigo": 0,
+    "salida": "aplicarCupon subtotal totalCarrito totalConIva"
+   }
+  },
+  {
+   "id": "e46",
+   "criterio": 22,
+   "titulo": "package.json y lockfile sin cambios",
+   "comando": "git diff --exit-code package.json package-lock.json",
+   "espera": {
+    "codigo": 0
+   }
+  },
+  {
+   "id": "e47",
+   "criterio": 23,
+   "titulo": "Porcentaje 1.5 se rechaza",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "porcentaje",
+       "valor": 1.5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "valor"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e48",
+   "criterio": 23,
+   "titulo": "Porcentaje 1 deja 0",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "porcentaje",
+       "valor": 1,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "e49",
+   "criterio": 24,
+   "titulo": "Tipo \"regalo\" se rechaza",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "regalo",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "tipo"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e50",
+   "criterio": 25,
+   "titulo": "Sirve el día que vence",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-01-15T10:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T20:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 95
+     }
+    }
+   ]
+  },
+  {
+   "id": "e51",
+   "criterio": 26,
+   "titulo": "Días en UTC: 23:00 y 01:00 del día siguiente",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      100,
+      {
+       "tipo": "monto",
+       "valor": 5,
+       "vence": {
+        "$fecha": "2026-01-15T23:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-16T01:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "vencido"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e52",
+   "criterio": 27,
+   "titulo": "Sin cupón equivale a totalConIva",
+   "pasos": [
+    {
+     "id": "a",
+     "modulo": "src/precio.js",
+     "funcion": "totalConIva",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      0.21
+     ],
+     "espera": {
+      "valor": 121
+     }
+    },
+    {
+     "id": "b",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21
+      }
+     ],
+     "espera": {
+      "igualA": "a"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e53",
+   "criterio": 28,
+   "titulo": "Con cupón exige hoy",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "monto",
+        "valor": 5,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       }
+      }
+     ],
+     "espera": {
+      "error": "TypeError",
+      "mensaje": "hoy"
+     }
+    }
+   ]
+  },
+  {
+   "id": "e54",
+   "criterio": 29,
+   "titulo": "IVA sobre el monto redondeado: 0.96, no 0.95",
+   "pasos": [
+    {
+     "id": "r",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 1,
+        "precioUnitario": 1.05
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "porcentaje",
+        "valor": 0.25,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "valor": 0.96
+     }
+    }
+   ]
+  },
+  {
+   "id": "f1",
+   "flujo": true,
+   "criterio": null,
+   "titulo": "Cupón de porcentaje 10 %",
+   "supuesto": null,
+   "pasos": [
+    {
+     "id": "s",
+     "etiqueta": "Subtotal del carrito",
+     "modulo": "src/precio.js",
+     "funcion": "subtotal",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ]
+     ],
+     "espera": {
+      "valor": 100
+     }
+    },
+    {
+     "id": "c",
+     "etiqueta": "Aplica el cupón",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      {
+       "$paso": "s"
+      },
+      {
+       "tipo": "porcentaje",
+       "valor": 0.1,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 90
+     }
+    },
+    {
+     "id": "t",
+     "etiqueta": "Total con IVA 21 %",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "porcentaje",
+        "valor": 0.1,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "valor": 108.9
+     }
+    }
+   ]
+  },
+  {
+   "id": "f2",
+   "flujo": true,
+   "criterio": null,
+   "titulo": "Cupón de monto fijo 10",
+   "supuesto": null,
+   "pasos": [
+    {
+     "id": "s",
+     "etiqueta": "Subtotal del carrito",
+     "modulo": "src/precio.js",
+     "funcion": "subtotal",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ]
+     ],
+     "espera": {
+      "valor": 100
+     }
+    },
+    {
+     "id": "c",
+     "etiqueta": "Aplica el cupón",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      {
+       "$paso": "s"
+      },
+      {
+       "tipo": "monto",
+       "valor": 10,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 90
+     }
+    },
+    {
+     "id": "t",
+     "etiqueta": "Total con IVA 21 %",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "monto",
+        "valor": 10,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "valor": 108.9
+     }
+    }
+   ]
+  },
+  {
+   "id": "f3",
+   "flujo": true,
+   "criterio": null,
+   "titulo": "Descuento mayor que el subtotal (monto 500)",
+   "supuesto": "S1",
+   "pasos": [
+    {
+     "id": "s",
+     "etiqueta": "Subtotal del carrito",
+     "modulo": "src/precio.js",
+     "funcion": "subtotal",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ]
+     ],
+     "espera": {
+      "valor": 100
+     }
+    },
+    {
+     "id": "c",
+     "etiqueta": "Aplica el cupón",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      {
+       "$paso": "s"
+      },
+      {
+       "tipo": "monto",
+       "valor": 500,
+       "vence": {
+        "$fecha": "2026-02-01T00:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "valor": 0
+     }
+    },
+    {
+     "id": "t",
+     "etiqueta": "Total con IVA 21 %",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "monto",
+        "valor": 500,
+        "vence": {
+         "$fecha": "2026-02-01T00:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "valor": 0
+     }
+    }
+   ]
+  },
+  {
+   "id": "f4",
+   "flujo": true,
+   "criterio": null,
+   "titulo": "Cupón vencido",
+   "supuesto": null,
+   "pasos": [
+    {
+     "id": "s",
+     "etiqueta": "Subtotal del carrito",
+     "modulo": "src/precio.js",
+     "funcion": "subtotal",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ]
+     ],
+     "espera": {
+      "valor": 100
+     }
+    },
+    {
+     "id": "c",
+     "etiqueta": "Aplica el cupón",
+     "modulo": "src/cupon.js",
+     "funcion": "aplicarCupon",
+     "args": [
+      {
+       "$paso": "s"
+      },
+      {
+       "tipo": "monto",
+       "valor": 10,
+       "vence": {
+        "$fecha": "2026-01-14T12:00:00Z"
+       }
+      },
+      {
+       "$fecha": "2026-01-15T12:00:00Z"
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "vencido"
+     }
+    },
+    {
+     "id": "t",
+     "etiqueta": "Total con IVA 21 %",
+     "modulo": "src/precio.js",
+     "funcion": "totalCarrito",
+     "args": [
+      [
+       {
+        "cantidad": 2,
+        "precioUnitario": 50
+       }
+      ],
+      {
+       "tasa": 0.21,
+       "cupon": {
+        "tipo": "monto",
+        "valor": 10,
+        "vence": {
+         "$fecha": "2026-01-14T12:00:00Z"
+        }
+       },
+       "hoy": {
+        "$fecha": "2026-01-15T12:00:00Z"
+       }
+      }
+     ],
+     "espera": {
+      "error": "RangeError",
+      "mensaje": "vencido"
+     }
+    }
+   ]
+  }
+ ]
+}

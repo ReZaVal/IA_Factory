@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evidencia T1.2</title>
+<style>
+:root { color-scheme: light dark; --fondo:#f7f6f2; --panel:#fff; --texto:#1f2421; --suave:#5d655f; --linea:#d9d8d0; --bien:#1c7044; --mal:#b3261e; --ambar:#8a5a00; --ambar-fondo:#fdf1d3; }
+@media (prefers-color-scheme: dark) { :root { --fondo:#171a18; --panel:#20241f; --texto:#e8eae6; --suave:#a3aba4; --linea:#3a403a; --bien:#6fd09b; --mal:#f2968f; --ambar:#f5c766; --ambar-fondo:#3a2e12; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--fondo); color:var(--texto); font:16px/1.5 system-ui, sans-serif; }
+main { max-width:960px; margin:0 auto; padding:24px 16px 64px; }
+h1 { margin:0 0 4px; font-size:1.7rem; } h2 { margin:40px 0 12px; font-size:1.25rem; } h3 { margin:0 0 8px; font-size:1.02rem; }
+.sub, .nota { color:var(--suave); font-size:.88rem; }
+.cifras { display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; }
+.cifra { flex:1 1 160px; background:var(--panel); border:1px solid var(--linea); border-radius:8px; padding:12px; }
+.cifra strong { display:block; font-size:1.4rem; }
+article { background:var(--panel); border:1px solid var(--linea); border-radius:8px; padding:16px; margin-bottom:12px; }
+.aviso, article.asumido { border-color:var(--ambar); background:var(--ambar-fondo); }
+.marca { color:var(--ambar); font-size:.8rem; font-weight:600; }
+ol { list-style:none; margin:0 0 8px; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+.paso { flex:1 1 200px; display:flex; flex-direction:column; gap:2px; padding:10px; border:1px solid var(--linea); border-radius:6px; min-width:0; }
+.paso strong { font-size:1.25rem; overflow-wrap:anywhere; } .paso-error strong { color:var(--mal); font-size:1rem; }
+.etiqueta { font-size:.85rem; font-weight:600; }
+.tabla { overflow-x:auto; background:var(--panel); border:1px solid var(--linea); border-radius:8px; }
+table { border-collapse:collapse; width:100%; font-size:.9rem; }
+th, td { text-align:left; vertical-align:top; padding:8px 10px; border-bottom:1px solid var(--linea); }
+tr.asumido td { background:var(--ambar-fondo); }
+.valor { overflow-wrap:anywhere; max-width:240px; }
+.bien { color:var(--bien); font-weight:600; } .mal { color:var(--mal); font-weight:600; }
+details summary { cursor:pointer; color:var(--suave); font-size:.82rem; }
+pre { max-width:80vw; overflow-x:auto; font-size:.76rem; padding:8px; border:1px solid var(--linea); border-radius:6px; }
+code { font-family:ui-monospace, monospace; }
+</style></head><body><main>
+<h1>Evidencia de T1.2: cupones</h1>
+<p class="sub">Los valores obtenidos salen de ejecutar el código. Los esperados vienen de la spec.</p>
+<div class="cifras">
+  <div class="cifra"><strong>58/58</strong>escenarios ejecutados en verde</div>
+  <div class="cifra"><strong>29/29</strong>criterios ejecutados</div>
+  <div class="cifra"><strong>3</strong>zonas horarias: UTC, America/Lima, Asia/Tokyo</div>
+</div>
+<h2>Necesita tu OK</h2>
+<p>Nada pendiente.</p>
+<p class="sub">S1 confirmado: da 0, no un error (D5 de IA_Factory_Test, 2026-11-04).</p>
+<h2>Cómo funciona</h2>
+<article class="flujo ">
+  <h3>Cupón de porcentaje 10 %</h3>
+  <ol><li class="paso ">
+  <span class="etiqueta">Subtotal del carrito</span>
+  <code>subtotal()</code>
+  <strong>100</strong>
+  <span class="nota">La spec dice: 100</span>
+</li><li class="paso ">
+  <span class="etiqueta">Aplica el cupón</span>
+  <code>aplicarCupon()</code>
+  <strong>90</strong>
+  <span class="nota">La spec dice: 90</span>
+</li><li class="paso ">
+  <span class="etiqueta">Total con IVA 21 %</span>
+  <code>totalCarrito()</code>
+  <strong>108.9</strong>
+  <span class="nota">La spec dice: 108.9</span>
+</li></ol>
+  <details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const m1 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }]]; const antes = JSON.stringify(a); try { r[&quot;s&quot;] = { valor: m0.subtotal(...a) }; } catch (e) { r[&quot;s&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;s&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [r[&quot;s&quot;].valor, { &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 0.1, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;c&quot;] = { valor: m1.aplicarCupon(...a) }; } catch (e) { r[&quot;c&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;c&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 0.1, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;t&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;t&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;t&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details>
+</article><article class="flujo ">
+  <h3>Cupón de monto fijo 10</h3>
+  <ol><li class="paso ">
+  <span class="etiqueta">Subtotal del carrito</span>
+  <code>subtotal()</code>
+  <strong>100</strong>
+  <span class="nota">La spec dice: 100</span>
+</li><li class="paso ">
+  <span class="etiqueta">Aplica el cupón</span>
+  <code>aplicarCupon()</code>
+  <strong>90</strong>
+  <span class="nota">La spec dice: 90</span>
+</li><li class="paso ">
+  <span class="etiqueta">Total con IVA 21 %</span>
+  <code>totalCarrito()</code>
+  <strong>108.9</strong>
+  <span class="nota">La spec dice: 108.9</span>
+</li></ol>
+  <details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const m1 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }]]; const antes = JSON.stringify(a); try { r[&quot;s&quot;] = { valor: m0.subtotal(...a) }; } catch (e) { r[&quot;s&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;s&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [r[&quot;s&quot;].valor, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 10, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;c&quot;] = { valor: m1.aplicarCupon(...a) }; } catch (e) { r[&quot;c&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;c&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 10, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;t&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;t&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;t&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details>
+</article><article class="flujo ">
+  <h3>Descuento mayor que el subtotal (monto 500)</h3>
+  <ol><li class="paso ">
+  <span class="etiqueta">Subtotal del carrito</span>
+  <code>subtotal()</code>
+  <strong>100</strong>
+  <span class="nota">La spec dice: 100</span>
+</li><li class="paso ">
+  <span class="etiqueta">Aplica el cupón</span>
+  <code>aplicarCupon()</code>
+  <strong>0</strong>
+  <span class="nota">La spec dice: 0</span>
+</li><li class="paso ">
+  <span class="etiqueta">Total con IVA 21 %</span>
+  <code>totalCarrito()</code>
+  <strong>0</strong>
+  <span class="nota">La spec dice: 0</span>
+</li></ol>
+  <details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const m1 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }]]; const antes = JSON.stringify(a); try { r[&quot;s&quot;] = { valor: m0.subtotal(...a) }; } catch (e) { r[&quot;s&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;s&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [r[&quot;s&quot;].valor, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 500, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;c&quot;] = { valor: m1.aplicarCupon(...a) }; } catch (e) { r[&quot;c&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;c&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 500, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;t&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;t&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;t&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details>
+</article><article class="flujo ">
+  <h3>Cupón vencido</h3>
+  <ol><li class="paso ">
+  <span class="etiqueta">Subtotal del carrito</span>
+  <code>subtotal()</code>
+  <strong>100</strong>
+  <span class="nota">La spec dice: 100</span>
+</li><li class="paso paso-error">
+  <span class="etiqueta">Aplica el cupón</span>
+  <code>aplicarCupon()</code>
+  <strong>RangeError: cupon vencido</strong>
+  <span class="nota">La spec dice: RangeError con «vencido»</span>
+</li><li class="paso paso-error">
+  <span class="etiqueta">Total con IVA 21 %</span>
+  <code>totalCarrito()</code>
+  <strong>RangeError: cupon vencido</strong>
+  <span class="nota">La spec dice: RangeError con «vencido»</span>
+</li></ol>
+  <details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const m1 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }]]; const antes = JSON.stringify(a); try { r[&quot;s&quot;] = { valor: m0.subtotal(...a) }; } catch (e) { r[&quot;s&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;s&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [r[&quot;s&quot;].valor, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 10, &quot;vence&quot;: new Date(&quot;2026-01-14T12:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;c&quot;] = { valor: m1.aplicarCupon(...a) }; } catch (e) { r[&quot;c&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;c&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 10, &quot;vence&quot;: new Date(&quot;2026-01-14T12:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;t&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;t&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;t&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details>
+</article>
+<h2>Criterio y resultado</h2>
+<div class="tabla"><table><thead><tr><th>#</th><th>Caso</th><th>Obtenido</th><th>Estado</th><th>Repetir</th></tr></thead>
+<tbody><tr class="">
+    <td>1</td><td>Porcentaje 10 % sobre 100</td><td class="valor">90</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 0.1, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>2</td><td>Monto fijo 5 sobre 100</td><td class="valor">95</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>3</td><td>Porcentaje 15 % sobre 19.99 redondea a centavos</td><td class="valor">16.99</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [19.99, { &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 0.15, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>4</td><td>Monto fijo 30 sobre 20 queda en 0</td><td class="valor">0</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [20, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 30, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>5</td><td>Vencido el día anterior</td><td class="valor">RangeError: cupon vencido</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-01-14T12:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>6</td><td>Mismo día, una hora antes</td><td class="valor">95</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }, new Date(&quot;2026-01-15T11:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>6</td><td>Mismo día, una hora después</td><td class="valor">95</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }, new Date(&quot;2026-01-15T13:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>7</td><td>subtotal &quot;100&quot;</td><td class="valor">TypeError: subtotal debe ser number</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [&quot;100&quot;, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>7</td><td>subtotal null</td><td class="valor">TypeError: subtotal debe ser number</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [null, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>7</td><td>subtotal -1</td><td class="valor">RangeError: subtotal debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [-1, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>7</td><td>subtotal NaN</td><td class="valor">RangeError: subtotal debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [NaN, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>7</td><td>subtotal Infinity</td><td class="valor">RangeError: subtotal debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [Infinity, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>8</td><td>cupon null</td><td class="valor">TypeError: cupon debe ser un objeto</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, null, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>8</td><td>cupon &quot;x&quot;</td><td class="valor">TypeError: cupon debe ser un objeto</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, &quot;x&quot;, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>8</td><td>valor de descuento &quot;10&quot;</td><td class="valor">TypeError: cupon.valor debe ser number</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: &quot;10&quot;, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>8</td><td>valor de descuento -1</td><td class="valor">RangeError: cupon.valor debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: -1, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>8</td><td>valor de descuento NaN</td><td class="valor">RangeError: cupon.valor debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: NaN, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>8</td><td>valor de descuento Infinity</td><td class="valor">RangeError: cupon.valor debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: Infinity, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>9</td><td>hoy &quot;2026-01-15&quot;</td><td class="valor">TypeError: hoy debe ser Date</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, &quot;2026-01-15&quot;]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>9</td><td>vencimiento &quot;2026-01-15&quot;</td><td class="valor">TypeError: cupon.vence debe ser Date</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: &quot;2026-01-15&quot; }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>9</td><td>hoy null</td><td class="valor">TypeError: hoy debe ser Date</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, null]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>9</td><td>vencimiento null</td><td class="valor">TypeError: cupon.vence debe ser Date</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: null }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>9</td><td>hoy Date inválida</td><td class="valor">RangeError: hoy es una Date inválida</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(NaN)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>9</td><td>vencimiento Date inválida</td><td class="valor">RangeError: cupon.vence es una Date inválida</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(NaN) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>10</td><td>Cupón congelado no se muta</td><td class="valor">90</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, Object.freeze({ &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 0.1, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }), new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>11</td><td>IVA después del descuento: 108.9, no 111</td><td class="valor">108.9</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 10, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>12</td><td>Cupón de porcentaje en el carrito</td><td class="valor">108.9</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 0.1, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>13</td><td>Monto fijo 500 deja el total en 0</td><td class="valor">0</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 500, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>14</td><td>Cupón vencido en el carrito</td><td class="valor">RangeError: cupon vencido</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-01-14T12:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>15</td><td>tasa -0.1</td><td class="valor">RangeError: tasa debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: -0.1 }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>15</td><td>tasa &quot;0.21&quot;</td><td class="valor">RangeError: tasa debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: &quot;0.21&quot; }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>15</td><td>tasa undefined</td><td class="valor">RangeError: tasa debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: undefined }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>15</td><td>tasa NaN</td><td class="valor">RangeError: tasa debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: NaN }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>15</td><td>tasa Infinity</td><td class="valor">RangeError: tasa debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: Infinity }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>16</td><td>lineas null</td><td class="valor">TypeError: lineas debe ser un array</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [null, { &quot;tasa&quot;: 0.21 }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>16</td><td>precioUnitario -5</td><td class="valor">RangeError: lineas[0].precioUnitario debe ser un número finito no negativo</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 1, &quot;precioUnitario&quot;: -5 }], { &quot;tasa&quot;: 0.21 }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>17</td><td>segundo argumento undefined</td><td class="valor">TypeError: el segundo argumento de totalCarrito debe ser un objeto</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], undefined]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>17</td><td>segundo argumento null</td><td class="valor">TypeError: el segundo argumento de totalCarrito debe ser un objeto</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], null]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>17</td><td>segundo argumento &quot;x&quot;</td><td class="valor">TypeError: el segundo argumento de totalCarrito debe ser un objeto</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], &quot;x&quot;]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>18</td><td>Líneas y opciones congeladas, con cupón</td><td class="valor">108.9</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [Object.freeze([Object.freeze({ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 })]), Object.freeze({ &quot;tasa&quot;: 0.21, &quot;cupon&quot;: Object.freeze({ &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 10, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }), &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) })]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>18</td><td>Líneas y opciones congeladas, sin cupón</td><td class="valor">121</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [Object.freeze([Object.freeze({ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 })]), Object.freeze({ &quot;tasa&quot;: 0.21 })]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>19</td><td>npm test termina en 0</td><td class="valor">RUN  v3.2.7 /home/renzo/IA_Factory_Test.fabrica/T1.2
+
+ ✓ tests/cupon.test.js (27 tests) 17ms
+ ✓ tests/precio.test.js (32 tests) 17ms
+
+ Test Files  2 passed (2)
+      Tests  59 passed (59)
+   Start at  06:07:45
+   Duration  584ms (transform 101ms, setup 0ms, collect 117ms, tests 34ms, environment 0ms, prepare 328ms)</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; npm test --silent</code></pre></details></td></tr><tr class="">
+    <td>19</td><td>Los tests existentes no pierden líneas</td><td class="valor">0</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; git diff tests/precio.test.js | grep -c '^-[^-]'</code></pre></details></td></tr><tr class="">
+    <td>20</td><td>src/ no lee reloj, red, disco ni entorno</td><td class="valor">sin salida</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; grep -nE &quot;Date\.now|new Date\(\s*\)|fetch|from \&quot;(node:)?(fs|http|https|net)\&quot;|process\.env&quot; src/cupon.js src/precio.js</code></pre></details></td></tr><tr class="">
+    <td>21</td><td>Exactamente 4 exportaciones</td><td class="valor">aplicarCupon subtotal totalCarrito totalConIva</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; grep -hoE &quot;^export function [a-zA-Z]+&quot; src/cupon.js src/precio.js | awk '{print $3}' | sort | tr '\n' ' '</code></pre></details></td></tr><tr class="">
+    <td>22</td><td>package.json y lockfile sin cambios</td><td class="valor">sin salida</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; git diff --exit-code package.json package-lock.json</code></pre></details></td></tr><tr class="">
+    <td>23</td><td>Porcentaje 1.5 se rechaza</td><td class="valor">RangeError: cupon.valor de un porcentaje no puede ser mayor que 1</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 1.5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>23</td><td>Porcentaje 1 deja 0</td><td class="valor">0</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 1, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>24</td><td>Tipo &quot;regalo&quot; se rechaza</td><td class="valor">RangeError: cupon.tipo debe ser &quot;porcentaje&quot; o &quot;monto&quot;</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;regalo&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, new Date(&quot;2026-01-15T12:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>25</td><td>Sirve el día que vence</td><td class="valor">95</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-01-15T10:00:00Z&quot;) }, new Date(&quot;2026-01-15T20:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>26</td><td>Días en UTC: 23:00 y 01:00 del día siguiente</td><td class="valor">RangeError: cupon vencido</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/cupon.js&quot;);
+const r = {};
+{ const a = [100, { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-01-15T23:00:00Z&quot;) }, new Date(&quot;2026-01-16T01:00:00Z&quot;)]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.aplicarCupon(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>27</td><td>Sin cupón equivale a totalConIva</td><td class="valor">121 · 121</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], 0.21]; const antes = JSON.stringify(a); try { r[&quot;a&quot;] = { valor: m0.totalConIva(...a) }; } catch (e) { r[&quot;a&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;a&quot;].mutado = JSON.stringify(a) !== antes; }
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21 }]; const antes = JSON.stringify(a); try { r[&quot;b&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;b&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;b&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>28</td><td>Con cupón exige hoy</td><td class="valor">TypeError: hoy debe ser Date</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 2, &quot;precioUnitario&quot;: 50 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;monto&quot;, &quot;valor&quot;: 5, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) } }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr><tr class="">
+    <td>29</td><td>IVA sobre el monto redondeado: 0.96, no 0.95</td><td class="valor">0.96</td><td><span class="bien">ejecutado</span></td>
+    <td><details><summary>Comando para repetirlo</summary><pre><code>cd /home/renzo/IA_Factory_Test.fabrica/T1.2 &amp;&amp; TZ=UTC node --input-type=module --eval 'const m0 = await import(&quot;./src/precio.js&quot;);
+const r = {};
+{ const a = [[{ &quot;cantidad&quot;: 1, &quot;precioUnitario&quot;: 1.05 }], { &quot;tasa&quot;: 0.21, &quot;cupon&quot;: { &quot;tipo&quot;: &quot;porcentaje&quot;, &quot;valor&quot;: 0.25, &quot;vence&quot;: new Date(&quot;2026-02-01T00:00:00Z&quot;) }, &quot;hoy&quot;: new Date(&quot;2026-01-15T12:00:00Z&quot;) }]; const antes = JSON.stringify(a); try { r[&quot;r&quot;] = { valor: m0.totalCarrito(...a) }; } catch (e) { r[&quot;r&quot;] = { error: e.name, mensaje: e.message }; } r[&quot;r&quot;].mutado = JSON.stringify(a) !== antes; }
+console.log(JSON.stringify(r, (k, v) =&gt; (typeof v === &quot;number&quot; &amp;&amp; !Number.isFinite(v) ? String(v) : v === undefined ? &quot;undefined&quot; : v)));'</code></pre></details></td></tr></tbody></table></div>
+<h2>Bugs sembrados</h2>
+<p class="sub">Cada bug se aplicó en una copia. M0 es el control: no debe detectarse nada.</p>
+<div class="tabla"><table><thead><tr><th>ID</th><th>Bug</th><th>Escenarios que lo detectan</th><th>Suite en Lima</th><th>Suite en UTC</th></tr></thead>
+<tbody><tr><td>M0</td><td>Control: copia sin cambios</td>
+  <td>0</td><td>No</td><td>No</td></tr><tr><td>M1</td><td>IVA antes del descuento</td>
+  <td>4</td><td>Sí</td><td>Sí</td></tr><tr><td>M2</td><td>Sin tope en 0</td>
+  <td>3</td><td>Sí</td><td>Sí</td></tr><tr><td>M3</td><td>El cupón no sirve el día que vence</td>
+  <td>3</td><td>Sí</td><td>Sí</td></tr><tr><td>M4</td><td>Compara por hora, no por día</td>
+  <td>2</td><td>Sí</td><td>Sí</td></tr><tr><td>M5</td><td>aplicarCupon no redondea</td>
+  <td>2</td><td>Sí</td><td>Sí</td></tr><tr><td>M6</td><td>Días en hora local, no en UTC</td>
+  <td>2</td><td>Sí</td><td>No</td></tr></tbody></table></div>
+<p class="sub">Código evaluado: <code>src/cupon.js</code> 71909c9522a670ed · <code>src/precio.js</code> 38d1223214c45d4a · <code>specs/T1.2.md</code> 3216eec4112bc857 · Node v24.14.0</p>
+</main></body></html>

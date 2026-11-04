@@ -1,0 +1,73 @@
+[
+  {
+    "id": "M0",
+    "titulo": "Control: copia sin cambios",
+    "escenariosQueLoDetectan": [],
+    "suiteLima": false,
+    "suiteUtc": false
+  },
+  {
+    "id": "M1",
+    "titulo": "IVA antes del descuento",
+    "escenariosQueLoDetectan": [
+      "e26",
+      "e40",
+      "e54",
+      "f2"
+    ],
+    "suiteLima": true,
+    "suiteUtc": true
+  },
+  {
+    "id": "M2",
+    "titulo": "Sin tope en 0",
+    "escenariosQueLoDetectan": [
+      "e04",
+      "e28",
+      "f3"
+    ],
+    "suiteLima": true,
+    "suiteUtc": true
+  },
+  {
+    "id": "M3",
+    "titulo": "El cupón no sirve el día que vence",
+    "escenariosQueLoDetectan": [
+      "e06",
+      "e07",
+      "e50"
+    ],
+    "suiteLima": true,
+    "suiteUtc": true
+  },
+  {
+    "id": "M4",
+    "titulo": "Compara por hora, no por día",
+    "escenariosQueLoDetectan": [
+      "e07",
+      "e50"
+    ],
+    "suiteLima": true,
+    "suiteUtc": true
+  },
+  {
+    "id": "M5",
+    "titulo": "aplicarCupon no redondea",
+    "escenariosQueLoDetectan": [
+      "e03",
+      "e54"
+    ],
+    "suiteLima": true,
+    "suiteUtc": true
+  },
+  {
+    "id": "M6",
+    "titulo": "Días en hora local, no en UTC",
+    "escenariosQueLoDetectan": [
+      "e50",
+      "e51"
+    ],
+    "suiteLima": true,
+    "suiteUtc": false
+  }
+]

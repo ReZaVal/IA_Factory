@@ -54,6 +54,12 @@ Dueño: `skills/ia-factory/SKILL.md`. Criterio de salida (`manager.md`).
 | ✅ T1.6 | Orquestador CLI: spec → construir → revisar (agentes amnésicos `claude -p`) | T1.3, T1.5 | 1 | `revision.md ## 3` | `scripts/fabrica/` | `fabrica TX.Y` corre el pipeline completo en un repo de prueba sin intervención hasta el veredicto |
 | ✅ T1.7 | Bucle de corrección (máx. 3 rondas) y escalamiento al humano | T1.6 | 1 | propuesta §5 Fase 5 | `scripts/fabrica/` | CAMBIOS REQUERIDOS reenvía al constructor; a la 3.ª falla deja informe para el humano |
 | ✅ T1.8 | Revisores sin API key: motor `agy` en `gemini.mjs`, UI en Claude, salida al usuario por cuota (`D13`) | T1.7 | 1 | `memoria.md D13`, `learn.md L8` | `gemini.mjs`, `fabrica.mjs`, `revisor-ui.md`, `revision.md ## 6`, `tests/` | Tests en verde + revisor real por `agy` en el repo de prueba |
+| ✅ T1.9 | Spike: escenarios reales de `T1.2` y flujo con valores obtenidos (`D14`) | T1.8 | 1 | spec de evidencia §7-§8 | `IA_Factory_Test`, informe en `docs/` | Los casos corren contra el código real; mecanismo para llamar al código decidido |
+| ⬜ T1.10 | Contrato común de informe y `evidencia.mjs` | T1.9 | 1 | spec de evidencia §4-§6 | `_formato.md`, `evidencia.mjs`, plantilla de spec, `spec.mjs`, `tests/` | Informe sin las 4 secciones o con ruta inexistente → rechazado; «Inferencia a confirmar» bloquea |
+| ⬜ T1.11 | `prueba.mjs` y agente probador | T1.10 | 1 | spec de evidencia §5, §7 | `prueba.mjs`, `probador.md`, `fabrica.mjs`, `tests/` | Bug sembrado → matriz con test fallando y la tarea no aprueba; cierra `L7` |
+| ⬜ T1.12 | Página de evidencia del grupo | T1.11 | 1 | spec de evidencia §8-§9, `P8` | `fabrica.mjs`, generador de la página, `tests/` | `T1.2` rehecha: abre sin red, valores obtenidos, tope en `0` en ámbar arriba |
+| ⬜ T1.13 | Modo grupo y parada | T1.12 | 1 | spec de evidencia §10 | `fabrica.mjs`, `planner.md` (plantilla, «Grupos»), `revision.md`, `tests/` | Grupo de dos tareas: se detiene una vez y solo entonces propone commits |
+| ⬜ T1.14 | Roles de seguridad y UI con su evidencia | T1.13 | 1 | spec de evidencia §5, `P7` | roles, `revisor-ui.md`, `tests/` | Informe de seguridad sin lista de lo probado → rechazado |
 
 **Riesgo de la fase:** `claude -p` en modo no interactivo puede no tener los
 mismos permisos/herramientas que la sesión principal; si bloquea, el
@@ -62,7 +68,7 @@ orquestador sigue siendo la sesión principal y `T1.6` se redefine.
 ### Fase 2 — Gatekeeper determinista y auto-merge ⬜
 | ID | Tarea | Dep. | Ses. | Criterio de salida |
 |---|---|---|---|---|
-| 🔒 ⬜ T2.1 | Formato de dictamen (JSON) + auto-merge como opt-in por proyecto + si hay log de despliegues (`D8`) | T1.7 | 1 | `Dn`; esquema en `memoria.md §4` |
+| 🔒 ⬜ T2.1 | Formato de dictamen (JSON) + auto-merge como opt-in por proyecto + si hay log de despliegues (`D8`) | T1.14 | 1 | `Dn`; esquema en `memoria.md §4` |
 | ⬜ T2.2 | Revisores y approver emiten JSON validado contra el esquema | T2.1 | 1 | Tests de esquema |
 | ⬜ T2.3 | Script gatekeeper: 4/4 + tests en verde, sin confiar en el agente (`H6`) | T2.2 | 1 | Rechaza dictámenes faltantes, alterados o con tests rojos |
 | ⬜ T2.4 | Radio de impacto por carril (rutas de núcleo) | T2.3 | 1 | Clasifica cambios de prueba en bajo / núcleo |
@@ -119,7 +125,7 @@ hosting. 5 sesiones estimadas.
 | 18-22 | 2027-03-08 → 2027-04-05 | 4 | 🏁 carril investigación |
 | 23-27 | 2027-04-12 → 2027-05-10 | 5 | 🏁 carril multimedia |
 
-**Ruta crítica:** `T1.1 → T1.2 → T1.3 → T1.6 → T1.7 → T2.1 → … → T2.6`.
+**Ruta crítica:** `T1.1 → T1.2 → T1.3 → T1.6 → T1.7 → T1.9 → … → T1.14 → T2.1 → … → T2.6`.
 **Dónde se puede romper:** (1) `claude -p` sin permisos suficientes (riesgo de
 Fase 1); (2) `P2` sin plan de pago → el auto-merge seguro no es posible en
 repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
@@ -139,6 +145,7 @@ repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
 | S-09 | 2026-11-03 | `L5` | ✅ | `gemini.mjs`: `clasificarError` + `pedirConReintentos` (3 reintentos con backoff y jitter o la espera de `RetryInfo` en 503 y 429 por minuto; fallo inmediato con qué hacer en `limit: 0`, cuota diaria, 404 o espera > 90 s). `revision.md` ya no asume Pro. Comparados Gemini y OpenAI: `D6` y `D12` sin cambios; el modelo se elige con `T2.7` | **T1.2 — corrida real SDD** para cerrar la Fase 1 |
 | S-10 | 2026-11-03 | T1.8 | ✅ | `D13`: sin API keys; Gemini vía `agy` en `plan`, UI en Claude (`revisor-ui`), cuota → usuario. 143 tests en verde; Seguridad, Lógica y spec probados con `agy` real en un clon; `revisor-ui` y la corrida completa sin probar en real. `L8` resuelto, `P6` abierta | **Corrida real completa con `agy`** para cerrar la Fase 1 |
 | S-11 | 2026-11-03 | corrida real `T1.2` | ✅ | `fabrica T1.2` en `IA_Factory_Test` con `agy` (Argon): spec reutilizada → auditoría → constructor → vía SDD → Seguridad + Lógica + Código → aprobador: **APROBADO en la ronda 1**, 59/59 tests, 6 min 17 s, US$ 1,74 de Claude, sin intervención. No ejercitado en real: planificador, bucle de correcciones (rondas 2-3), `revisor-ui` y la cuota de `agy` | Confirmar el cierre de la Fase 1; luego **T2.1** (🔒) |
+| S-12 | 2026-11-04 | T1.9 | ✅ | Spec de evidencia aprobada (`D14`), `T1.9`-`T1.14` en el backlog. Spike en `docs/superpowers/spikes/T1.9/`: 58/58 escenarios contra el código real de `T1.2`, 29/29 criterios ejecutados, 3 zonas horarias, 6/6 bugs sembrados detectados; mecanismo `node --eval` por escenario. Destapó `L9` (suite ciega al bug de zona horaria en UTC). `P9` cerrada (tope en `0`, `D5` del repo de prueba); `P7` y `P8` abiertas | **T1.10 — Contrato común y `evidencia.mjs`** |
 
 ## 7. Cómo se mantiene vivo
 Al cerrar tarea: ✅ + fila en §6. Al cerrar fase: recalcular §2 y §5, colapsar
