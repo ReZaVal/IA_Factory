@@ -17,5 +17,20 @@ Severidades:
 
 Si no hay hallazgos, deja la tabla con una fila `| — | — | — | Sin hallazgos | — |`.
 
+## Qué verifiqué
+Lista de comprobaciones, cada una con cómo la hiciste (comando, caso ejecutado, línea leída).
+«Todo» o una sección vacía se rechaza.
+
+## Evidencia
+Ruta de un archivo de `evidencia/` (entre comillas invertidas) o la salida literal en un bloque de código.
+Citar un archivo que no existe se rechaza. Aquí no pegues conclusiones: solo lo que se puede ver o repetir.
+
+## Qué supuse
+Cada decisión que tomaste sin que la spec, una `Dn` de `memoria.md` o el backlog la respalde, con las opciones
+que descartaste. Escribe «Ninguno» solo si de verdad no supusiste nada.
+
+## Qué no pude verificar
+Lo que leíste sin ejecutar y lo que no se pudo comprobar con el material recibido (o «Nada»).
+
 ## Preguntas
-Lo que no pudiste verificar con el material recibido (o "Ninguna").
+Lo que necesitas que decida una persona (o "Ninguna").

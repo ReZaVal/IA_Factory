@@ -175,8 +175,12 @@ worktree y relanza con `--solo-revision --url <url>`) · `1` error.
 <qué se crea / toca>
 
 ## Criterios de aceptación
-1. <verificable> → test `<archivo>`: <nombre del caso>
+1. <verificable> → test `<archivo>`: <nombre del caso> · Ejemplo: `<llamada literal>` → `<valor esperado>`
 2. <verificable en UI> → captura / comprobación
+
+## Supuestos
+<cada decisión que no está en una `Dn` ni en el backlog, con sus opciones; "Ninguno" si no hay.
+Una inferencia sin respaldo no va en «Riesgos»: es pregunta abierta.>
 
 ## Riesgos y migración
 <estado guardado, compatibilidad, datos personales; "ninguno" si no aplica>

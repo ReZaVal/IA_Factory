@@ -6,7 +6,8 @@ const SECCIONES = ["Objetivo", "Alcance", "Archivos", "Criterios de aceptación"
 // Palabras que no se pueden verificar con un test: si aparecen en un criterio o
 // en el alcance, el criterio es ambiguo.
 const VAGOS = /\b(etc\.?|adecuad\w*|apropiad\w*|rápid\w*|intuitiv\w*|robust\w*|fácil\w*|amigable\w*|optimizad\w*|según corresponda|lo necesario|si aplica)(?=\W|$)/gi;
-const SIN_PREGUNTAS = /^(ninguna|ninguno|—|-|n\/a)?\.?$/i;
+const INFERENCIA = /inferencia\s+a\s+confirmar/i;
+const SIN_PREGUNTAS =/^(ninguna|ninguno|—|-|n\/a)?\.?$/i;
 
 /** @typedef {{ severidad: "HIGH" | "MEDIUM", seccion: string, hallazgo: string }} Chequeo */
 
@@ -45,7 +46,7 @@ export function tocarDeFila(planner, tarea) {
 }
 
 /** @param {string} spec @param {string} nombre */
-function seccion(spec, nombre) {
+export function seccion(spec, nombre) {
   const m = spec.match(new RegExp(`^##\\s+${escapar(nombre)}\\s*$([\\s\\S]*?)(?=^##\\s|(?![\\s\\S]))`, "m"));
   return m ? m[1].replace(/<!--[\s\S]*?-->/g, "").trim() : null;
 }
@@ -99,6 +100,11 @@ export function precheckSpec({ spec, planner, tarea }) {
   } else {
     const extra = archivosDeSpec(spec).filter((r) => !cubierta(r, tocar));
     if (extra.length) chequeos.push({ severidad: "HIGH", seccion: "Archivos", hallazgo: `Alcance extra: ${extra.map((r) => `\`${r}\``).join(", ")} no está en «Tocar» del backlog (${tocar.map((r) => `\`${r}\``).join(", ") || "vacío"})` });
+  }
+
+  // Una inferencia no es una nota de riesgo: si no tiene Dn, es pregunta abierta (spec de evidencia §6).
+  if (INFERENCIA.test(spec.replace(/<!--[\s\S]*?-->/g, ""))) {
+    chequeos.push({ severidad: "HIGH", seccion: "Supuestos", hallazgo: "La spec declara una «Inferencia a confirmar»: es bloqueante; resuélvela con el usuario o regístrala como Dn antes de construir" });
   }
 
   const preguntas = seccion(spec, "Preguntas abiertas");

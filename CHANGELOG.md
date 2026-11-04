@@ -1,6 +1,14 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Contrato común de informe (`D14`, `T1.10`): `_formato.md` añade las secciones
+  «Qué verifiqué», «Evidencia», «Qué supuse» y «Qué no pude verificar», y el
+  nuevo `scripts/revision/evidencia.mjs` (sin modelo) rechaza un informe sin
+  ellas, con «todo» sin lista, con rutas de evidencia inexistentes o con
+  «Ninguno» en supuestos cuando la spec los declara. `spec.mjs` trata una
+  «Inferencia a confirmar» como HIGH. La plantilla de spec suma «Supuestos» y
+  un ejemplo ejecutable por criterio. Aún no está enchufado en `fabrica.mjs`
+  ni en `gemini.mjs` (`T1.11`).
 - Revisores sin API key (`D13` de IA Factory): `gemini.mjs` usa por defecto
   `agy` (Antigravity CLI) con la cuenta personal, `AGY_MODEL` por defecto
   `gemini-4-argon-medium`, en `--mode plan`, desde una carpeta temporal y con
