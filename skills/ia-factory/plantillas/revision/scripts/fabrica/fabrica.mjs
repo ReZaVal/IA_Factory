@@ -13,6 +13,12 @@
 // llamar a los revisores (D14). UI lo revisa el agente Claude `revisor-ui`,
 // que lee las capturas (D13). Si se agota una cuota, sale al usuario con cómo relanzar.
 // Uso: node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url URL] [--solo-revision] [--reiniciar-rondas]
+//      node scripts/fabrica/fabrica.mjs grupo GN [--carril software] [--url URL] [--solo-revision] [--desde TX.Y]
+//      node scripts/fabrica/fabrica.mjs grupo GN --proponer
+// Modo grupo (D14, spec de evidencia §10): las tareas de «Grupos» (planner.md) corren en orden en un
+// mismo worktree, cada una con su ciclo; se detiene una sola vez (grupo terminado, supuesto
+// bloqueante sin confirmar, cuota u otra tarea sin aprobar). Tras el visto bueno, --proponer
+// registra la evidencia en docs/evidencia/ (D15) y redacta los commits, sin ejecutarlos.
 // Salida: 0 APROBADO · 2 CAMBIOS REQUERIDOS · 3 BLOQUEADO o hace falta el usuario · 1 error.
 import { readFile, writeFile, mkdir, copyFile, rename, rm, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -21,7 +27,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDotenv } from "../revision/gemini.mjs";
 import { precheckSpec } from "../revision/spec.mjs";
-import { generarPagina } from "../revision/pagina.mjs";
+import { generarPagina, registrarEvidencia } from "../revision/pagina.mjs";
+import {
+  parseGrupos, problemasDeGrupo, tituloDeTarea, confirmacionesDe, supuestosPendientes,
+  archivosNuevos, rutasDeStatus, propuestaDeCommits, parseArgsGrupo
+} from "./grupo.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // Rondas planificador ↔ auditor antes de llevar la spec al usuario (memoria P5 de IA Factory, provisional).
@@ -38,6 +48,7 @@ const REQUERIDOS = [
   "scripts/revision/via.mjs",
   "scripts/revision/prueba.mjs",
   "scripts/revision/pagina.mjs",
+  "scripts/fabrica/grupo.mjs",
   ...["planificador", "constructor", "probador", "revisor-codigo", "aprobador"].map((a) => `.claude/agents/${a}.md`)
 ];
 const CAPTURAS = ["360-claro", "360-oscuro", "1280-claro", "1280-oscuro"];
@@ -162,11 +173,11 @@ function correr(cmd, args, { cwd, entrada = "" }) {
 const leer = (ruta) => (existsSync(ruta) ? readFile(ruta, "utf8") : Promise.resolve(""));
 
 /** Contexto de una corrida: worktree, configuración y bitácora de pasos. */
-function crearCtx({ tarea, carril, url }, cfg, wt) {
+function crearCtx({ tarea, carril, url, grupo = "" }, cfg, wt) {
   const pasos = [];
   const rondas = [];
   return {
-    tarea, carril, url, cfg, wt,
+    tarea, carril, url, grupo, cfg, wt,
     rel: (archivo) => path.join(wt, ".revision", tarea, archivo),
     paso: (nombre, resultado, costo = 0) => {
       pasos.push({ nombre, resultado, costo });
@@ -181,7 +192,7 @@ function crearCtx({ tarea, carril, url }, cfg, wt) {
 /** Falla de un rol; si fue cuota, va al usuario con cómo seguir (D13). */
 function falloDe(ctx, rol, mensaje) {
   if (!CUOTA.test(mensaje)) return new Error(mensaje);
-  const relanzar = `fabrica ${ctx.tarea}${ANTES_DE_REVISAR.includes(rol) ? "" : " --solo-revision"}`;
+  const relanzar = `fabrica ${ctx.grupo ? `grupo ${ctx.grupo}` : ctx.tarea}${ANTES_DE_REVISAR.includes(rol) ? "" : " --solo-revision"}`;
   return Object.assign(new Error(`cuota o límite agotado en ${rol}: espera a que se reinicie y relanza con \`${relanzar}\`. ${mensaje}`), { usuario: true });
 }
 
@@ -240,12 +251,18 @@ async function revisar(ctx, revisores) {
   }
 }
 
-async function prepararWorktree(tarea) {
+/** Crea (o reutiliza) el worktree de la tarea y comprueba que la fábrica viaja en él. */
+async function crearWorktree(tarea) {
   const r = await correr(path.join(ROOT, "scripts/fabrica/worktree.sh"), ["crear", tarea], { cwd: ROOT });
   if (r.codigo !== 0) throw new Error(r.error.trim());
   const wt = r.salida.trim().split("\n").at(-1);
   const faltan = REQUERIDOS.filter((f) => !existsSync(path.join(wt, f)));
   if (faltan.length) throw new Error(`el worktree sale de HEAD y le falta: ${faltan.join(", ")}. Commitea la fábrica y el plan antes de correrla`);
+  return wt;
+}
+
+/** Deja listo `.revision/TX.Y/` y la spec de la tarea dentro del worktree `wt`. */
+async function prepararTarea(tarea, wt) {
   // La spec escrita en el repo principal sin commitear también vale (T1.5).
   const spec = `specs/${tarea}.md`;
   if (existsSync(path.join(ROOT, spec)) && !existsSync(path.join(wt, spec))) {
@@ -253,7 +270,6 @@ async function prepararWorktree(tarea) {
     await copyFile(path.join(ROOT, spec), path.join(wt, spec));
   }
   await mkdir(path.join(wt, ".revision", tarea), { recursive: true });
-  return wt;
 }
 
 /** Veredicto determinista cuando la evidencia ejecutada falla: no hace falta un modelo para saberlo. */
@@ -382,10 +398,8 @@ function informeFabrica(ctx, { resultado, motivo, escalar }, ultimoVeredicto, pa
   ].join("\n");
 }
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const cfg = configFabrica(process.env, await leer(path.join(ROOT, ".env.local")));
-  const ctx = crearCtx(args, cfg, await prepararWorktree(args.tarea));
+/** Una tarea de punta a punta: pipeline, página de evidencia y `fabrica.md`. */
+async function correrTarea(ctx, args) {
   let fin;
   try {
     fin = await correrPipeline(ctx, args);
@@ -395,12 +409,151 @@ async function main() {
   const ultimo = fin.escalar ? await leer(ctx.rel("veredicto.md")) : "";
   const pagina = paginaEvidencia(ctx);
   await writeFile(ctx.rel("fabrica.md"), `${informeFabrica(ctx, fin, ultimo, pagina)}\n`);
+  return fin;
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const cfg = configFabrica(process.env, await leer(path.join(ROOT, ".env.local")));
+  const wt = await crearWorktree(args.tarea);
+  await prepararTarea(args.tarea, wt);
+  const ctx = crearCtx(args, cfg, wt);
+  const fin = await correrTarea(ctx, args);
   process.stdout.write(`${args.tarea}: ${fin.resultado} — ${fin.motivo}\n  → ${ctx.rel("fabrica.md")}\n`);
   process.exitCode = SALIDA[fin.resultado];
 }
 
+// --- Modo grupo ---------------------------------------------------------------
+
+const rutaGrupo = (wt, grupo, archivo) => path.join(wt, ".revision", grupo, archivo);
+
+async function leerEstado(wt, grupo) {
+  const texto = await leer(rutaGrupo(wt, grupo, "grupo.json"));
+  return texto ? JSON.parse(texto) : { tareas: {} };
+}
+
+async function guardarEstado(wt, grupo, estado) {
+  await mkdir(path.dirname(rutaGrupo(wt, grupo, "grupo.json")), { recursive: true });
+  await writeFile(rutaGrupo(wt, grupo, "grupo.json"), `${JSON.stringify(estado, null, 2)}\n`);
+}
+
+/** Archivos con cambios sin commitear en el worktree (`.revision/` está ignorada). */
+async function archivosSucios(wt) {
+  const r = await correr("git", ["status", "--porcelain", "-z", "--untracked-files=all"], { cwd: wt });
+  if (r.codigo !== 0) throw new Error(`git status falló: ${r.error.trim()}`);
+  return rutasDeStatus(r.salida);
+}
+
+const escenariosDe = async (wt, tarea) => {
+  const texto = await leer(path.join(wt, ".revision", tarea, "evidencia", "escenarios.json"));
+  return texto ? JSON.parse(texto) : {};
+};
+
+/** Lo que queda por confirmar en las tareas aprobadas, por orden de tarea. */
+async function pendientesDeTarea(wt, tarea, memoria) {
+  return supuestosPendientes(await escenariosDe(wt, tarea), confirmacionesDe(memoria), tarea);
+}
+
+/** Corre las tareas que faltan, en orden; devuelve por qué se detuvo. */
+async function correrGrupo(args, cfg, { tareas, wt, memoria }) {
+  const estado = await leerEstado(wt, args.grupo);
+  if (args.desde) {
+    if (!tareas.includes(args.desde)) throw new Error(`${args.desde} no está en ${args.grupo} (${tareas.join(", ")})`);
+    for (const t of tareas.slice(tareas.indexOf(args.desde))) if (estado.tareas[t]) estado.tareas[t] = { ...estado.tareas[t], estado: "pendiente", archivos: [] };
+  }
+  let primera = true;
+  for (const tarea of tareas) {
+    if (estado.tareas[tarea]?.estado !== "APROBADO") {
+      const previas = estado.tareas[tarea]?.previas ?? (await archivosSucios(wt));
+      estado.tareas[tarea] = { estado: "en curso", previas, archivos: [] };
+      await guardarEstado(wt, args.grupo, estado);
+      await prepararTarea(tarea, wt);
+      const ctx = crearCtx({ tarea, carril: args.carril, url: args.url, grupo: args.grupo }, cfg, wt);
+      const fin = await correrTarea(ctx, { soloRevision: primera && args.soloRevision, reiniciarRondas: tarea === args.desde });
+      primera = false;
+      const aprobada = fin.resultado === "APROBADO";
+      const archivos = aprobada ? archivosNuevos(await archivosSucios(wt), previas) : [];
+      estado.tareas[tarea] = { estado: aprobada ? "APROBADO" : fin.resultado, previas, archivos };
+      await guardarEstado(wt, args.grupo, estado);
+      if (!aprobada) return { ...fin, tarea };
+    }
+    const pendientes = await pendientesDeTarea(wt, tarea, memoria);
+    if (pendientes.length) {
+      const ids = pendientes.map((s) => `${tarea}/${s.id}`).join(", ");
+      return { resultado: "usuario", motivo: `${tarea} necesita tu OK antes de seguir: ${ids}. Decide, regístralo como \`Dn\` en memoria.md citando ${ids.split(", ")[0]} y relanza; si lo rechazas, ajusta la spec y relanza con --desde ${tarea}` };
+    }
+  }
+  return { resultado: "usuario", motivo: `grupo terminado (${tareas.join(", ")}): revisa la evidencia y, si das el visto bueno, corre \`fabrica grupo ${args.grupo} --proponer\``, terminado: true };
+}
+
+/** La página del grupo reúne las tareas que ya tienen evidencia, con los supuestos confirmados marcados. */
+function paginaGrupo(wt, grupo, tareas, memoria) {
+  const conEvidencia = tareas.filter((t) => existsSync(path.join(wt, ".revision", t, "evidencia", "resultados.json")));
+  if (!conEvidencia.length) return "";
+  try {
+    return path.relative(wt, generarPagina({ raiz: wt, id: grupo, tareas: conEvidencia, confirmados: confirmacionesDe(memoria) }));
+  } catch (err) {
+    process.stderr.write(`  · página del grupo: no se pudo generar: ${err.message}\n`);
+    return "";
+  }
+}
+
+function informeGrupo(args, tareas, estado, fin, pagina, wt) {
+  return [
+    `# Grupo ${args.grupo}: ${fin.terminado ? "terminado" : fin.resultado}`,
+    `- Worktree: \`${wt}\` · carril: ${args.carril}`,
+    `- Necesita al usuario: ${fin.motivo}`,
+    ...(pagina ? [`- Evidencia para ti: \`${pagina}\` (ábrela en el navegador; abre sin red)`] : []),
+    "",
+    "| Tarea | Estado | Archivos |",
+    "|---|---|---|",
+    ...tareas.map((t) => `| ${t} | ${estado.tareas[t]?.estado ?? "pendiente"} | ${(estado.tareas[t]?.archivos ?? []).length} |`)
+  ].join("\n");
+}
+
+/** Tras el visto bueno: evidencia al repo (D15) y commits propuestos, no ejecutados. */
+async function proponerGrupo(args, { tareas, wt, memoria, planner }) {
+  const estado = await leerEstado(wt, args.grupo);
+  const sinAprobar = tareas.filter((t) => estado.tareas[t]?.estado !== "APROBADO");
+  if (sinAprobar.length) throw new Error(`faltan por aprobar: ${sinAprobar.join(", ")}; corre \`fabrica grupo ${args.grupo}\``);
+  for (const t of tareas) {
+    const pendientes = await pendientesDeTarea(wt, t, memoria);
+    if (pendientes.length) throw new Error(`${t} tiene supuestos sin confirmar: ${pendientes.map((s) => s.id).join(", ")}`);
+  }
+  const registro = path.relative(wt, registrarEvidencia({ raiz: wt, id: args.grupo, tareas, confirmados: confirmacionesDe(memoria) }));
+  const propuesta = propuestaDeCommits({
+    wt, rama: `fabrica/${tareas[0]}`, grupo: args.grupo, registro,
+    tareas: tareas.map((tarea) => ({ tarea, titulo: tituloDeTarea(planner, tarea), archivos: estado.tareas[tarea].archivos }))
+  });
+  await writeFile(rutaGrupo(wt, args.grupo, "commits.md"), `${propuesta}\n`);
+  return propuesta;
+}
+
+async function mainGrupo(argv) {
+  const args = parseArgsGrupo(argv);
+  const cfg = configFabrica(process.env, await leer(path.join(ROOT, ".env.local")));
+  const planner = await leer(path.join(ROOT, "planner.md"));
+  const tareas = parseGrupos(planner)[args.grupo] ?? [];
+  const problemas = problemasDeGrupo(planner, args.grupo, tareas);
+  if (problemas.length) throw new Error(`grupo ${args.grupo}:\n- ${problemas.join("\n- ")}`);
+  const contexto = { tareas, wt: await crearWorktree(tareas[0]), memoria: await leer(path.join(ROOT, "memoria.md")), planner };
+  if (args.proponer) {
+    process.stdout.write(`${await proponerGrupo(args, contexto)}\n  → ${rutaGrupo(contexto.wt, args.grupo, "commits.md")}\n`);
+    return;
+  }
+  const fin = await correrGrupo(args, cfg, contexto);
+  const pagina = paginaGrupo(contexto.wt, args.grupo, tareas, contexto.memoria);
+  const informe = informeGrupo(args, tareas, await leerEstado(contexto.wt, args.grupo), fin, pagina, contexto.wt);
+  await mkdir(path.dirname(rutaGrupo(contexto.wt, args.grupo, "fabrica.md")), { recursive: true });
+  await writeFile(rutaGrupo(contexto.wt, args.grupo, "fabrica.md"), `${informe}\n`);
+  const donde = fin.tarea ? `${fin.tarea}: ` : "";
+  process.stdout.write(`${args.grupo}: ${donde}${fin.terminado ? "terminado" : fin.resultado} — ${fin.motivo}\n  → ${rutaGrupo(contexto.wt, args.grupo, "fabrica.md")}\n`);
+  process.exitCode = SALIDA[fin.resultado];
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main().catch((err) => {
+  const [modo, ...resto] = process.argv.slice(2);
+  (modo === "grupo" ? mainGrupo(resto) : main()).catch((err) => {
     process.stderr.write(`Error: ${err.message}\n`);
     process.exit(1);
   });

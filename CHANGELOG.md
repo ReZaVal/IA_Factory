@@ -1,6 +1,15 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Modo grupo y parada (`D14`/`D15`, `T1.13`): `fabrica grupo GN` corre en orden
+  las tareas de la tabla «Grupos» de `planner.md` en un mismo worktree (nuevo
+  `scripts/fabrica/grupo.mjs`: sin modelo ni git) y se detiene una sola vez: grupo
+  terminado, supuesto bloqueante sin confirmar (una `Dn` de `memoria.md` que cita
+  `TX.Y/sN` lo confirma al relanzar; `--desde TX.Y` rehace desde una tarea) o una
+  tarea sin aprobar. Deja la página del grupo; `--proponer` registra la evidencia
+  en `docs/evidencia/GN/` y redacta un commit por tarea sin ejecutarlo. Rechaza
+  un grupo cuya orden contradice la columna «Dep.». `pagina.mjs` marca como
+  confirmados los supuestos con `Dn` sin tocar los archivos hasheados.
 - Página de evidencia (`D14`/`D15`, `T1.12`): el nuevo `scripts/revision/pagina.mjs`
   (sin modelo) arma `.revision/<id>/evidencia.html` desde `evidencia/`: un solo
   archivo, sin scripts ni recursos externos, con «Necesita tu OK» arriba (los

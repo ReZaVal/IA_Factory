@@ -49,7 +49,10 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 - **Página de evidencia (S-15):** `T1.12` ✅: `pagina.mjs` genera
   `evidencia.html` desde `evidencia/` (supuestos arriba en ámbar, sin red);
   `fabrica.mjs` la deja y la enlaza; `D15`: se registra en `docs/evidencia/`.
-- **Próximos pasos:** `T1.13`-`T1.14`; `P6` antes de enviar
+- **Modo grupo (S-16):** `T1.13` ✅: `fabrica grupo GN` (tabla «Grupos» de
+  `planner.md`); se detiene una vez; `--proponer` registra la evidencia y redacta
+  los commits. Probado con agentes simulados, sin grupo real.
+- **Próximos pasos:** `T1.14`; `P6` antes de enviar
   código de clientes; luego `T2.1` (🔒). El usuario no ha confirmado el cierre
   de la Fase 1.
 
@@ -94,7 +97,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.12` ✅, `T1.13`-`T1.14` ⬜ (`D14`) |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.13` ✅, `T1.14` ⬜ (`D14`) |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |

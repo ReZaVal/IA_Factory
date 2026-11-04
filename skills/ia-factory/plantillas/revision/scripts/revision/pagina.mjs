@@ -152,11 +152,22 @@ ${tareas.map(seccionTarea).join("\n")}
 `;
 }
 
+/**
+ * `confirmados` ("TX.Y/sN" → "Dn"): supuestos que el dueño ya registró en memoria.md; se
+ * marcan confirmados en la página sin tocar los archivos hasheados de evidencia/.
+ * @param {string} raiz @param {string[]} tareas @param {Record<string, string>} [confirmados]
+ */
+const datosConfirmados = (raiz, tareas, confirmados = {}) => tareas.map((tarea) => {
+  const d = datosDeTarea(raiz, tarea);
+  const supuestos = d.supuestos.map((s) => (confirmados[`${tarea}/${s.id}`] && !s.confirmado ? { ...s, confirmado: `registrado en ${confirmados[`${tarea}/${s.id}`]}` } : s));
+  return { ...d, supuestos };
+});
+
 /** Escribe .revision/<id>/evidencia.html. @returns {string} ruta */
-export function generarPagina({ raiz, id, tareas }) {
+export function generarPagina({ raiz, id, tareas, confirmados }) {
   const salida = path.join(raiz, ".revision", id, "evidencia.html");
   mkdirSync(path.dirname(salida), { recursive: true });
-  writeFileSync(salida, paginaHtml({ id, tareas: tareas.map((t) => datosDeTarea(raiz, t)) }));
+  writeFileSync(salida, paginaHtml({ id, tareas: datosConfirmados(raiz, tareas, confirmados) }));
   return salida;
 }
 
@@ -164,10 +175,10 @@ export function generarPagina({ raiz, id, tareas }) {
  * D15: copia página y evidencia/ a docs/evidencia/<id>/, que git no ignora. Se niega si algo
  * cambió desde que prueba.mjs lo generó. @returns {string} carpeta del registro
  */
-export function registrarEvidencia({ raiz, id, tareas }) {
+export function registrarEvidencia({ raiz, id, tareas, confirmados }) {
   const alteradas = tareas.flatMap((t) => datosDeTarea(raiz, t).alterada.map((a) => `${t}/${a}`));
   if (alteradas.length) throw new Error(`evidencia alterada, no la registro: ${alteradas.join(", ")}`);
-  const pagina = generarPagina({ raiz, id, tareas });
+  const pagina = generarPagina({ raiz, id, tareas, confirmados });
   const destino = path.join(raiz, REGISTRO, id);
   rmSync(destino, { recursive: true, force: true });
   mkdirSync(destino, { recursive: true });

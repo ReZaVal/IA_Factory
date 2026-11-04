@@ -36,6 +36,7 @@ const NUEVOS_1_1 = [
   ".claude/agents/revisor-ui.md",
   "constitucion-software.md",
   "scripts/fabrica/fabrica.mjs",
+  "scripts/fabrica/grupo.mjs",
   "scripts/fabrica/worktree.sh",
   "scripts/revision/evidencia.mjs",
   "scripts/revision/pagina.mjs",

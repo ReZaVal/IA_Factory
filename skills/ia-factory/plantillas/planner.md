@@ -85,6 +85,15 @@ Dueño: `<doc>`. Criterio de salida: <condición>.
 |---|---|---|---|---|
 | ⬜ T<N+1>.1 | <tarea> | T<N>.2 | 1 | <condición objetiva> |
 
+### Grupos
+Tareas que se revisan y aprueban juntas (`fabrica grupo GN`). El orden es el de
+ejecución y debe respetar la columna «Dep.»; la fábrica rechaza un grupo que
+ejecute una tarea antes que su dependencia.
+
+| Grupo | Tareas (en orden) |
+|---|---|
+| G<n> | T<N>.1, T<N>.2 |
+
 ## 5. Cronograma referencial
 | Semanas | Ventana | Fase | Tareas previstas | Hito |
 |---|---|---|---|---|

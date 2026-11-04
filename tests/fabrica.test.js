@@ -6,6 +6,9 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, cpSync, m
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
+  parseGrupos, problemasDeGrupo, confirmacionesDe, supuestosPendientes, rutasDeStatus, propuestaDeCommits, parseArgsGrupo, archivosNuevos, tituloDeTarea
+} from "../skills/ia-factory/plantillas/revision/scripts/fabrica/grupo.mjs";
+import {
   parseArgs, configFabrica, argsClaude, resultadoClaude, conBloqueantes, veredictoDe, revisoresDeVia, informeUiNoAplica, SALIDA, RONDAS_SPEC, RONDAS_REVISION, PROMPTS
 } from "../skills/ia-factory/plantillas/revision/scripts/fabrica/fabrica.mjs";
 
@@ -136,16 +139,20 @@ const agente = process.argv[process.argv.indexOf("--agent") + 1];
 const prompt = fs.readFileSync(0, "utf8");
 fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ agente, args: process.argv.slice(2), prompt, cwd: process.cwd() }) + "\\n");
 const escribir = (f, t) => { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, t); };
-const t = "T9.1";
-if (agente === "planificador" && process.env.FAKE_SPEC !== "-") escribir("specs/T9.1.md", process.env.FAKE_SPEC);
+const t = (prompt.match(/T\\d+\\.\\d+/) || ["T9.1"])[0];
+const env = (nombre) => process.env[nombre + "_" + t.replace(".", "_")] || process.env[nombre];
+if (agente === "planificador" && process.env.FAKE_SPEC !== "-") escribir("specs/" + t + ".md", process.env.FAKE_SPEC);
 const correcciones = prompt.match(/\\.revision\\/\\S+\\/correcciones\\.md/);
 if (agente === "constructor" && correcciones) escribir(correcciones[0], "| # | Corregido |\\n");
 else if (agente === "constructor") {
-  for (const f of (process.env.FAKE_CODIGO || "src/suma.js").split(",")) escribir(f, "export const suma = (a, b) => a + b;\\n");
-  escribir("tests/suma.test.js", 'import assert from "node:assert";\\nimport { suma } from "../src/suma.js";\\nassert.equal(suma(2, 3), 5);\\n');
+  const nombre = t === "T9.2" ? "resta" : "suma";
+  for (const f of (env("FAKE_CODIGO") || "src/" + nombre + ".js").split(",")) escribir(f, "export const " + nombre + " = (a, b) => a " + (nombre === "resta" ? "-" : "+") + " b;\\n");
+  escribir("tests/" + nombre + ".test.js", 'import assert from "node:assert";\\nimport { ' + nombre + ' } from "../src/' + nombre + '.js";\\nassert.equal(' + nombre + "(5, 3), " + (nombre === "resta" ? 2 : 8) + ");\\n");
 }
 if (process.env.FAKE_CLAUDE_CUOTA === agente) { process.stdout.write(JSON.stringify({ result: "Claude usage limit reached", is_error: true })); process.exit(1); }
-if (agente === "probador") escribir(".revision/" + t + "/escenarios.json", process.env.FAKE_ESCENARIOS || JSON.stringify({ tarea: t, escenarios: [{ id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 5 } }] }] }));
+if (agente === "probador") escribir(".revision/" + t + "/escenarios.json", env("FAKE_ESCENARIOS") || (t === "T9.2"
+  ? JSON.stringify({ tarea: t, escenarios: [{ id: "e01", criterio: 1, titulo: "resta", pasos: [{ id: "r", modulo: "src/resta.js", funcion: "resta", args: [5, 3], espera: { valor: 2 } }] }] })
+  : JSON.stringify({ tarea: t, escenarios: [{ id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 5 } }] }] })));
 if (agente === "revisor-ui") escribir(".revision/" + t + "/ui.md", "## Veredicto: SIN BLOQUEANTES\\n");
 if (agente === "revisor-codigo") escribir(".revision/" + t + "/codigo.md", "## Veredicto: SIN BLOQUEANTES\\n");
 // FAKE_VEREDICTO: uno por ronda separados por coma; el último se repite.
@@ -487,5 +494,200 @@ describe("fabrica TX.Y: pipeline completo", () => {
     const r = fabrica(["T9.1"], { FAKE_SPEC: "-" });
     expect(r.codigo).toBe(SALIDA.error);
     expect(r.salida).toMatch(/planificador terminó sin dejar specs\/T9\.1\.md/);
+  });
+});
+
+// --- Modo grupo (T1.13) -----------------------------------------------------
+
+describe("grupo.mjs: piezas puras", () => {
+  const planner = `| ID | Tarea | Dep. | Ses. | Leer | Tocar | Criterio |
+|---|---|---|---|---|---|---|
+| ⬜ T1.1 | Suma | — | 1 | — | \`src/suma.js\` | x |
+| ⬜ T1.2 | Resta | T1.1 | 1 | — | \`src/resta.js\` | x |
+
+## Grupos
+| Grupo | Tareas (en orden) |
+|---|---|
+| G1 | T1.1, T1.2 |
+| G2 | T1.2, T1.1 |
+`;
+
+  it("parseGrupos lee la tabla «Grupos» en orden", () => {
+    expect(parseGrupos(planner)).toEqual({ G1: ["T1.1", "T1.2"], G2: ["T1.2", "T1.1"] });
+    expect(parseGrupos("# nada")).toEqual({});
+  });
+
+  it("problemasDeGrupo exige el backlog y respeta «Dep.»", () => {
+    expect(problemasDeGrupo(planner, "G1", ["T1.1", "T1.2"])).toEqual([]);
+    expect(problemasDeGrupo(planner, "G2", ["T1.2", "T1.1"])).toEqual([expect.stringMatching(/T1\.2 depende de T1\.1.*después/)]);
+    expect(problemasDeGrupo(planner, "G3", ["T1.1", "T9.9", "T1.1"])).toEqual(expect.arrayContaining([expect.stringMatching(/T9\.9 no está/), expect.stringMatching(/T1\.1 aparece dos veces/)]));
+    expect(problemasDeGrupo(planner, "G4", undefined)).toEqual([expect.stringMatching(/no está en planner/)]);
+    expect(tituloDeTarea(planner, "T1.2")).toBe("Resta");
+  });
+
+  it("confirmacionesDe: una Dn que cita TX.Y/sN confirma ese supuesto", () => {
+    const memoria = "## 3\n### D15 — otra\nsin referencias\n\n### D16 — Descuento mayor\nConfirma T1.2/s1 y T1.2/s2.\n\n### D17 — x\nT1.2/s1 otra vez\n";
+    expect(confirmacionesDe(memoria)).toEqual({ "T1.2/s1": "D16", "T1.2/s2": "D16" });
+    expect(confirmacionesDe("")).toEqual({});
+  });
+
+  it("supuestosPendientes: bloqueantes sin Dn ni `confirmado`", () => {
+    const esc = { supuestos: [{ id: "s1", titulo: "a" }, { id: "s2", titulo: "b", bloqueante: false }, { id: "s3", titulo: "c", confirmado: "ok" }, { id: "s4", titulo: "d" }] };
+    expect(supuestosPendientes(esc, { "T1.1/s4": "D16" }, "T1.1")).toEqual([{ id: "s1", titulo: "a" }]);
+    expect(supuestosPendientes({}, {}, "T1.1")).toEqual([]);
+  });
+
+  it("rutasDeStatus lee -z y salta el origen de un renombrado", () => {
+    expect(rutasDeStatus("?? src/a b.js\0 M x.js\0R  nuevo.js\0viejo.js\0")).toEqual(["src/a b.js", "x.js", "nuevo.js"]);
+    expect(archivosNuevos(["a", "b", "c"], ["a"])).toEqual(["b", "c"]);
+  });
+
+  it("propuestaDeCommits: un commit por tarea y la evidencia en el último; nada se ejecuta", () => {
+    const md = propuestaDeCommits({ wt: "/w", rama: "fabrica/T1.1", grupo: "G1", registro: "docs/evidencia/G1", tareas: [
+      { tarea: "T1.1", titulo: "Suma", archivos: ["src/a.js"] },
+      { tarea: "T1.2", titulo: "It's", archivos: ["src/b.js"] }
+    ] });
+    expect(md).toMatch(/git add -- 'src\/a\.js'\ngit commit -m 'feat: T1\.1 — Suma'/);
+    expect(md).toMatch(/git add -- 'src\/b\.js' 'docs\/evidencia\/G1'\ngit commit -m 'feat: T1\.2 — It'\\''s'/);
+    expect(md.indexOf("docs/evidencia")).toBeGreaterThan(md.indexOf("T1.2"));
+  });
+
+  it("parseArgsGrupo", () => {
+    expect(parseArgsGrupo(["G1", "--url", "http://x/", "--desde", "T1.2"])).toEqual({ grupo: "G1", carril: "software", url: "http://x/", soloRevision: false, proponer: false, desde: "T1.2" });
+    expect(() => parseArgsGrupo([])).toThrow(/grupo inválido/);
+    expect(() => parseArgsGrupo(["G1", "--desde", "x"])).toThrow(/--desde inválido/);
+    expect(() => parseArgsGrupo(["G1", "--proponer", "--desde", "T1.1"])).toThrow(/no se combina/);
+    expect(() => parseArgsGrupo(["G1", "--rondas"])).toThrow(/desconocido/);
+  });
+});
+
+const PLANNER_GRUPO = `# planner
+## 4. Backlog
+| ID | Tarea | Dep. | Ses. | Leer | Tocar | Criterio de salida |
+|---|---|---|---|---|---|---|
+| ⬜ T9.1 | Suma | — | 1 | — | \`src/suma.js\`, \`tests/suma.test.js\` | suma |
+| ⬜ T9.2 | Resta | T9.1 | 1 | — | \`src/resta.js\`, \`tests/resta.test.js\` | resta |
+
+## Grupos
+| Grupo | Tareas (en orden) |
+|---|---|
+| G1 | T9.1, T9.2 |
+`;
+const SPEC_T92 = SPEC(["src/resta.js", "tests/resta.test.js"]).replaceAll("T9.1", "T9.2").replace("suma(2, 3) devuelve 5 → test `tests/suma.test.js`: suma básica", "resta(5, 3) devuelve 2 → test `tests/resta.test.js`: resta básica");
+const SUPUESTO = JSON.stringify({
+  tarea: "T9.1",
+  escenarios: [{ id: "e01", criterio: 1, titulo: "suma", supuesto: "s1", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 5 } }] }],
+  supuestos: [{ id: "s1", titulo: "¿Redondear?", origen: "La spec no lo dice.", criterios: [1], opciones: ["Redondear", "No redondear"] }]
+});
+
+describe("fabrica grupo GN", () => {
+  const grupo = (args, env = {}) => fabrica(["grupo", ...args], { FABRICA_TESTS: "node tests/suma.test.js", ...env });
+  const base = () => path.join(wt(), ".revision/G1");
+  const ordenTareas = () => llamadas().filter((l) => /^(constructor|aprobador)$/.test(l.agente)).map((l) => `${l.agente}:${l.prompt.match(/T\d+\.\d+/)[0]}`);
+
+  /** Repo con el grupo G1 (T9.1 → T9.2); las specs sin commitear se copian al worktree. */
+  function montarGrupo() {
+    montarRepo();
+    writeFileSync(path.join(repo, "planner.md"), PLANNER_GRUPO);
+    git("commit", "--quiet", "-am", "grupo");
+    mkdirSync(path.join(repo, "specs"));
+    writeFileSync(path.join(repo, "specs/T9.1.md"), SPEC(["src/suma.js", "tests/suma.test.js"]));
+    writeFileSync(path.join(repo, "specs/T9.2.md"), SPEC_T92);
+  }
+
+  it("corre las dos tareas en orden, se detiene una vez al terminar y no propone commits", () => {
+    montarGrupo();
+    const r = grupo(["G1"]);
+    expect(r.error).not.toMatch(/Error:/);
+    expect(r.codigo).toBe(SALIDA.usuario);
+    expect(r.salida).toMatch(/G1: terminado.*--proponer/);
+    expect(ordenTareas()).toEqual(["constructor:T9.1", "aprobador:T9.1", "constructor:T9.2", "aprobador:T9.2"]);
+    expect(llamadas().every((l) => l.cwd === wt())).toBe(true);
+    const estado = JSON.parse(readFileSync(path.join(base(), "grupo.json"), "utf8"));
+    expect(estado.tareas["T9.1"]).toMatchObject({ estado: "APROBADO", archivos: expect.arrayContaining(["src/suma.js", "tests/suma.test.js"]) });
+    expect(estado.tareas["T9.2"].archivos.sort()).toEqual(["specs/T9.2.md", "src/resta.js", "tests/resta.test.js"]);
+    expect(estado.tareas["T9.1"].archivos).not.toContain("src/resta.js");
+    expect(readFileSync(path.join(base(), "evidencia.html"), "utf8")).toMatch(/T9\.1[\s\S]*T9\.2/);
+    expect(readFileSync(path.join(base(), "fabrica.md"), "utf8")).toMatch(/Grupo G1: terminado[\s\S]*T9\.2 \| APROBADO/);
+    expect(existsSync(path.join(base(), "commits.md"))).toBe(false);
+    expect(existsSync(path.join(wt(), "docs/evidencia"))).toBe(false);
+    expect(execFileSync("git", ["log", "--oneline"], { cwd: wt(), encoding: "utf8" }).trim().split("\n")).toHaveLength(2);
+  });
+
+  it("--proponer registra la evidencia (D15) y redacta un commit por tarea sin ejecutarlos", () => {
+    montarGrupo();
+    grupo(["G1"]);
+    const antes = execFileSync("git", ["rev-parse", "HEAD"], { cwd: wt(), encoding: "utf8" });
+    const r = grupo(["G1", "--proponer"]);
+    expect(r.error).not.toMatch(/Error:/);
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    expect(existsSync(path.join(wt(), "docs/evidencia/G1/evidencia.html"))).toBe(true);
+    expect(existsSync(path.join(wt(), "docs/evidencia/G1/T9.2/matriz.md"))).toBe(true);
+    const md = readFileSync(path.join(base(), "commits.md"), "utf8");
+    expect(md).toMatch(/git add -- [^\n]*'src\/suma\.js'[^\n]*\ngit commit -m 'feat: T9\.1 — Suma'/);
+    expect(md).toMatch(/'src\/resta\.js'.*'docs\/evidencia\/G1'\ngit commit -m 'feat: T9\.2 — Resta'/);
+    expect(r.salida).toMatch(/Commits propuestos para G1/);
+    expect(execFileSync("git", ["rev-parse", "HEAD"], { cwd: wt(), encoding: "utf8" })).toBe(antes);
+  });
+
+  it("--proponer se niega si falta una tarea por aprobar", () => {
+    montarGrupo();
+    const r = grupo(["G1", "--proponer"]);
+    expect(r.codigo).toBe(SALIDA.error);
+    expect(r.error).toMatch(/faltan por aprobar: T9\.1, T9\.2/);
+  });
+
+  it("supuesto bloqueante en T9.1: se detiene sin construir T9.2 y relanzar no repite T9.1", () => {
+    montarGrupo();
+    const env = { FAKE_ESCENARIOS_T9_1: SUPUESTO };
+    const r = grupo(["G1"], env);
+    expect(r.codigo).toBe(SALIDA.usuario);
+    expect(r.salida).toMatch(/T9\.1 necesita tu OK.*T9\.1\/s1/);
+    expect(ordenTareas()).toEqual(["constructor:T9.1", "aprobador:T9.1"]);
+    expect(readFileSync(path.join(base(), "evidencia.html"), "utf8")).toMatch(/Necesita tu OK[\s\S]*¿Redondear\?/);
+    expect(grupo(["G1", "--proponer"], env).error).toMatch(/faltan por aprobar: T9\.2/);
+    rmSync(log);
+    expect(grupo(["G1"], env).salida).toMatch(/T9\.1 necesita tu OK/);
+    expect(llamadas()).toEqual([]);
+    // El dueño lo confirma como Dn en memoria.md (que no está commiteado: se lee del repo principal).
+    writeFileSync(path.join(repo, "memoria.md"), "## 3\n### D16 — Sin redondear\nConfirma T9.1/s1: no se redondea.\n");
+    const r2 = grupo(["G1"], env);
+    expect(r2.salida).toMatch(/G1: terminado/);
+    expect(ordenTareas()).toEqual(["constructor:T9.2", "aprobador:T9.2"]);
+    expect(readFileSync(path.join(base(), "evidencia.html"), "utf8")).toMatch(/s1 confirmado: registrado en D16/);
+    expect(grupo(["G1", "--proponer"], env).codigo).toBe(SALIDA.APROBADO);
+  });
+
+  it("T9.2 sin aprobar detiene el grupo con su resultado; relanzar sigue en T9.2", () => {
+    montarGrupo();
+    const r = grupo(["G1"], { FAKE_GEMINI_CUOTA: "seguridad", FAKE_VEREDICTO: "APROBADO" });
+    expect(r.codigo).toBe(SALIDA.usuario);
+    expect(r.salida).toMatch(/G1: T9\.1: usuario[\s\S]*cuota[\s\S]*fabrica grupo G1 --solo-revision/);
+    rmSync(log);
+    const r2 = grupo(["G1", "--solo-revision"]);
+    expect(r2.salida).toMatch(/G1: terminado/);
+    expect(ordenTareas()).toEqual(["aprobador:T9.1", "constructor:T9.2", "aprobador:T9.2"]);
+  });
+
+  it("--desde reinicia esa tarea y las siguientes con rondas nuevas", () => {
+    montarGrupo();
+    grupo(["G1"]);
+    rmSync(log);
+    const r = grupo(["G1", "--desde", "T9.2"]);
+    expect(r.salida).toMatch(/G1: terminado/);
+    expect(ordenTareas()).toEqual(["constructor:T9.2", "aprobador:T9.2"]);
+    expect(llamadas().find((l) => l.agente === "aprobador").prompt).toMatch(/ronda 1 de 3/);
+    expect(JSON.parse(readFileSync(path.join(base(), "grupo.json"), "utf8")).tareas["T9.2"].archivos.sort()).toEqual(["specs/T9.2.md", "src/resta.js", "tests/resta.test.js"]);
+  });
+
+  it("grupo inexistente o con dependencias al revés: error claro antes de crear nada", () => {
+    montarGrupo();
+    expect(grupo(["G9"]).error).toMatch(/grupo G9/);
+    writeFileSync(path.join(repo, "planner.md"), PLANNER_GRUPO.replace("| G1 | T9.1, T9.2 |", "| G1 | T9.2, T9.1 |"));
+    git("commit", "--quiet", "-am", "al revés");
+    const r = grupo(["G1"]);
+    expect(r.codigo).toBe(SALIDA.error);
+    expect(r.error).toMatch(/T9\.2 depende de T9\.1/);
+    expect(llamadas()).toEqual([]);
   });
 });

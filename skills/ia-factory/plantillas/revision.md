@@ -153,6 +153,30 @@ worktree y relanza con `--solo-revision --url <url>`) · `1` error.
   binario de `claude`).
 - No hace commit ni merge: con APROBADO, el orquestador propone el commit.
 
+#### Modo grupo
+```bash
+node scripts/fabrica/fabrica.mjs grupo GN [--carril software] [--url <url>] [--solo-revision] [--desde TX.Y]
+node scripts/fabrica/fabrica.mjs grupo GN --proponer
+```
+`GN` sale de la tabla «Grupos» de `planner.md`. Las tareas corren en orden en
+**un mismo worktree** (el de la primera), cada una con su ciclo completo. La
+fábrica se detiene **una sola vez** (salida `3`): al terminar el grupo, ante un
+supuesto bloqueante sin confirmar, o si una tarea no se aprueba (cuota, rondas
+gastadas, tarea visible sin `--url`…); nunca construye sobre un supuesto sin
+confirmar. Deja `.revision/GN/evidencia.html` (la página del grupo, con
+«Necesita tu OK» arriba) y `.revision/GN/fabrica.md`. El estado vive en
+`.revision/GN/grupo.json`: relanzar salta las tareas aprobadas.
+- **Confirmar un supuesto** es registrar una `Dn` en `memoria.md` que cite
+  `TX.Y/sN` (el id del supuesto) y relanzar: la fábrica la lee del repo
+  principal y sigue. **Rechazarlo**: ajusta la spec y relanza con
+  `--desde TX.Y` (esa tarea y las siguientes vuelven a correr con rondas nuevas).
+- **Tras el visto bueno** de la página, `--proponer` registra la evidencia en
+  `docs/evidencia/GN/` (`D15`) y escribe `.revision/GN/commits.md`: un commit
+  por tarea con los archivos que esa tarea cambió (la evidencia va en el último).
+  La fábrica no los ejecuta: los confirma el dueño.
+- Límite: los archivos se reparten por tarea según lo que estaba sin commitear
+  al empezar; un archivo que dos tareas editan queda en el commit de la primera.
+
 6. **Cierre:** fila en `planner.md §6` con el veredicto y el número de rondas.
    `.revision/` es efímera (ignorada por git); lo que importa queda en la
    bitácora, en `learn.md` (si salió un error) o en `memoria.md` (si salió una
