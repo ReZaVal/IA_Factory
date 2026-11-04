@@ -1,14 +1,25 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- `prueba.mjs` y agente `probador` (`D14`, `T1.11`): el probador deriva de la
+  spec (sin leer el código) `.revision/TX.Y/escenarios.json`; `prueba.mjs`, sin
+  modelo y fuera de los permisos de los agentes, corre la suite, los tests
+  nuevos contra `HEAD` (deben fallar), opcionalmente la cobertura
+  (`FABRICA_COBERTURA`) y los escenarios en UTC, Lima y Tokio. Escribe
+  `evidencia/` con salida literal, `matriz.md` (criterio → test → resultado,
+  «ejecutado» o «leído»), comando para repetir cada escenario y hash de cada
+  archivo (`--verificar` detecta alteraciones). `fabrica.mjs` lo corre al
+  inicio de cada ronda: si algo falla, la ronda es CAMBIOS REQUERIDOS sin
+  llamar a revisores ni aprobador; el aprobador recibe la ruta de la matriz.
+  Los escenarios `comando` son argv de solo lectura. Cierra `L7`; mitiga `L9`.
 - Contrato común de informe (`D14`, `T1.10`): `_formato.md` añade las secciones
   «Qué verifiqué», «Evidencia», «Qué supuse» y «Qué no pude verificar», y el
   nuevo `scripts/revision/evidencia.mjs` (sin modelo) rechaza un informe sin
   ellas, con «todo» sin lista, con rutas de evidencia inexistentes o con
   «Ninguno» en supuestos cuando la spec los declara. `spec.mjs` trata una
   «Inferencia a confirmar» como HIGH. La plantilla de spec suma «Supuestos» y
-  un ejemplo ejecutable por criterio. Aún no está enchufado en `fabrica.mjs`
-  ni en `gemini.mjs` (`T1.11`).
+  un ejemplo ejecutable por criterio. Aún no está enchufado en `gemini.mjs`
+  (`T1.14`).
 - Revisores sin API key (`D13` de IA Factory): `gemini.mjs` usa por defecto
   `agy` (Antigravity CLI) con la cuenta personal, `AGY_MODEL` por defecto
   `gemini-4-argon-medium`, en `--mode plan`, desde una carpeta temporal y con

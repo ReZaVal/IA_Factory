@@ -12,6 +12,7 @@ const ARCHIVOS_1_0 = [
   ".claude/agents/aprobador.md",
   ".claude/agents/constructor.md",
   ".claude/agents/planificador.md",
+  ".claude/agents/probador.md",
   ".claude/agents/revisor-codigo.md",
   ".gitignore",
   "AGENTS.md",
@@ -37,6 +38,7 @@ const NUEVOS_1_1 = [
   "scripts/fabrica/fabrica.mjs",
   "scripts/fabrica/worktree.sh",
   "scripts/revision/evidencia.mjs",
+  "scripts/revision/prueba.mjs",
   "scripts/revision/roles/spec.md",
   "scripts/revision/spec.mjs",
   "scripts/revision/via.mjs"

@@ -27,7 +27,7 @@ describe("parseArgs", () => {
 
 describe("configFabrica", () => {
   it("entorno primero, luego .env.local, luego valores por defecto", () => {
-    expect(configFabrica({}, "")).toEqual({ claude: "claude", tests: "npm test", permitidos: [] });
+    expect(configFabrica({}, "")).toEqual({ claude: "claude", tests: "npm test", cobertura: "", permitidos: [] });
     const cfg = configFabrica({ FABRICA_TESTS: "pytest" }, "FABRICA_TESTS=npm test\nFABRICA_PERMITIDOS=Bash(make lint:*), Bash(ls:*)\n");
     expect(cfg.tests).toBe("pytest");
     expect(cfg.permitidos).toEqual(["Bash(make lint:*)", "Bash(ls:*)"]);
@@ -142,9 +142,10 @@ const correcciones = prompt.match(/\\.revision\\/\\S+\\/correcciones\\.md/);
 if (agente === "constructor" && correcciones) escribir(correcciones[0], "| # | Corregido |\\n");
 else if (agente === "constructor") {
   for (const f of (process.env.FAKE_CODIGO || "src/suma.js").split(",")) escribir(f, "export const suma = (a, b) => a + b;\\n");
-  escribir("tests/suma.test.js", "// test\\n");
+  escribir("tests/suma.test.js", 'import assert from "node:assert";\\nimport { suma } from "../src/suma.js";\\nassert.equal(suma(2, 3), 5);\\n');
 }
 if (process.env.FAKE_CLAUDE_CUOTA === agente) { process.stdout.write(JSON.stringify({ result: "Claude usage limit reached", is_error: true })); process.exit(1); }
+if (agente === "probador") escribir(".revision/" + t + "/escenarios.json", process.env.FAKE_ESCENARIOS || JSON.stringify({ tarea: t, escenarios: [{ id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 5 } }] }] }));
 if (agente === "revisor-ui") escribir(".revision/" + t + "/ui.md", "## Veredicto: SIN BLOQUEANTES\\n");
 if (agente === "revisor-codigo") escribir(".revision/" + t + "/codigo.md", "## Veredicto: SIN BLOQUEANTES\\n");
 // FAKE_VEREDICTO: uno por ronda separados por coma; el último se repite.
@@ -182,6 +183,7 @@ function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes 
   renameSync(path.join(scripts, "gemini.mjs"), path.join(scripts, "gemini-real.mjs"));
   writeFileSync(path.join(scripts, "gemini.mjs"), FAKE_GEMINI);
   writeFileSync(path.join(repo, "planner.md"), PLANNER(tocar));
+  writeFileSync(path.join(repo, "package.json"), '{"type":"module"}\n');
   if (sinAgentes) rmSync(path.join(repo, ".claude/agents/aprobador.md"));
   if (sinRevisorUi) rmSync(path.join(repo, ".claude/agents/revisor-ui.md"));
   writeFileSync(path.join(repo, "scripts/revision/capturas.sh"), "#!/bin/sh\nexit 0\n");
@@ -198,6 +200,7 @@ function fabrica(args, env = {}) {
       FABRICA_CLAUDE: path.join(raiz, "claude"),
       FABRICA_WORKTREES: path.join(raiz, "worktrees"),
       FAKE_LOG: log,
+      FABRICA_TESTS: "node tests/suma.test.js",
       FAKE_SPEC: SPEC(["src/suma.js", "tests/suma.test.js"]),
       ...env
     }
@@ -243,13 +246,46 @@ describe("fabrica TX.Y: pipeline completo", () => {
 
   it("los agentes Claude corren con acceptEdits y sin poder commitear", () => {
     montarRepo();
-    fabrica(["T9.1"], { FABRICA_TESTS: "npx vitest run" });
+    fabrica(["T9.1"], { FABRICA_TESTS: "node tests/suma.test.js --ok" });
     const claude = llamadas().filter((l) => !l.agente.startsWith("gemini"));
     expect(claude.length).toBeGreaterThanOrEqual(4);
     for (const l of claude) {
-      expect(l.args).toEqual(expect.arrayContaining(["acceptEdits", "Bash(npx vitest run:*)", "Bash(git commit:*)"]));
+      expect(l.args).toEqual(expect.arrayContaining(["acceptEdits", "Bash(node tests/suma.test.js --ok:*)", "Bash(git commit:*)"]));
     }
-    expect(claude.find((l) => l.agente === "aprobador").prompt).toMatch(/npx vitest run/);
+    expect(claude.find((l) => l.agente === "aprobador").prompt).toMatch(/node tests\/suma.test.js --ok/);
+  });
+
+  it("el probador corre tras construir y antes de revisar; la evidencia queda en el worktree", () => {
+    montarRepo();
+    expect(fabrica(["T9.1"]).codigo).toBe(SALIDA.APROBADO);
+    const orden = llamadas().map((l) => l.agente);
+    expect(orden.indexOf("probador")).toBe(orden.indexOf("constructor") + 1);
+    expect(llamadas().find((l) => l.agente === "probador").prompt).toMatch(/No leas el código/);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/evidencia/matriz.md"), "utf8")).toMatch(/en verde/);
+    expect(llamadas().find((l) => l.agente === "aprobador").prompt).toMatch(/evidencia\/ \(matriz\.md\)/);
+  });
+
+  it("bug sembrado: el escenario falla → matriz con FALLA, ronda con CAMBIOS REQUERIDOS sin revisores ni aprobador", () => {
+    montarRepo();
+    const mal = JSON.stringify({ tarea: "T9.1", escenarios: [{ id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 6 } }] }] });
+    const r = fabrica(["T9.1"], { FAKE_ESCENARIOS: mal });
+    expect(r.codigo).toBe(SALIDA["CAMBIOS REQUERIDOS"]);
+    const orden = llamadas().map((l) => l.agente);
+    expect(orden).not.toContain("aprobador");
+    expect(orden).not.toContain("revisor-codigo");
+    expect(orden.filter((a) => a === "constructor")).toHaveLength(1 + (RONDAS_REVISION - 1));
+    const ronda1 = path.join(wt(), ".revision/T9.1/ronda-1");
+    expect(readFileSync(path.join(ronda1, "veredicto.md"), "utf8")).toMatch(/CAMBIOS REQUERIDOS[\s\S]*escenario e01.*esperaba 6, obtuvo 5/);
+    expect(readFileSync(path.join(ronda1, "evidencia/matriz.md"), "utf8")).toMatch(/❌ FALLA/);
+    expect(r.salida).toMatch(/CAMBIOS REQUERIDOS/);
+  });
+
+  it("escenarios.json inválido → error de la fábrica, no aprobación", () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_ESCENARIOS: JSON.stringify({ escenarios: [{ id: "x" }] }) });
+    expect(r.codigo).toBe(SALIDA.error);
+    expect(r.salida).toMatch(/escenarios\.json inválido/);
+    expect(llamadas().map((l) => l.agente)).not.toContain("aprobador");
   });
 
   it("SDD: alcance abierto en «Tocar» → corre también Lógica", () => {

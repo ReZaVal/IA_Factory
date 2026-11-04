@@ -7,7 +7,10 @@
 // renueva; solo --reiniciar-rondas, que usa el humano tras intervenir.
 // Cada rol Claude es un agente amnésico `claude -p --agent <rol>` con permisos
 // acotados (acceptEdits + lista blanca de Bash; commit/push negados); los
-// revisores Gemini corren con gemini.mjs. UI lo revisa el agente Claude `revisor-ui`,
+// revisores Gemini corren con gemini.mjs. Antes de revisar, prueba.mjs (sin modelo, fuera
+// de los permisos de los agentes) corre la suite, los tests nuevos contra HEAD y los
+// escenarios que el probador derivó de la spec; si algo falla, la ronda pide cambios sin
+// llamar a los revisores (D14). UI lo revisa el agente Claude `revisor-ui`,
 // que lee las capturas (D13). Si se agota una cuota, sale al usuario con cómo relanzar.
 // Uso: node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url URL] [--solo-revision] [--reiniciar-rondas]
 // Salida: 0 APROBADO · 2 CAMBIOS REQUERIDOS · 3 BLOQUEADO o hace falta el usuario · 1 error.
@@ -32,15 +35,16 @@ const REQUERIDOS = [
   "planner.md",
   "scripts/revision/gemini.mjs",
   "scripts/revision/via.mjs",
-  ...["planificador", "constructor", "revisor-codigo", "aprobador"].map((a) => `.claude/agents/${a}.md`)
+  "scripts/revision/prueba.mjs",
+  ...["planificador", "constructor", "probador", "revisor-codigo", "aprobador"].map((a) => `.claude/agents/${a}.md`)
 ];
 const CAPTURAS = ["360-claro", "360-oscuro", "1280-claro", "1280-oscuro"];
 // Informes de una ronda; al pedir cambios se mueven a .revision/TX.Y/ronda-N/.
-const DE_RONDA = ["via", "seguridad", "logica", "ui", "codigo", "veredicto"].map((f) => `${f}.md`);
+const DE_RONDA = [...["via", "seguridad", "logica", "ui", "codigo", "veredicto"].map((f) => `${f}.md`), "evidencia"];
 const DIR_RONDA = /^ronda-\d+$/;
 const CUOTA = /cuota|quota|usage limit|rate.?limit|limit reached|resource.?exhausted/i;
 // Roles antes de que exista lo que se revisa: relanzar debe repetir la construcción.
-const ANTES_DE_REVISAR = ["spec", "planificador", "constructor"];
+const ANTES_DE_REVISAR = ["spec", "planificador", "constructor", "probador"];
 
 /**
  * @param {string[]} argv
@@ -64,7 +68,7 @@ export function parseArgs(argv) {
 
 /**
  * Entorno primero; si falta, `.env.local`. FABRICA_TESTS es el comando de la suite
- * (constructor y aprobador lo corren); FABRICA_PERMITIDOS, reglas extra separadas por coma.
+ * (constructor y aprobador lo corren); FABRICA_COBERTURA, el de cobertura (opcional); FABRICA_PERMITIDOS, reglas extra separadas por coma.
  * @param {Record<string, string | undefined>} env
  * @param {string} dotenvText
  */
@@ -74,6 +78,7 @@ export function configFabrica(env, dotenvText) {
   return {
     claude: valor("FABRICA_CLAUDE") || "claude",
     tests: valor("FABRICA_TESTS") || "npm test",
+    cobertura: valor("FABRICA_COBERTURA"),
     permitidos: valor("FABRICA_PERMITIDOS").split(",").map((s) => s.trim()).filter(Boolean)
   };
 }
@@ -133,8 +138,9 @@ export const PROMPTS = {
   construir: (t, tests) => `Implementa ${t} contra specs/${t}.md con TDD hasta que \`${tests}\` quede en verde. ${SIN_HUMANO}`,
   ui: (t) => `Revisa la UI de ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Mira con Read cada captura: ${CAPTURAS.map((c) => `.revision/${t}/captura-${c}.png`).join(", ")}. Escribe .revision/${t}/ui.md. ${SIN_HUMANO}`,
   codigo: (t) => `Revisa ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Escribe .revision/${t}/codigo.md. ${SIN_HUMANO}`,
+  probar: (t) => `Deriva de specs/${t}.md los escenarios ejecutables y escríbelos en .revision/${t}/escenarios.json según tus instrucciones. No leas el código de la app ni los tests: el valor esperado sale solo de la spec. ${SIN_HUMANO}`,
   corregir: (t, tests, n) => `El aprobador pidió cambios en ${t} (ronda ${n}): corrige cada punto de .revision/${t}/ronda-${n}/veredicto.md (los informes de esa ronda están junto a él) contra specs/${t}.md, con TDD hasta que \`${tests}\` quede en verde. Escribe .revision/${t}/ronda-${n}/correcciones.md con una fila por punto: qué hiciste o por qué no lo corriges. ${SIN_HUMANO}`,
-  aprobar: (t, tests, n) => `Emite el veredicto de ${t} (ronda ${n} de ${RONDAS_REVISION}). ${n > 1 ? `Las rondas anteriores están en .revision/${t}/ronda-*/ (veredicto.md y correcciones.md): comprueba que lo pedido quedó corregido. ` : ""}La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${SIN_HUMANO}`
+  aprobar: (t, tests, n) => `Emite el veredicto de ${t} (ronda ${n} de ${RONDAS_REVISION}). ${n > 1 ? `Las rondas anteriores están en .revision/${t}/ronda-*/ (veredicto.md y correcciones.md): comprueba que lo pedido quedó corregido. ` : ""}La evidencia ejecutada está en .revision/${t}/evidencia/ (matriz.md): cítala y marca cada criterio «ejecutado» o «leído». La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${SIN_HUMANO}`
 };
 
 /** @returns {Promise<{ codigo: number, salida: string, error: string }>} */
@@ -248,8 +254,30 @@ async function prepararWorktree(tarea) {
   return wt;
 }
 
-/** Pasos 4-5 de la ronda n: vía → revisores → aprobador. */
+/** Veredicto determinista cuando la evidencia ejecutada falla: no hace falta un modelo para saberlo. */
+export const veredictoPorEvidencia = (tarea, fallos) =>
+  `# Veredicto: CAMBIOS REQUERIDOS\n\nLa evidencia ejecutada por prueba.mjs falla (\`.revision/${tarea}/evidencia/matriz.md\`); no se llamó a los revisores.\n\n## Qué corregir\n${fallos.map((f) => `- ${f}`).join("\n")}\n`;
+
+/** Evidencia ejecutada de la ronda n. Devuelve los fallos (vacío si todo en verde). */
+async function probar(ctx, n) {
+  const args = ["scripts/revision/prueba.mjs", "--tarea", ctx.tarea, "--tests", ctx.cfg.tests, ...(ctx.cfg.cobertura ? ["--cobertura", ctx.cfg.cobertura] : [])];
+  const r = await correr(process.execPath, args, { cwd: ctx.wt });
+  if (r.codigo === 2) throw new Error(`prueba.mjs: ${r.error.trim() || r.salida.trim()}`);
+  const linea = r.salida.split("\n")[0];
+  ctx.paso(`prueba (ronda ${n})`, r.codigo === 0 ? linea : `FALLA — ${linea}`);
+  if (r.codigo === 0) return [];
+  const { fallos } = JSON.parse(await readFile(ctx.rel("evidencia/resultados.json"), "utf8"));
+  return fallos;
+}
+
+/** Pasos 4-5 de la ronda n: prueba → vía → revisores → aprobador. */
 async function rondaRevision(ctx, n) {
+  const fallosPrueba = await probar(ctx, n);
+  if (fallosPrueba.length) {
+    await writeFile(ctx.rel("veredicto.md"), veredictoPorEvidencia(ctx.tarea, fallosPrueba));
+    ctx.ronda(n, "CAMBIOS REQUERIDOS");
+    return { resultado: "CAMBIOS REQUERIDOS", motivo: `.revision/${ctx.tarea}/veredicto.md` };
+  }
   const v = await correr(process.execPath, ["scripts/revision/via.mjs", "--tarea", ctx.tarea], { cwd: ctx.wt });
   if (v.codigo !== 0) throw new Error(`via.mjs falló: ${v.error.trim()}`);
   const { via, revisores } = revisoresDeVia(v.salida);
@@ -303,6 +331,7 @@ async function correrPipeline(ctx, { soloRevision, reiniciarRondas: reiniciar })
     const motivo = await especificar(ctx);
     if (motivo) return { resultado: "usuario", motivo };
     await agente(ctx, "constructor", PROMPTS.construir(ctx.tarea, ctx.cfg.tests));
+    await agente(ctx, "probador", PROMPTS.probar(ctx.tarea), `.revision/${ctx.tarea}/escenarios.json`);
   }
   for (let n = usadas + 1; ; n++) {
     const fin = await rondaRevision(ctx, n);

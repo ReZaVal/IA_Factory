@@ -121,7 +121,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   que `fabrica.md` no es material de la ronda.
 
 ### L7 — El aprobador no puede probar casos borde con `node`
-- **Estado:** 🔴 Abierto (S-08, riesgo anotado en `D10`)
+- **Estado:** ✅ Resuelto (S-14, `T1.11`; abierto desde S-08, riesgo anotado en `D10`)
 - **Síntoma:** a `claude -p --agent aprobador` se le negaron sondas con
   `node -e` y un `grep` fuera del worktree; marcó criterios como verificados
   «por lectura».
@@ -129,6 +129,9 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   git de lectura. Permitir `Bash(node:*)` equivale a shell libre.
 - **Solución propuesta:** decidir con el usuario: dejarlo así (el aprobador
   verifica con la suite) o permitir un comando acotado de sondas.
+- **Solución aplicada:** `prueba.mjs` corre las sondas fuera de los permisos del
+  agente y deja la salida en `evidencia/`; el aprobador la lee. Los permisos de
+  `D10` no cambian. Los escenarios `comando` son argv de solo lectura.
 
 ### L8 — `agy` no es de solo lectura por defecto y puede dar éxito vacío
 - **Estado:** ✅ Resuelto (S-10, `T1.8`)
@@ -149,7 +152,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 - **Regla derivada:** ver §1.
 
 ### L9 — La suite de cupones depende de la zona horaria de la máquina
-- **Estado:** 🔴 Abierto (S-12, spike `T1.9`)
+- **Estado:** 🟡 Mitigado (S-14, `T1.11`: `prueba.mjs` corre las llamadas en UTC, Lima y Tokio; falta pedirlo a la suite del proyecto)
 - **Síntoma:** con un bug sembrado que compara días en hora local, la suite de
   `T1.2` falla en America/Lima y da 59/59 en UTC. Un CI en UTC no lo vería.
 - **Causa raíz probable:** los tests corren en una sola zona, la de la máquina.

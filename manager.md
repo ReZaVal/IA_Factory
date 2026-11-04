@@ -42,8 +42,11 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 - **Spike (S-12):** `T1.9` ✅, 58/58 escenarios reales de `T1.2`; informe en
   `docs/superpowers/spikes/T1.9/`. `L9` abierto.
 - **Contrato (S-13):** `T1.10` ✅: `evidencia.mjs` y las 4 secciones de
-  `_formato.md`; falta enchufarlos en `fabrica.mjs`/`gemini.mjs` (`T1.11`).
-- **Próximos pasos:** `T1.11`-`T1.14`; `P6` antes de enviar
+  `_formato.md`; falta enchufarlos en `gemini.mjs` (`T1.14`).
+- **Evidencia ejecutada (S-14):** `T1.11` ✅: `prueba.mjs` + agente `probador`
+  enchufados en `fabrica.mjs`; cierra `L7`. Probado con los escenarios del spike,
+  no con un probador real.
+- **Próximos pasos:** `T1.12`-`T1.14`; `P6` antes de enviar
   código de clientes; luego `T2.1` (🔒). El usuario no ha confirmado el cierre
   de la Fase 1.
 
@@ -88,7 +91,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.10` ✅, `T1.11`-`T1.14` ⬜ (`D14`) |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.11` ✅, `T1.12`-`T1.14` ⬜ (`D14`) |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |
