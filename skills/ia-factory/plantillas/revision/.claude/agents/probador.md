@@ -54,3 +54,9 @@ convertir en escenario, con el motivo.
   "origen": "specs/TX.Y.md, «Riesgos»", "opciones": ["lo construido", "la alternativa"] }]`,
   uno por cada «Inferencia a confirmar» o decisión sin `Dn` que la spec declare. Con
   `"bloqueante": false` si no cambia nada observable. Nunca pongas `confirmado`: lo confirma el dueño.
+
+## Pantallas (tarea visible)
+Si la spec describe pantallas, añade en la raíz `"pantallas": [{ "id": "carrito", "titulo": "Carrito
+con un producto", "ruta": "/carrito?demo=1" }]`, en el orden del recorrido. `id`: minúsculas, números y
+guiones. `ruta`: relativa a la app (`/…`, `#…` o `?…`). Solo se visitan URLs: un paso que exija hacer
+clic o llenar un formulario no se puede capturar; dilo en tu respuesta.

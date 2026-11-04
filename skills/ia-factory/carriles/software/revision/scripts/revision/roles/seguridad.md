@@ -18,3 +18,11 @@ Eres el revisor de seguridad y protección de datos. Busca:
   exacta, service workers que cacheen o sirvan contenido de orígenes ajenos.
 - **Exportaciones:** archivos CSV/PDF/JSON con inyección de fórmulas
   (`=`, `+`, `-`, `@` al inicio de celda) o datos de más.
+
+## Qué entregas además del formato común
+Un «seguro» sin lista de lo probado no vale: un script lo rechaza.
+
+- Sección `## Superficie de entrada`: lista cada entrada que revisaste (función exportada,
+  campo de formulario, parámetro de URL, archivo importado) y de dónde llega el dato.
+- Sección `## Sondas`: un ataque por cada hallazgo CRITICAL o HIGH y los que probaste sin
+  encontrar nada (con `"hallazgo": null`). Un script los ejecuta; ver «Sondas» más abajo.

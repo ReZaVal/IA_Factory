@@ -59,7 +59,8 @@ Dueño: `skills/ia-factory/SKILL.md`. Criterio de salida (`manager.md`).
 | ✅ T1.11 | `prueba.mjs` y agente probador | T1.10 | 1 | spec de evidencia §5, §7 | `prueba.mjs`, `probador.md`, `fabrica.mjs`, `tests/` | Bug sembrado → matriz con test fallando y la tarea no aprueba; cierra `L7` |
 | ✅ T1.12 | Página de evidencia del grupo | T1.11 | 1 | spec de evidencia §8-§9, `P8` | `fabrica.mjs`, generador de la página, `tests/` | `T1.2` rehecha: abre sin red, valores obtenidos, tope en `0` en ámbar arriba |
 | ✅ T1.13 | Modo grupo y parada | T1.12 | 1 | spec de evidencia §10 | `fabrica.mjs`, `planner.md` (plantilla, «Grupos»), `revision.md`, `tests/` | Grupo de dos tareas: se detiene una vez y solo entonces propone commits |
-| ⬜ T1.14 | Roles de seguridad y UI con su evidencia | T1.13 | 1 | spec de evidencia §5, `P7` | roles, `revisor-ui.md`, `tests/` | Informe de seguridad sin lista de lo probado → rechazado |
+| ✅ T1.14 | Roles de seguridad y UI con su evidencia | T1.13 | 1 | spec de evidencia §5, §8-§9, `D16` | roles, `revisor-ui.md`, `evidencia.mjs`, `sondas.mjs`, `gemini.mjs`, `fabrica.mjs`, `pagina.mjs`, `capturas.sh`, `tests/` | Informe de seguridad sin lista de lo probado → rechazado |
+| ⬜ T1.15 | Evidencia de API: peticiones y respuestas reales contra el servidor del worktree (`D16`) | T1.14 | 1 | spec de evidencia §8, `D16` | `prueba.mjs`, `probador.md`, `pagina.mjs`, `tests/` | Escenario de API con respuesta distinta a la spec → falla la ronda; la página muestra petición y respuesta |
 
 **Riesgo de la fase:** `claude -p` en modo no interactivo puede no tener los
 mismos permisos/herramientas que la sesión principal; si bloquea, el
@@ -68,7 +69,7 @@ orquestador sigue siendo la sesión principal y `T1.6` se redefine.
 ### Fase 2 — Gatekeeper determinista y auto-merge ⬜
 | ID | Tarea | Dep. | Ses. | Criterio de salida |
 |---|---|---|---|---|
-| 🔒 ⬜ T2.1 | Formato de dictamen (JSON) + auto-merge como opt-in por proyecto + si hay log de despliegues (`D8`) | T1.14 | 1 | `Dn`; esquema en `memoria.md §4` |
+| 🔒 ⬜ T2.1 | Formato de dictamen (JSON) + auto-merge como opt-in por proyecto + si hay log de despliegues (`D8`) | T1.15 | 1 | `Dn`; esquema en `memoria.md §4` |
 | ⬜ T2.2 | Revisores y approver emiten JSON validado contra el esquema | T2.1 | 1 | Tests de esquema |
 | ⬜ T2.3 | Script gatekeeper: 4/4 + tests en verde, sin confiar en el agente (`H6`) | T2.2 | 1 | Rechaza dictámenes faltantes, alterados o con tests rojos |
 | ⬜ T2.4 | Radio de impacto por carril (rutas de núcleo) | T2.3 | 1 | Clasifica cambios de prueba en bajo / núcleo |
@@ -125,7 +126,7 @@ hosting. 5 sesiones estimadas.
 | 18-22 | 2027-03-08 → 2027-04-05 | 4 | 🏁 carril investigación |
 | 23-27 | 2027-04-12 → 2027-05-10 | 5 | 🏁 carril multimedia |
 
-**Ruta crítica:** `T1.1 → T1.2 → T1.3 → T1.6 → T1.7 → T1.9 → … → T1.14 → T2.1 → … → T2.6`.
+**Ruta crítica:** `T1.1 → T1.2 → T1.3 → T1.6 → T1.7 → T1.9 → … → T1.15 → T2.1 → … → T2.6`.
 **Dónde se puede romper:** (1) `claude -p` sin permisos suficientes (riesgo de
 Fase 1); (2) `P2` sin plan de pago → el auto-merge seguro no es posible en
 repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
@@ -150,6 +151,7 @@ repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
 | S-14 | 2026-11-04 | T1.11 | ✅ | `prueba.mjs` (sin modelo): suite, tests nuevos contra `HEAD` (C7), cobertura opcional y escenarios en UTC/Lima/Tokio; `evidencia/` con matriz criterio→test→resultado y hash por archivo (`--verificar`). Agente `probador` (solo lee la spec). `fabrica.mjs`: prueba al inicio de cada ronda; si falla, CAMBIOS REQUERIDOS sin revisores. Real: 49/49 en `T1.2` de `IA_Factory_Test`. 197 tests en verde, `claude plugin validate` e `instalar.sh` probados. Cierra `L7`, mitiga `L9`. **Falta:** que el probador (modelo) escriba escenarios reales — solo probado con los del spike | **T1.12 — página de evidencia** |
 | S-15 | 2026-11-04 | T1.12 | ✅ | `P8` → `D15` (evidencia al repo). `pagina.mjs` (sin modelo): `evidencia.html` de una tarea o grupo, un archivo sin scripts ni recursos externos (CSP cerrada), con «Necesita tu OK» arriba en ámbar, flujo con valores obtenidos, matriz criterio→test→resultado (ejecutado/leído), comando para repetir y aviso rojo si los hashes no coinciden; `--registrar` copia a `docs/evidencia/<id>/`. `prueba.mjs` acepta `flujo` y `supuestos` en `escenarios.json`; `fabrica.mjs` genera la página al terminar y la enlaza en `fabrica.md`. Real: `T1.2` de `IA_Factory_Test` con los flujos y el supuesto del spike (54/54): 1 aviso, 1 flujo en ámbar, sin red. 227 tests en verde. **Sin ver en navegador** (estilos del spike). Secciones de seguridad y UI de la página: `T1.14` | **T1.13 — modo grupo y parada** |
 | S-16 | 2026-11-04 | T1.13 | ✅ | `fabrica grupo GN` (`grupo.mjs` + `fabrica.mjs`): tareas de «Grupos» en orden, un worktree, estado en `.revision/GN/grupo.json`; se detiene una vez (grupo terminado, supuesto bloqueante sin `Dn` en `memoria.md` —cita `TX.Y/sN`—, o tarea sin aprobar). `--desde` rehace; `--proponer` registra `docs/evidencia/GN/` (`D15`) y redacta un commit por tarea sin ejecutarlo. Rechaza grupos que contradicen «Dep.». Pruebas con `claude`/Gemini simulados: 241 tests en verde. **Sin grupo real** en `IA_Factory_Test`; archivos compartidos entre tareas quedan en el primer commit | **T1.14 — roles de seguridad y UI con su evidencia** |
+| S-17 | 2026-11-04 | T1.14 | ✅ | `P7` → `D16` (pantallas y APIs; capturas WebP incrustadas); APIs partidas a `T1.15`. `evidencia.mjs` enchufado en `gemini.mjs` y `fabrica.mjs` con exigencias por rol (informe inválido se reintenta y luego falla la ronda). `sondas.mjs` ejecuta los ataques y casos borde que Seguridad y Lógica escriben como datos, porque `agy` no ejecuta. `capturas.sh` por pantalla; página con seguridad, casos borde y UI. Real en carpeta temporal con XSS sembrado: Seguridad y Lógica por `agy` y `revisor-ui` (US$ 0,26) cumplieron el contrato; sonda `reproducido`, página vista en Chrome. Corrida completa real de `T1.3` en `IA_Factory_Test` (el dueño la lanzó, US$ 5,04 de Claude): planificador con 2 preguntas (salida 3, `D6` allí), ronda 1 BLOQUEADO por `L11`, ronda 2 APROBADO; 18/18 criterios ejecutados, 24/24 escenarios, 8 sondas sin reproducir, evidencia intacta. Destapó `L10`, `L11` y `L12` (abierto). 318 tests en verde. **Falta:** Lógica y capturas dentro de la fábrica real (fue FTD y sin pantallas); el recorrido solo visita URLs; informes de planificador y constructor sin validar (`supuestos.md`); en modo tarea un supuesto bloqueante no detiene | **T1.15 — evidencia de API** |
 
 ## 7. Cómo se mantiene vivo
 Al cerrar tarea: ✅ + fila en §6. Al cerrar fase: recalcular §2 y §5, colapsar

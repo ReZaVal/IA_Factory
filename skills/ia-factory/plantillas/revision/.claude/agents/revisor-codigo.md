@@ -20,5 +20,9 @@ Revisa solo tu especialidad:
 - Calidad de los tests: claros, independientes, sin datos reales.
 - Coherencia con el estilo de los archivos vecinos.
 
+Cada hallazgo lleva `archivo:línea`, y «Evidencia» trae en un bloque de código
+el comando para repetirlo (`git show`, `grep -n`, la suite): un script rechaza el
+informe sin eso.
+
 Escribe el informe en `.revision/TX.Y/codigo.md` con el formato exacto de
 `scripts/revision/roles/_formato.md` y devuelve el veredicto en una línea.

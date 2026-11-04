@@ -11,7 +11,9 @@
 // de los permisos de los agentes) corre la suite, los tests nuevos contra HEAD y los
 // escenarios que el probador derivó de la spec; si algo falla, la ronda pide cambios sin
 // llamar a los revisores (D14). UI lo revisa el agente Claude `revisor-ui`,
-// que lee las capturas (D13). Si se agota una cuota, sale al usuario con cómo relanzar.
+// que lee las capturas (D13). Cada informe pasa por evidencia.mjs: uno inválido se reintenta
+// y, si sigue inválido, falla la ronda. Las sondas de Seguridad y Lógica las ejecuta sondas.mjs
+// antes del aprobador (D16). Si se agota una cuota, sale al usuario con cómo relanzar.
 // Uso: node scripts/fabrica/fabrica.mjs TX.Y [--carril software] [--url URL] [--solo-revision] [--reiniciar-rondas]
 //      node scripts/fabrica/fabrica.mjs grupo GN [--carril software] [--url URL] [--solo-revision] [--desde TX.Y]
 //      node scripts/fabrica/fabrica.mjs grupo GN --proponer
@@ -28,6 +30,9 @@ import { fileURLToPath } from "node:url";
 import { parseDotenv } from "../revision/gemini.mjs";
 import { precheckSpec } from "../revision/spec.mjs";
 import { generarPagina, registrarEvidencia } from "../revision/pagina.mjs";
+import { validarInforme, supuestosDeSpec, existeEvidencia } from "../revision/evidencia.mjs";
+import { correrSondas, ROLES_CON_SONDAS } from "../revision/sondas.mjs";
+import { anadirHashes } from "../revision/prueba.mjs";
 import {
   parseGrupos, problemasDeGrupo, tituloDeTarea, confirmacionesDe, supuestosPendientes,
   archivosNuevos, rutasDeStatus, propuestaDeCommits, parseArgsGrupo
@@ -48,10 +53,15 @@ const REQUERIDOS = [
   "scripts/revision/via.mjs",
   "scripts/revision/prueba.mjs",
   "scripts/revision/pagina.mjs",
+  "scripts/revision/evidencia.mjs",
+  "scripts/revision/sondas.mjs",
   "scripts/fabrica/grupo.mjs",
   ...["planificador", "constructor", "probador", "revisor-codigo", "aprobador"].map((a) => `.claude/agents/${a}.md`)
 ];
-const CAPTURAS = ["360-claro", "360-oscuro", "1280-claro", "1280-oscuro"];
+const VISTAS = [[360, "claro"], [360, "oscuro"], [1280, "claro"], [1280, "oscuro"]];
+// Sin `pantallas` en escenarios.json, el recorrido es la URL servida.
+const PANTALLA_INICIO = { id: "inicio", titulo: "Inicio", ruta: "" };
+const INTENTOS_INFORME = 2;
 // Informes de una ronda; al pedir cambios se mueven a .revision/TX.Y/ronda-N/.
 const DE_RONDA = [...["via", "seguridad", "logica", "ui", "codigo", "veredicto"].map((f) => `${f}.md`), "evidencia"];
 const DIR_RONDA = /^ronda-\d+$/;
@@ -149,15 +159,15 @@ export const PROMPTS = {
   spec: (t) => `Escribe la spec de la tarea ${t} en specs/${t}.md según tus instrucciones. ${SIN_HUMANO} Las decisiones que falten van a «Preguntas abiertas».`,
   corregirSpec: (t) => `La auditoría de specs/${t}.md encontró bloqueantes: lee .revision/${t}/spec.md y corrige la spec (no el backlog). ${SIN_HUMANO}`,
   construir: (t, tests) => `Implementa ${t} contra specs/${t}.md con TDD hasta que \`${tests}\` quede en verde. ${SIN_HUMANO}`,
-  ui: (t) => `Revisa la UI de ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Mira con Read cada captura: ${CAPTURAS.map((c) => `.revision/${t}/captura-${c}.png`).join(", ")}. Escribe .revision/${t}/ui.md. ${SIN_HUMANO}`,
+  ui: (t, capturas, pantallas) => `Revisa la UI de ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Mira con Read cada captura y cítala en «Evidencia»: ${capturas.join(", ")}. Cada nombre lleva su pantalla: ${pantallas.map((p) => `\`${p.id}\` es la ruta \`${p.ruta || "/"}\` (${p.titulo})`).join("; ")}. Escribe .revision/${t}/ui.md. ${SIN_HUMANO}`,
   codigo: (t) => `Revisa ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Escribe .revision/${t}/codigo.md. ${SIN_HUMANO}`,
   probar: (t) => `Deriva de specs/${t}.md los escenarios ejecutables y escríbelos en .revision/${t}/escenarios.json según tus instrucciones. No leas el código de la app ni los tests: el valor esperado sale solo de la spec. ${SIN_HUMANO}`,
   corregir: (t, tests, n) => `El aprobador pidió cambios en ${t} (ronda ${n}): corrige cada punto de .revision/${t}/ronda-${n}/veredicto.md (los informes de esa ronda están junto a él) contra specs/${t}.md, con TDD hasta que \`${tests}\` quede en verde. Escribe .revision/${t}/ronda-${n}/correcciones.md con una fila por punto: qué hiciste o por qué no lo corriges. ${SIN_HUMANO}`,
-  aprobar: (t, tests, n) => `Emite el veredicto de ${t} (ronda ${n} de ${RONDAS_REVISION}). ${n > 1 ? `Las rondas anteriores están en .revision/${t}/ronda-*/ (veredicto.md y correcciones.md): comprueba que lo pedido quedó corregido. ` : ""}La evidencia ejecutada está en .revision/${t}/evidencia/ (matriz.md): cítala y marca cada criterio «ejecutado» o «leído». La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${SIN_HUMANO}`
+  aprobar: (t, tests, n) => `Emite el veredicto de ${t} (ronda ${n} de ${RONDAS_REVISION}). ${n > 1 ? `Las rondas anteriores están en .revision/${t}/ronda-*/ (veredicto.md y correcciones.md): comprueba que lo pedido quedó corregido. ` : ""}La evidencia ejecutada está en .revision/${t}/evidencia/ (matriz.md) y los ataques y casos borde ejecutados, en evidencia/sondas.json: cítala y marca cada criterio «ejecutado» o «leído»; si alguno quedó «leído», dilo antes de la primera sección \`##\`, con su número. La memoria vigente del proyecto, con las decisiones aún sin commitear, está en .revision/${t}/memoria.md: esa es la que vale, no la del worktree. La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${SIN_HUMANO}`
 };
 
 /** @returns {Promise<{ codigo: number, salida: string, error: string }>} */
-function correr(cmd, args, { cwd, entrada = "" }) {
+export function correr(cmd, args, { cwd, entrada = "" }) {
   return new Promise((resolve, reject) => {
     const hijo = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
     let salida = "";
@@ -166,6 +176,7 @@ function correr(cmd, args, { cwd, entrada = "" }) {
     hijo.stderr.on("data", (d) => (error += d));
     hijo.on("error", (e) => reject(new Error(`no pude ejecutar ${cmd}: ${e.message}`)));
     hijo.on("close", (codigo) => resolve({ codigo: codigo ?? 1, salida, error }));
+    hijo.stdin.on("error", () => {}); // Un hijo que termina sin leer stdin no debe tumbar la fábrica (L13); `close` da su código.
     hijo.stdin.end(entrada);
   });
 }
@@ -204,6 +215,19 @@ async function agente(ctx, rol, prompt, entregable) {
   ctx.paso(rol, res.texto.split("\n")[0].slice(0, 160) || "ok", res.costo);
 }
 
+/** Un agente con informe: lo que entrega pasa el contrato (D14) o la ronda falla; nunca cuenta como aprobación. */
+async function agenteConInforme(ctx, rol, prompt, informe, opciones) {
+  const specConSupuestos = supuestosDeSpec(await leer(path.join(ctx.wt, "specs", `${ctx.tarea}.md`))).length > 0;
+  await agente(ctx, rol, prompt, informe);
+  for (let intento = 1; ; intento++) {
+    const { ok, problemas } = validarInforme(await leer(path.join(ctx.wt, informe)), { existe: existeEvidencia(ctx.wt, ctx.tarea), specConSupuestos, ...opciones });
+    if (ok) return;
+    const lista = `- ${problemas.join("\n- ")}`;
+    if (intento >= INTENTOS_INFORME) throw new Error(`${rol}: informe rechazado por evidencia.mjs tras ${INTENTOS_INFORME} intentos:\n${lista}`);
+    await agente(ctx, rol, `${prompt}\n\nTu informe ${informe} fue rechazado por evidencia.mjs. Corrígelo:\n${lista}`, informe);
+  }
+}
+
 async function gemini(ctx, rol) {
   const args = ["scripts/revision/gemini.mjs", rol, "--tarea", ctx.tarea, "--carril", ctx.carril];
   const r = await correr(process.execPath, args, { cwd: ctx.wt });
@@ -229,18 +253,41 @@ async function especificar(ctx) {
   }
 }
 
+/** Pantallas del recorrido que el probador sacó de la spec (D14, spec §8). */
+async function pantallasDe(ctx) {
+  const { pantallas = [] } = JSON.parse(await leer(ctx.rel("escenarios.json")) || "{}");
+  return pantallas.length ? pantallas : [PANTALLA_INICIO];
+}
+
+/** Lleva los WebP a evidencia/ y los sella: son lo que la página incrusta (D16). Los PNG los lee el revisor. */
+async function guardarRecorrido(ctx, pantallas) {
+  const recorrido = pantallas.map((p) => ({ ...p, capturas: VISTAS.map(([ancho, tema]) => ({ ancho, tema, archivo: `captura-${p.id}-${ancho}-${tema}.webp` })) }));
+  const archivos = recorrido.flatMap((p) => p.capturas.map((c) => c.archivo));
+  const pngs = archivos.map((a) => a.replace(/webp$/, "png"));
+  const faltan = [...archivos, ...pngs].filter((a) => !existsSync(ctx.rel(a)));
+  if (faltan.length) throw new Error(`capturas.sh no dejó: ${faltan.join(", ")}`);
+  for (const a of archivos) await rename(ctx.rel(a), ctx.rel(`evidencia/${a}`));
+  await writeFile(ctx.rel("evidencia/recorrido.json"), `${JSON.stringify(recorrido, null, 2)}\n`);
+  anadirHashes(ctx.rel("evidencia"), ["recorrido.json", ...archivos]);
+  return pngs.map((a) => `.revision/${ctx.tarea}/${a}`);
+}
+
 async function capturasYUi(ctx) {
   if (!existsSync(path.join(ctx.wt, ".claude/agents/revisor-ui.md"))) throw new Error("falta .claude/agents/revisor-ui.md: reinstala el carril y commitéalo");
-  const r = await correr(path.join(ctx.wt, "scripts/revision/capturas.sh"), [ctx.tarea, ctx.url], { cwd: ctx.wt });
-  if (r.codigo !== 0) throw new Error(`capturas.sh falló: ${r.error.trim()}`);
-  return agente(ctx, "revisor-ui", PROMPTS.ui(ctx.tarea), `.revision/${ctx.tarea}/ui.md`);
+  const pantallas = await pantallasDe(ctx);
+  for (const p of pantallas) {
+    const r = await correr(path.join(ctx.wt, "scripts/revision/capturas.sh"), [ctx.tarea, new URL(p.ruta, ctx.url).href, p.id], { cwd: ctx.wt });
+    if (r.codigo !== 0) throw new Error(`capturas.sh falló en ${p.id}: ${r.error.trim()}`);
+  }
+  const capturas = await guardarRecorrido(ctx, pantallas);
+  return agenteConInforme(ctx, "revisor-ui", PROMPTS.ui(ctx.tarea, capturas, pantallas), `.revision/${ctx.tarea}/ui.md`, { rol: "ui", capturas });
 }
 
 /** Paso 4: revisores en paralelo; si alguno falla, falla la ronda. */
 async function revisar(ctx, revisores) {
   if (!revisores.includes("ui")) await writeFile(ctx.rel("ui.md"), informeUiNoAplica(ctx.tarea));
   const resultados = await Promise.allSettled(revisores.map((rol) => {
-    if (rol === "codigo") return agente(ctx, "revisor-codigo", PROMPTS.codigo(ctx.tarea), `.revision/${ctx.tarea}/codigo.md`);
+    if (rol === "codigo") return agenteConInforme(ctx, "revisor-codigo", PROMPTS.codigo(ctx.tarea), `.revision/${ctx.tarea}/codigo.md`, { rol: "codigo" });
     if (rol === "ui") return capturasYUi(ctx);
     return gemini(ctx, rol);
   }));
@@ -270,6 +317,8 @@ async function prepararTarea(tarea, wt) {
     await copyFile(path.join(ROOT, spec), path.join(wt, spec));
   }
   await mkdir(path.join(wt, ".revision", tarea), { recursive: true });
+  // El worktree sale de HEAD: sin esto, una Dn recién tomada y sin commitear no llega a la ronda (L11).
+  if (existsSync(path.join(ROOT, "memoria.md"))) await copyFile(path.join(ROOT, "memoria.md"), path.join(wt, ".revision", tarea, "memoria.md"));
 }
 
 /** Veredicto determinista cuando la evidencia ejecutada falla: no hace falta un modelo para saberlo. */
@@ -304,7 +353,10 @@ async function rondaRevision(ctx, n) {
     return { resultado: "usuario", motivo: `la tarea cambia algo visible: sirve la app del worktree y relanza con --solo-revision --url <url>` };
   }
   await revisar(ctx, revisores);
-  await agente(ctx, "aprobador", PROMPTS.aprobar(ctx.tarea, ctx.cfg.tests, n), `.revision/${ctx.tarea}/veredicto.md`);
+  const sondas = correrSondas({ raiz: ctx.wt, tarea: ctx.tarea, roles: revisores.filter((r) => ROLES_CON_SONDAS.includes(r)) });
+  ctx.paso(`sondas (ronda ${n})`, sondas.resumen);
+  const leidos = JSON.parse(await readFile(ctx.rel("evidencia/matriz.json"), "utf8")).filter((f) => f.modo === "leído").map((f) => f.criterio);
+  await agenteConInforme(ctx, "aprobador", PROMPTS.aprobar(ctx.tarea, ctx.cfg.tests, n), `.revision/${ctx.tarea}/veredicto.md`, { rol: "aprobador", leidos });
   const veredicto = veredictoDe(await readFile(ctx.rel("veredicto.md"), "utf8"));
   if (!veredicto) throw new Error(`veredicto.md no empieza por «# Veredicto: …»`);
   ctx.ronda(n, veredicto);

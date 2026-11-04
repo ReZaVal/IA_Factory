@@ -16,10 +16,17 @@ fs.appendFileSync(process.env.FAKE_LOG, JSON.stringify({ args: process.argv.slic
 const n = fs.readFileSync(process.env.FAKE_LOG, "utf8").trim().split("\\n").length;
 const modo = process.env.FAKE_AGY || "ok";
 const fin = (r, codigo = 0) => { process.stdout.write('{"event":"init"}\\n' + JSON.stringify({ event: "result", result: r }) + "\\n"); process.exit(codigo); };
-const INFORME = "## Veredicto: SIN BLOQUEANTES\\n\\n## Hallazgos\\n";
+const CONTRATO = "## Qué verifiqué\\n- Leí el diff\\n\\n## Evidencia\\n\\x60\\x60\\x60\\nsrc/a.js:1\\n\\x60\\x60\\x60\\n\\n## Qué supuse\\nNinguno\\n\\n## Qué no pude verificar\\n- El navegador\\n";
+const ROL = "## Superficie de entrada\\n- Texto libre\\n\\n## Sondas\\n\\x60\\x60\\x60json\\n[]\\n\\x60\\x60\\x60\\n\\n";
+const INFORME = "## Veredicto: SIN BLOQUEANTES\\n\\n## Hallazgos\\n\\n" + ROL + CONTRATO;
+const SIN_LISTA = INFORME.replace("- Leí el diff", "Revisé todo, es seguro.");
+const FICTICIA = INFORME.replace("\\x60\\x60\\x60\\nsrc/a.js:1\\n\\x60\\x60\\x60", "\\x60evidencia/no-existe.txt\\x60");
 if (modo === "vacio") { process.stderr.write("no output produced\\n"); fin({ status: "SUCCESS", response: "" }); }
 if (modo === "vacio-una-vez" && n === 1) fin({ status: "SUCCESS", response: "" });
 if (modo === "fuera-de-tema") fin({ status: "SUCCESS", response: "Un scraper en Python" });
+if (modo === "sin-lista") fin({ status: "SUCCESS", response: SIN_LISTA });
+if (modo === "sin-lista-una-vez" && n === 1) fin({ status: "SUCCESS", response: SIN_LISTA });
+if (modo === "ficticia") fin({ status: "SUCCESS", response: FICTICIA });
 if (modo === "cuota") fin({ status: "ERROR", error: "quota exceeded" }, 1);
 if (modo === "escribe") fs.writeFileSync(process.env.FAKE_REPO + "/src/a.js", "alterado\\n");
 if (modo === "escribe-nuevo") fs.writeFileSync(process.env.FAKE_REPO + "/colado.js", "x\\n");
@@ -95,6 +102,41 @@ describe("gemini.mjs con motor agy", () => {
     expect(r.codigo).toBe(1);
     expect(r.error).toMatch(/_formato\.md/);
     expect(existsSync(informe())).toBe(false);
+  });
+
+  it("criterio de salida de T1.14: informe de seguridad sin lista de lo probado → rechazado, no queda informe", () => {
+    const r = revisor(["seguridad", "--tarea", "T9.1"], { FAKE_AGY: "sin-lista" });
+    expect(r.codigo).toBe(1);
+    expect(r.error).toMatch(/informe rechazado[\s\S]*no lista comprobaciones/i);
+    expect(existsSync(informe())).toBe(false);
+  });
+
+  it("un informe rechazado se reintenta diciéndole al revisor por qué", () => {
+    expect(revisor(["seguridad", "--tarea", "T9.1"], { FAKE_AGY: "sin-lista-una-vez" }).codigo).toBe(0);
+    const [primera, segunda] = llamadas();
+    expect(JSON.parse(primera.entrada).message.content).not.toMatch(/fue rechazado/);
+    expect(JSON.parse(segunda.entrada).message.content).toMatch(/fue rechazado[\s\S]*no lista comprobaciones/);
+    expect(readFileSync(informe(), "utf8")).toMatch(/Leí el diff/);
+  });
+
+  it("citar evidencia que no existe → rechazado", () => {
+    const r = revisor(["seguridad", "--tarea", "T9.1"], { FAKE_AGY: "ficticia" });
+    expect(r.codigo).toBe(1);
+    expect(r.error).toMatch(/evidencia\/no-existe\.txt/);
+  });
+
+  it("el revisor recibe la matriz de prueba.mjs, y lo que cita de evidencia/ se resuelve en la tarea", () => {
+    mkdirSync(path.join(repo, ".revision/T9.1/evidencia"), { recursive: true });
+    writeFileSync(path.join(repo, ".revision/T9.1/evidencia/matriz.md"), "# Matriz MARCA-DE-MATRIZ\n");
+    writeFileSync(path.join(repo, ".revision/T9.1/evidencia/no-existe.txt"), "ya existe\n");
+    expect(revisor(["seguridad", "--tarea", "T9.1"], { FAKE_AGY: "ficticia" }).codigo).toBe(0);
+    expect(JSON.parse(llamadas()[0].entrada).message.content).toMatch(/MARCA-DE-MATRIZ/);
+  });
+
+  it("Seguridad y Lógica reciben cómo escribir sondas; el auditor de spec no", () => {
+    revisor(["seguridad", "--tarea", "T9.1"]);
+    expect(JSON.parse(llamadas()[0].entrada).message.content).toMatch(/## Sondas/);
+    expect(revisor(["spec", "--tarea", "T9.1"]).codigo).toBe(1);
   });
 
   it("cuota agotada: falla a la primera diciendo cuota", () => {

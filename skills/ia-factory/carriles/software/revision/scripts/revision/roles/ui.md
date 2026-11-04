@@ -20,3 +20,9 @@ imágenes:
   cambian de tema).
 
 Si una captura no permite juzgar algo, dilo en "Preguntas" en vez de suponer.
+
+## Qué entregas además del formato común
+Un veredicto sin imágenes se rechaza.
+
+- Sección `## Recorrido`: lista, pantalla por pantalla, qué viste a 360 px y a escritorio.
+- En «Evidencia», la ruta de **cada** captura que te pasaron, entre comillas invertidas.

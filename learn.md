@@ -18,6 +18,9 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 | L3 | El worktree salía sin dependencias (lo ignorado por git no viaja) | Probar la fábrica con una suite que dependa de algo ignorado por git, dentro del worktree; preparar con `FABRICA_PREPARAR` | `worktree.sh`, `revision.md ## 3`, `tests/worktree.test.js` |
 | L4 | Nombres de función en «Archivos» contados como alcance extra | Los chequeos deterministas se prueban también con specs escritas por el planificador real, no solo con las sintéticas | `spec.mjs` (`archivosDeSpec`), `tests/spec.test.js` |
 | L5 | Un error de Gemini cortaba la fábrica, fuese transitorio o permanente | Al llamar a una API externa, separar transitorio de permanente: reintentar con tope lo primero y fallar rápido con qué hacer lo segundo; no asumir en la plantilla un plan de pago | `gemini.mjs` (`clasificarError`, `pedirConReintentos`), `revision.md ## 6`, `tests/revision.test.js` |
+| L13 | Un hijo que terminaba sin leer stdin tumbaba la fábrica con `EPIPE`, de forma intermitente | Todo `stdin` de un proceso hijo lleva su manejador de `error`; ante un test intermitente, leer el mensaje completo antes de culpar al tiempo | `fabrica.mjs` (`correr`), `tests/fabrica.test.js` |
+| L11 | Una `Dn` sin commitear no llegaba al worktree y el aprobador bloqueaba | Lo que decide el dueño entre corridas se le pasa a la fábrica desde el repo principal; el flujo «decide y relanza» se prueba completo, con la decisión sin commitear | `fabrica.mjs` (`prepararTarea`), `aprobador.md`, `tests/fabrica.test.js` |
+| L10 | `capturas.sh` colgaba Chrome para siempre en WSL2 y nadie lo vio | Todo proceso externo de la fábrica lleva límite de tiempo; un script simulado en los tests no prueba la herramienta real: correrlo una vez de verdad antes de cerrar | `capturas.sh` (`capturar`, `CAPTURAS_LIMITE`) |
 | L8 | `agy` escribe sin `--mode plan` y da éxito vacío | Probar cada CLI de agente con un archivo canario antes de darle material; `SUCCESS` no basta: validar contenido y formato | `gemini.mjs` (`argsAgy`, `interpretarAgy`, `huellaArbol`), `revision.md ## 6`, `tests/agy.test.js` |
 
 ## 2. Log de errores
@@ -149,6 +152,52 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 - **Límite:** la huella ve cualquier cambio en archivos no ignorados, venga de
   quien venga: mis logs dentro del repo dieron un falso «modificó el árbol».
   No detecta escrituras fuera del repo; ahí la defensa es solo `--mode plan`.
+- **Regla derivada:** ver §1.
+
+### L13 — `EPIPE` tumbaba la fábrica de forma intermitente
+- **Estado:** ✅ Resuelto (S-17, `T1.14`)
+- **Síntoma:** la suite fallaba 1 de cada 3 veces, en tests distintos, con
+  `Error: write EPIPE` sin manejar. En una corrida real habría matado el proceso.
+- **Causa raíz:** `correr` escribía por stdin a hijos que no lo leen; si el hijo
+  terminaba antes, el error del stream no tenía manejador. `gemini.mjs` ya lo
+  evitaba; `fabrica.mjs`, no. El agente lo atribuyó primero al límite de 5 s de
+  vitest sin leer el mensaje, y commiteó sin condicionar el commit a la suite.
+- **Solución aplicada:** manejador de `error` en `hijo.stdin`.
+- **Regla derivada:** ver §1.
+
+### L12 — A `revisor-codigo` le niegan la shell
+- **Estado:** 🔴 Abierto (S-17, ronda 2 de `T1.3`)
+- **Síntoma:** dijo que no pudo correr `npm test`, `grep` ni `git diff --exit-code`
+  «por falta de aprobación», aunque `argsClaude` permite la suite y git de lectura.
+  En la ronda 1 el aprobador sí corrió `npm test`. Lo declaró en «Qué no pude
+  verificar», así que no aprobó nada a ciegas; lo cubre `prueba.mjs`.
+- **Causa raíz probable:** sin confirmar. `grep` no está en la lista blanca; lo de
+  `npm test` y `git diff` podría ser un comando compuesto (`cd … &&`, `2>&1`). Falta
+  registrar qué comando exacto se negó.
+- **Solución propuesta:** guardar las denegaciones de `claude -p` en `.revision/`
+  y decidir con el usuario si `grep` entra en la lista de `D10`.
+
+### L11 — Una decisión recién tomada no llegaba al worktree
+- **Estado:** ✅ Resuelto (S-17, `T1.14`; hallado en la corrida real de `T1.3`)
+- **Síntoma:** `T1.3` quedó BLOQUEADO con 18/18 criterios y 34/34 tests: `D6`
+  existía en `memoria.md` del repo principal, sin commitear, y el aprobador no
+  podía leerla. Hizo bien en bloquear: la spec no puede ser su propia fuente.
+- **Causa raíz:** el worktree sale de `HEAD`, pero el flujo de «Preguntas
+  abiertas» dice «decide y relanza» sobre el mismo worktree. El modo grupo ya leía
+  `memoria.md` del repo principal; el de una tarea, no.
+- **Solución aplicada:** `prepararTarea` copia `memoria.md` a
+  `.revision/TX.Y/memoria.md` en cada corrida y el aprobador lee esa.
+- **Regla derivada:** ver §1.
+
+### L10 — `capturas.sh` nunca terminaba en WSL2
+- **Estado:** ✅ Resuelto (S-17, `T1.14`)
+- **Síntoma:** Chrome headless no escribía la captura ni salía; sin límite de
+  tiempo, una tarea visible habría dejado la fábrica esperando para siempre.
+- **Causa raíz:** faltaba `--disable-software-rasterizer` (con `--disable-gpu`
+  solo, el proceso no termina aquí). No se había visto porque los tests simulan
+  `capturas.sh` y `revisor-ui` nunca había corrido en real.
+- **Solución aplicada:** el flag, `timeout` (`CAPTURAS_LIMITE`, 60 s), perfil
+  temporal y error si no queda el archivo. Real: 8 capturas en 5,4 s.
 - **Regla derivada:** ver §1.
 
 ### L9 — La suite de cupones depende de la zona horaria de la máquina

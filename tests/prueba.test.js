@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync, realpathSy
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
-  expresion, snippet, validarEscenarios, criteriosDeSpec, matriz, testsNuevos, probar, verificarHashes
+  expresion, snippet, validarEscenarios, criteriosDeSpec, matriz, testsNuevos, probar, verificarHashes, registrarHashes, anadirHashes
 } from "../skills/ia-factory/plantillas/revision/scripts/revision/prueba.mjs";
 
 const PRUEBA = path.resolve(import.meta.dirname, "../skills/ia-factory/plantillas/revision/scripts/revision/prueba.mjs");
@@ -85,6 +85,52 @@ describe("validarEscenarios: flujos y supuestos (T1.12)", () => {
 
   it("un flujo que cita un supuesto inexistente → problema", () => {
     expect(validarEscenarios({ supuestos: [], escenarios: [flujo({ supuesto: "S9" })] }).join()).toMatch(/supuesto S9 no está declarado/);
+  });
+});
+
+describe("validarEscenarios: comandos sin secretos (T1.14)", () => {
+  const comando = (argv) => validarEscenarios({ escenarios: [escenario({ pasos: undefined, comando: argv, espera: { codigo: 0 } })] }).join();
+
+  it.each([
+    [["cat", ".env.local"]],
+    [["git", "show", "HEAD:.env"]],
+    [["grep", "--file=.env", "src/a.js"]],
+    [["grep", "-f.env", "src/a.js"]],
+    [["grep", "clave", "config/.env"]],
+    [["cat", "local_privado/datos.json"]],
+    [["cat", "/etc/passwd"]],
+    [["cat", "../otro/secreto.txt"]],
+    [["grep", "-R", "clave", "."]],
+    [["grep", "-rnR", "clave", "."]],
+    [["grep", "--dereference-recursive", "clave", "."]]
+  ])("%j → rechazado", (argv) => {
+    expect(comando(argv)).toMatch(/secreto|fuera del proyecto/);
+  });
+
+  it("lo normal sigue valiendo", () => {
+    expect(comando(["grep", "-rn", "clave", "src"])).toBe("");
+    expect(comando(["grep", "-n", "process.env", "src/a.js"])).toBe("");
+    expect(comando(["git", "diff", "--exit-code", "package.json"])).toBe("");
+  });
+});
+
+describe("validarEscenarios: pantallas del recorrido (T1.14)", () => {
+  const con = (pantallas) => validarEscenarios({ escenarios: [escenario()], pantallas }).join();
+
+  it("pantalla bien formada y sin pantallas → sin problemas", () => {
+    expect(con([{ id: "carrito", titulo: "Carrito", ruta: "/carrito?vacio=1" }, { id: "pago", titulo: "Pago", ruta: "#/pago" }])).toBe("");
+    expect(con(undefined)).toBe("");
+  });
+
+  it.each([
+    ["no es lista", "x", /`pantallas` debe ser una lista/],
+    ["id con ruta", [{ id: "../x", titulo: "t", ruta: "/" }], /id/],
+    ["id repetido", [{ id: "a", titulo: "t", ruta: "/" }, { id: "a", titulo: "u", ruta: "/b" }], /repetido/],
+    ["sin título", [{ id: "a", ruta: "/" }], /titulo/],
+    ["otro origen", [{ id: "a", titulo: "t", ruta: "https://evil.example/" }], /ruta/],
+    ["protocolo relativo", [{ id: "a", titulo: "t", ruta: "//evil.example/" }], /ruta/]
+  ])("%s → rechazado", (_n, pantallas, patron) => {
+    expect(con(pantallas)).toMatch(patron);
   });
 });
 
@@ -235,6 +281,29 @@ describe("probar: entradas y hashes", () => {
     rmSync(path.join(ev, "base.txt"));
     writeFileSync(path.join(ev, "nuevo.txt"), "x");
     expect(verificarHashes(ev)).toEqual(["base.txt: borrado", "nuevo.txt: añadido después", "suite.txt: modificado"]);
+  });
+});
+
+describe("anadirHashes (T1.14)", () => {
+  let d;
+  beforeEach(() => {
+    d = realpathSync(mkdtempSync(path.join(tmpdir(), "ia-factory-hash-")));
+    writeFileSync(path.join(d, "a.txt"), "a\n");
+    registrarHashes(d);
+  });
+  afterEach(() => { rmSync(d, { recursive: true, force: true }); });
+
+  it("sella archivos nuevos sin tocar los ya sellados", () => {
+    writeFileSync(path.join(d, "b.txt"), "b\n");
+    expect(verificarHashes(d)).toEqual(["b.txt: añadido después"]);
+    anadirHashes(d, ["b.txt"]);
+    expect(verificarHashes(d)).toEqual([]);
+  });
+
+  it("no re-sella un archivo alterado: se niega", () => {
+    writeFileSync(path.join(d, "a.txt"), "alterado\n");
+    expect(() => anadirHashes(d, ["a.txt"])).toThrow(/ya está sellado/);
+    expect(verificarHashes(d)).toEqual(["a.txt: modificado"]);
   });
 });
 

@@ -5,7 +5,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync, realpathSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { probar } from "../skills/ia-factory/plantillas/revision/scripts/revision/prueba.mjs";
+import { probar, anadirHashes } from "../skills/ia-factory/plantillas/revision/scripts/revision/prueba.mjs";
 import { datosDeTarea, paginaHtml, generarPagina, registrarEvidencia } from "../skills/ia-factory/plantillas/revision/scripts/revision/pagina.mjs";
 
 const PAGINA = path.resolve(import.meta.dirname, "../skills/ia-factory/plantillas/revision/scripts/revision/pagina.mjs");
@@ -146,6 +146,118 @@ describe("paginaHtml (criterio de salida de T1.12)", () => {
     expect(h).toMatch(/Evidencia de G1/);
     expect(h.match(/<section class="tarea"/g)).toHaveLength(2);
     expect(h.match(/class="aviso"/g)).toHaveLength(1);
+  });
+});
+
+describe("seguridad, casos borde y UI en la página (T1.14)", () => {
+  const SONDAS = {
+    seguridad: {
+      superficie: ["`tope(s, d)`: <números> del usuario"],
+      sondas: [
+        { rol: "seguridad", id: "a1", hallazgo: 1, titulo: "Descuento <negativo>", estado: "reproducido", pasos: [{ id: "r", funcion: "tope", obtenido: { valor: 130 }, espera: { valor: 100 } }], repetir: "node x" },
+        { rol: "seguridad", id: "a2", hallazgo: null, titulo: "Subtotal enorme", estado: "resistió", pasos: [{ id: "r", funcion: "tope", obtenido: { valor: 0 }, espera: { valor: 0 } }], repetir: "node y" },
+        { rol: "seguridad", id: "a3", hallazgo: 2, titulo: "En el DOM", estado: "sin ejecutar", sinEjecutar: "necesita navegador" }
+      ]
+    },
+    logica: { superficie: [], sondas: [{ rol: "logica", id: "b1", hallazgo: null, titulo: "Cero", estado: "resistió", salida: "ok", repetir: "grep x" }] }
+  };
+  const RECORRIDO = [{ id: "carrito", titulo: "Carrito <vacío>", ruta: "/carrito", capturas: [
+    { ancho: 360, tema: "claro", archivo: "captura-carrito-360-claro.webp" },
+    { ancho: 1280, tema: "oscuro", archivo: "captura-carrito-1280-oscuro.webp" }
+  ] }];
+  const evidencia = ".revision/T9.1/evidencia";
+  const conSondas = () => {
+    escribir(`${evidencia}/sondas.json`, JSON.stringify(SONDAS));
+    anadirHashes(path.join(dir, evidencia), ["sondas.json"]);
+  };
+  const conRecorrido = () => {
+    for (const c of RECORRIDO[0].capturas) escribir(`${evidencia}/${c.archivo}`, `imagen ${c.ancho}`);
+    escribir(`${evidencia}/recorrido.json`, JSON.stringify(RECORRIDO));
+    anadirHashes(path.join(dir, evidencia), ["recorrido.json", ...RECORRIDO[0].capturas.map((c) => c.archivo)]);
+  };
+
+  it("muestra la superficie y cada sonda con su estado, sin dejar pasar HTML", () => {
+    montar();
+    conSondas();
+    const h = html();
+    expect(h).toMatch(/Seguridad[\s\S]*Superficie de entrada[\s\S]*&lt;números&gt;/);
+    expect(h).toMatch(/Descuento &lt;negativo&gt;[\s\S]*reproducido[\s\S]*130/);
+    expect(h).toMatch(/Subtotal enorme[\s\S]*resistió/);
+    expect(h).toMatch(/En el DOM[\s\S]*necesita navegador/);
+    expect(h).toMatch(/Casos borde[\s\S]*Cero/);
+    expect(h).not.toContain("<negativo>");
+  });
+
+  it("con un ataque reproducido la tarea no se anuncia «En verde»", () => {
+    montar();
+    expect(html()).toMatch(/T9\.1 · En verde/);
+    conSondas();
+    const h = html();
+    expect(h).not.toMatch(/T9\.1 · En verde/);
+    expect(h).toMatch(/T9\.1 · Con ataques reproducidos/);
+  });
+
+  it("la superficie no muestra el Markdown del informe y sigue escapada", () => {
+    montar();
+    escribir(`${evidencia}/sondas.json`, JSON.stringify({ seguridad: { superficie: ["**`tope(s)`** recibe <b>"], sondas: [] } }));
+    anadirHashes(path.join(dir, evidencia), ["sondas.json"]);
+    const h = html();
+    expect(h).toContain("<li><code>tope(s)</code> recibe &lt;b&gt;</li>");
+  });
+
+  it("separa lo obtenido de lo que haría un código sano", () => {
+    montar();
+    conSondas();
+    expect(html()).toMatch(/Obtenido: <code>130<\/code>[\s\S]*Código sano: <code>100<\/code>/);
+  });
+
+  it("las capturas de escritorio ocupan más que las de móvil", () => {
+    montar();
+    conRecorrido();
+    expect(html()).toMatch(/<figure class="ancha"><img[^>]*1280 px/);
+    expect(html()).toMatch(/<figure><img[^>]*360 px/);
+  });
+
+  it("un ataque reproducido sube a «Necesita tu OK»", () => {
+    montar();
+    conSondas();
+    const h = html();
+    expect(h.indexOf("Descuento &lt;negativo&gt;")).toBeLessThan(h.indexOf("Cómo funciona"));
+  });
+
+  it("incrusta las capturas: un solo archivo, y la CSP solo admite imágenes data:", () => {
+    montar();
+    conRecorrido();
+    const h = html();
+    expect(h).toMatch(/UX\/UI[\s\S]*Carrito &lt;vacío&gt;/);
+    expect(h).toContain(`src="data:image/webp;base64,${Buffer.from("imagen 360").toString("base64")}"`);
+    expect(h).toMatch(/alt="Carrito &lt;vacío&gt;, 360 px, tema claro"/);
+    expect(h).toMatch(/img-src data:/);
+    expect(h).not.toMatch(/src="(?!data:)/);
+  });
+
+  it("ignora un archivo de captura con un nombre que no es de capturas", () => {
+    montar();
+    escribir(`${evidencia}/recorrido.json`, JSON.stringify([{ id: "x", titulo: "X", ruta: "/", capturas: [{ ancho: 360, tema: "claro", archivo: "../../../.env.local" }] }]));
+    anadirHashes(path.join(dir, evidencia), ["recorrido.json"]);
+    escribir(".env.local", "CLAVE=secreta\n");
+    expect(html()).not.toContain(Buffer.from("CLAVE=secreta\n").toString("base64"));
+  });
+
+  it("sin sondas ni recorrido lo dice, no inventa", () => {
+    montar();
+    const h = html();
+    expect(h).toMatch(/Seguridad[\s\S]*Sin sondas/);
+    expect(h).toMatch(/UX\/UI[\s\S]*No aplica/);
+  });
+
+  it("D16: el registro lleva las capturas dentro de la página, no como archivos sueltos", () => {
+    montar();
+    conRecorrido();
+    const destino = registrarEvidencia({ raiz: dir, id: "T9.1", tareas: ["T9.1"] });
+    expect(existsSync(path.join(destino, "T9.1/recorrido.json"))).toBe(true);
+    expect(existsSync(path.join(destino, "T9.1/captura-carrito-360-claro.webp"))).toBe(false);
+    expect(readFileSync(path.join(destino, "evidencia.html"), "utf8")).toContain("data:image/webp;base64,");
   });
 });
 

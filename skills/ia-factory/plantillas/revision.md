@@ -105,9 +105,19 @@ SDD):
    node scripts/revision/gemini.mjs seguridad --tarea TX.Y
    node scripts/revision/gemini.mjs logica --tarea TX.Y
    <comando para servir la app>   # en otra terminal, para las capturas
-   scripts/revision/capturas.sh TX.Y <url>
+   scripts/revision/capturas.sh TX.Y <url> [pantalla]
    ```
-   y subagentes `revisor-ui` (lee las capturas) y `revisor-codigo`. `--base` (por defecto `HEAD`) define contra
+   y subagentes `revisor-ui` (lee las capturas) y `revisor-codigo`. Cada
+   informe pasa por `evidencia.mjs`: el contrato común más lo de su rol
+   (Seguridad: superficie de entrada y sondas; Lógica: sondas; UI: recorrido y
+   cada captura citada; Código: `archivo:línea` y comandos; aprobador: «leído»
+   dicho arriba). Uno inválido se reintenta y, si sigue inválido, falla la
+   ronda. Como `agy` no ejecuta nada, Seguridad y Lógica escriben sus ataques y
+   casos borde como datos, y un script los corre antes del veredicto:
+   ```bash
+   node scripts/revision/sondas.mjs --tarea TX.Y   # → evidencia/sondas.json
+   ```
+   `--base` (por defecto `HEAD`) define contra
    qué se compara; los archivos nuevos sin `git add` también se envían.
    `--carril` (por defecto `software`) elige qué `constitucion-<carril>.md`
    se envía.
@@ -128,7 +138,10 @@ Crea (o reutiliza) el worktree y, dentro de él, corre: planificador (si no hay
 `specs/TX.Y.md`; la del repo principal sin commitear se copia) → auditoría
 (máx. 2 rondas con el planificador corrigiendo) → constructor → `via.mjs` →
 los revisores de la vía en paralelo (UI «no aplica» lo escribe él) →
-aprobador. Con CAMBIOS REQUERIDOS archiva la ronda en `ronda-N/`, el
+`sondas.mjs` → aprobador. En una tarea visible captura cada pantalla de
+`escenarios.json` (`pantallas`; sin ellas, la URL de `--url`): los PNG los lee
+`revisor-ui` y una versión WebP reducida va a `evidencia/` y se incrusta en la
+página. `docs/evidencia/` guarda las capturas solo dentro de esa página. Con CAMBIOS REQUERIDOS archiva la ronda en `ronda-N/`, el
 constructor corrige y repite desde `via.mjs`. Las 3 rondas son de la
 **tarea**, no de la corrida: relanzar (también con `--solo-revision`) sigue
 contando desde las `ronda-N/` que haya; con las 3 gastadas sale con `3` sin
@@ -142,7 +155,9 @@ REQUERIDOS tras 3 rondas (al usuario) ·
 sin limpiar tras 2 rondas, rondas de revisión ya gastadas, cuota agotada, o tarea visible sin `--url`: sirve la app del
 worktree y relanza con `--solo-revision --url <url>`) · `1` error.
 - La fábrica, `planner.md` y `.claude/agents/` deben estar commiteados: el
-  worktree sale de `HEAD`.
+  worktree sale de `HEAD`. `memoria.md` no hace falta: en cada corrida se copia la
+  del repo principal a `.revision/TX.Y/memoria.md`, y el aprobador lee esa, así que
+  una `Dn` recién tomada vale al relanzar.
 - Cada rol Claude es un agente amnésico `claude -p --agent <rol>` con
   `--permission-mode acceptEdits` y `--permission-prompts none`: edita
   archivos del worktree; Bash solo para la suite (`FABRICA_TESTS`, por defecto
@@ -200,7 +215,7 @@ confirmar. Deja `.revision/GN/evidencia.html` (la página del grupo, con
 
 ## Criterios de aceptación
 1. <verificable> → test `<archivo>`: <nombre del caso> · Ejemplo: `<llamada literal>` → `<valor esperado>`
-2. <verificable en UI> → captura / comprobación
+2. <verificable en UI> → captura en la ruta `</ruta>`: <qué debe verse>
 
 ## Supuestos
 <cada decisión que no está en una `Dn` ni en el backlog, con sus opciones; "Ninguno" si no hay.

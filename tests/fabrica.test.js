@@ -8,7 +8,7 @@ import path from "node:path";
 import {
   parseGrupos, problemasDeGrupo, confirmacionesDe, supuestosPendientes, rutasDeStatus, propuestaDeCommits, parseArgsGrupo, archivosNuevos, tituloDeTarea
 } from "../skills/ia-factory/plantillas/revision/scripts/fabrica/grupo.mjs";
-import {
+import { correr,
   parseArgs, configFabrica, argsClaude, resultadoClaude, conBloqueantes, veredictoDe, revisoresDeVia, informeUiNoAplica, SALIDA, RONDAS_SPEC, RONDAS_REVISION, PROMPTS
 } from "../skills/ia-factory/plantillas/revision/scripts/fabrica/fabrica.mjs";
 
@@ -153,12 +153,17 @@ if (process.env.FAKE_CLAUDE_CUOTA === agente) { process.stdout.write(JSON.string
 if (agente === "probador") escribir(".revision/" + t + "/escenarios.json", env("FAKE_ESCENARIOS") || (t === "T9.2"
   ? JSON.stringify({ tarea: t, escenarios: [{ id: "e01", criterio: 1, titulo: "resta", pasos: [{ id: "r", modulo: "src/resta.js", funcion: "resta", args: [5, 3], espera: { valor: 2 } }] }] })
   : JSON.stringify({ tarea: t, escenarios: [{ id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 5 } }] }] })));
-if (agente === "revisor-ui") escribir(".revision/" + t + "/ui.md", "## Veredicto: SIN BLOQUEANTES\\n");
-if (agente === "revisor-codigo") escribir(".revision/" + t + "/codigo.md", "## Veredicto: SIN BLOQUEANTES\\n");
+// Informe que cumple el contrato común (evidencia.mjs); FAKE_INFORME_MALO lo rompe para ese agente.
+const contrato = (citas) => "\\n## Qué verifiqué\\n- Leí el diff\\n\\n## Evidencia\\n" + citas + "\\n\\n## Qué supuse\\nNinguno\\n\\n## Qué no pude verificar\\nNada\\n";
+const malo = process.env.FAKE_INFORME_MALO === agente || (process.env.FAKE_INFORME_MALO_UNA === agente && !prompt.includes("fue rechazado"));
+const verifique = (texto) => (malo ? texto.replace("- Leí el diff", "Todo bien") : texto);
+const capturas = (prompt.match(/\\.revision\\/\\S+\\.png/g) || []).map((c) => "\\x60" + c + "\\x60").join("\\n");
+if (agente === "revisor-ui") escribir(".revision/" + t + "/ui.md", verifique("## Veredicto: SIN BLOQUEANTES\\n\\n## Recorrido\\n- Inicio: se ve bien\\n" + contrato(capturas)));
+if (agente === "revisor-codigo") escribir(".revision/" + t + "/codigo.md", verifique("## Veredicto: SIN BLOQUEANTES\\n" + contrato("\\x60evidencia/matriz.md\\x60")));
 // FAKE_VEREDICTO: uno por ronda separados por coma; el último se repite.
 const ronda = fs.readFileSync(process.env.FAKE_LOG, "utf8").split("\\n").filter((l) => l.includes('"agente":"aprobador"')).length;
 const veredictos = (process.env.FAKE_VEREDICTO || "APROBADO").split(",");
-if (agente === "aprobador") escribir(".revision/" + t + "/veredicto.md", "# Veredicto: " + veredictos[Math.min(ronda, veredictos.length) - 1] + "\\n");
+if (agente === "aprobador") escribir(".revision/" + t + "/veredicto.md", verifique("# Veredicto: " + veredictos[Math.min(ronda, veredictos.length) - 1] + "\\n" + (process.env.FAKE_ARRIBA || "") + "\\n" + contrato("\\x60evidencia/matriz.md\\x60")));
 process.stdout.write(JSON.stringify({ result: agente + " listo", total_cost_usd: 0.01, is_error: false }));
 `;
 
@@ -173,8 +178,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (process.env.FAKE_GEMINI_CUOTA === rol) { process.stderr.write("Error: Cuota agotada en agy\\n"); process.exit(1); }
   const bloquea = rol === "spec" && process.env.FAKE_SPEC_BLOQUEA === "1";
   fs.mkdirSync(".revision/" + tarea, { recursive: true });
-  fs.writeFileSync(".revision/" + tarea + "/" + rol + ".md", "## Veredicto: " + (bloquea ? "CON BLOQUEANTES" : "SIN BLOQUEANTES") + "\\n");
+  fs.writeFileSync(".revision/" + tarea + "/" + rol + ".md", "## Veredicto: " + (bloquea ? "CON BLOQUEANTES" : "SIN BLOQUEANTES") + "\\n" + (process.env["FAKE_INFORME_" + rol] || ""));
 }
+`;
+
+// capturas.sh simulado: deja los PNG y los WebP de la pantalla y anota la URL.
+const CAPTURAS_SH = `#!/bin/sh
+echo "$2 $3" >> "$FAKE_LOG.capturas"
+[ -n "$FAKE_SIN_WEBP" ] && exit 0
+for v in 360-claro 360-oscuro 1280-claro 1280-oscuro; do
+  printf png > ".revision/$1/captura-$3-$v.png"
+  printf webp > ".revision/$1/captura-$3-$v.webp"
+done
 `;
 
 let raiz, repo, log;
@@ -193,7 +208,7 @@ function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes 
   writeFileSync(path.join(repo, "package.json"), '{"type":"module"}\n');
   if (sinAgentes) rmSync(path.join(repo, ".claude/agents/aprobador.md"));
   if (sinRevisorUi) rmSync(path.join(repo, ".claude/agents/revisor-ui.md"));
-  writeFileSync(path.join(repo, "scripts/revision/capturas.sh"), "#!/bin/sh\nexit 0\n");
+  writeFileSync(path.join(repo, "scripts/revision/capturas.sh"), CAPTURAS_SH);
   git("add", ".");
   git("commit", "--quiet", "-m", "fábrica");
 }
@@ -230,6 +245,13 @@ beforeEach(() => {
 
 afterEach(() => {
   rmSync(raiz, { recursive: true, force: true });
+});
+
+describe("correr: un hijo que no lee stdin (L13)", () => {
+  it("si termina antes de que le escriban, no tumba la fábrica", async () => {
+    const r = await correr(process.execPath, ["-e", "process.exit(0)"], { cwd: raiz, entrada: "x".repeat(4_000_000) });
+    expect(r.codigo).toBe(0);
+  });
 });
 
 describe("fabrica TX.Y: pipeline completo", () => {
@@ -363,8 +385,106 @@ describe("fabrica TX.Y: pipeline completo", () => {
     const r = fabrica(["T9.1", "--url", "http://x/"], { FAKE_SPEC: SPEC(["src/suma.js", "css/app.css", "tests/suma.test.js"]), FAKE_CODIGO: "src/suma.js,css/app.css" });
     expect(r.codigo).toBe(SALIDA.APROBADO);
     const ui = llamadas().find((l) => l.agente === "revisor-ui");
-    expect(ui.prompt).toMatch(/\.revision\/T9\.1\/captura-360-claro\.png/);
+    expect(ui.prompt).toMatch(/\.revision\/T9\.1\/captura-inicio-360-claro\.png/);
     expect(llamadas().map((l) => l.agente)).not.toContain("gemini ui");
+  });
+
+  const VISIBLE = { tocar: "`src/suma.js`, `css/app.css`, `tests/suma.test.js`" };
+  const envVisible = (extra = {}) => ({ FAKE_SPEC: SPEC(["src/suma.js", "css/app.css", "tests/suma.test.js"]), FAKE_CODIGO: "src/suma.js,css/app.css", ...extra });
+  const ESCENARIO_SUMA = { id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 5 } }] };
+
+  it("recorre las pantallas de escenarios.json y la página muestra las capturas (D16)", () => {
+    montarRepo(VISIBLE);
+    const pantallas = [{ id: "carrito", titulo: "Carrito", ruta: "/carrito" }, { id: "pago", titulo: "Pago", ruta: "/pago?x=1" }];
+    const r = fabrica(["T9.1", "--url", "http://x/app/"], envVisible({ FAKE_ESCENARIOS: JSON.stringify({ tarea: "T9.1", escenarios: [ESCENARIO_SUMA], pantallas }) }));
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    expect(readFileSync(`${log}.capturas`, "utf8")).toBe("http://x/carrito carrito\nhttp://x/pago?x=1 pago\n");
+    const prompt = llamadas().find((l) => l.agente === "revisor-ui").prompt;
+    expect(prompt).toMatch(/captura-carrito-360-claro\.png[\s\S]*captura-pago-1280-oscuro\.png/);
+    expect(prompt).toMatch(/`carrito` es la ruta `\/carrito` \(Carrito\)/);
+    const evidencia = path.join(wt(), ".revision/T9.1/evidencia");
+    expect(JSON.parse(readFileSync(path.join(evidencia, "recorrido.json"), "utf8")).map((p) => p.capturas.length)).toEqual([4, 4]);
+    expect(JSON.parse(readFileSync(path.join(evidencia, "hashes.json"), "utf8"))).toHaveProperty(["captura-pago-360-claro.webp"]);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/evidencia.html"), "utf8")).toMatch(/UX\/UI[\s\S]*Carrito[\s\S]*data:image\/webp/);
+  });
+
+  it("capturas.sh que no deja las imágenes: error claro, el revisor UI no opina sin ellas", () => {
+    montarRepo(VISIBLE);
+    const r = fabrica(["T9.1", "--url", "http://x/"], envVisible({ FAKE_SIN_WEBP: "1" }));
+    expect(r.codigo).toBe(SALIDA.error);
+    expect(r.salida).toMatch(/capturas\.sh no dejó/);
+    expect(llamadas().map((l) => l.agente)).not.toContain("revisor-ui");
+  });
+
+  it("revisor UI que no cita las capturas: informe rechazado, nunca aprueba", () => {
+    montarRepo(VISIBLE);
+    const r = fabrica(["T9.1", "--url", "http://x/"], envVisible({ FAKE_INFORME_MALO: "revisor-ui" }));
+    expect(r.codigo).toBe(SALIDA.error);
+    expect(r.salida).toMatch(/revisor-ui: informe rechazado/);
+    expect(llamadas().map((l) => l.agente)).not.toContain("aprobador");
+  });
+
+  it("informe de Código inválido: se reintenta una vez con el motivo y la corrida sigue", () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_INFORME_MALO_UNA: "revisor-codigo" });
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    const codigo = llamadas().filter((l) => l.agente === "revisor-codigo");
+    expect(codigo).toHaveLength(2);
+    expect(codigo[1].prompt).toMatch(/fue rechazado[\s\S]*no lista comprobaciones/);
+  });
+
+  it("informe de Código inválido dos veces: falla la ronda, no llega al aprobador", () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_INFORME_MALO: "revisor-codigo" });
+    expect(r.codigo).toBe(SALIDA.error);
+    expect(llamadas().map((l) => l.agente)).not.toContain("aprobador");
+  });
+
+  it("veredicto sin las secciones del contrato: nunca cuenta como aprobación", () => {
+    montarRepo();
+    expect(fabrica(["T9.1"], { FAKE_INFORME_MALO: "aprobador" }).codigo).toBe(SALIDA.error);
+  });
+
+  it("criterio sin escenario: el aprobador debe decir «leído» arriba o se rechaza", () => {
+    montarRepo();
+    const spec = SPEC(["src/suma.js", "tests/suma.test.js"]).replace("## Preguntas abiertas", "2. suma es pura → test `tests/suma.test.js`: pura\n\n## Preguntas abiertas");
+    expect(fabrica(["T9.1"], { FAKE_SPEC: spec }).codigo).toBe(SALIDA.error);
+    rmSync(path.join(raiz, "worktrees"), { recursive: true, force: true });
+    git("worktree", "prune");
+    git("branch", "-D", "fabrica/T9.1");
+    expect(fabrica(["T9.1"], { FAKE_SPEC: spec, FAKE_ARRIBA: "Leído sin ejecutar: criterio 2." }).codigo).toBe(SALIDA.APROBADO);
+  });
+
+  it("una Dn sin commitear llega al aprobador: el worktree sale de HEAD y no la vería (L11)", () => {
+    montarRepo();
+    writeFileSync(path.join(repo, "memoria.md"), "## 3\n### D9 — Decisión recién tomada\n");
+    expect(fabrica(["T9.1"]).codigo).toBe(SALIDA.APROBADO);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/memoria.md"), "utf8")).toMatch(/D9 — Decisión recién tomada/);
+    expect(llamadas().find((l) => l.agente === "aprobador").prompt).toMatch(/\.revision\/T9\.1\/memoria\.md/);
+    expect(git("-C", wt(), "status", "--porcelain", "memoria.md")).toBe("");
+  });
+
+  it("al relanzar se refresca la memoria: vale lo que el dueño decidió después", () => {
+    montarRepo();
+    writeFileSync(path.join(repo, "memoria.md"), "vieja\n");
+    fabrica(["T9.1"]);
+    writeFileSync(path.join(repo, "memoria.md"), "nueva\n");
+    fabrica(["T9.1", "--solo-revision"]);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/memoria.md"), "utf8")).toBe("nueva\n");
+  });
+
+  it("las sondas de Seguridad corren antes del aprobador y llegan a la evidencia (D16)", () => {
+    montarRepo();
+    const sondas = [{ id: "a1", hallazgo: null, titulo: "Suma con texto", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: ["2", 3], espera: { valor: 5 } }] }];
+    const informe = `## Superficie de entrada\n- suma(a, b)\n\n## Sondas\n\`\`\`json\n${JSON.stringify(sondas)}\n\`\`\`\n`;
+    const r = fabrica(["T9.1"], { FAKE_INFORME_seguridad: informe });
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    const evidencia = path.join(wt(), ".revision/T9.1/evidencia");
+    const { seguridad } = JSON.parse(readFileSync(path.join(evidencia, "sondas.json"), "utf8"));
+    expect(seguridad.sondas[0]).toMatchObject({ id: "a1", estado: "reproducido" });
+    expect(llamadas().find((l) => l.agente === "aprobador").prompt).toMatch(/evidencia\/sondas\.json/);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/evidencia.html"), "utf8")).toMatch(/Necesita tu OK[\s\S]*Suma con texto[\s\S]*Cómo funciona/);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8")).toMatch(/sondas \(ronda 1\).*1 reproducida/);
   });
 
   it("tarea visible sin el agente revisor-ui: error claro antes de capturar", () => {

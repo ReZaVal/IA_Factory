@@ -1,6 +1,6 @@
 # Formato obligatorio de tu respuesta
 
-Responde en español, en Markdown, con exactamente estas secciones:
+Responde en español, en Markdown, con estas secciones y las que tu rol añada. Un script rechaza el informe que no las traiga:
 
 ## Veredicto: SIN BLOQUEANTES | CON BLOQUEANTES
 (CON BLOQUEANTES si hay al menos un hallazgo CRITICAL o HIGH.)

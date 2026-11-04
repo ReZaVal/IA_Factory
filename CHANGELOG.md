@@ -1,6 +1,25 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- `fabrica.mjs` ya no se cae con `EPIPE` si un proceso hijo termina sin leer su
+  entrada (`L13`).
+- `fabrica.mjs` copia en cada corrida la `memoria.md` del repo principal a
+  `.revision/TX.Y/memoria.md` y el aprobador lee esa: una `Dn` sin commitear ya no
+  bloquea la tarea al relanzar (`L11`).
+- Roles con su evidencia (`D14`/`D16`, `T1.14`): `evidencia.mjs` rige ya los
+  informes de Seguridad, Lógica, UI, Código y aprobador, y el del auditor de spec:
+  uno inválido se reintenta diciendo por qué y, si sigue inválido, falla la ronda.
+  Añade lo de cada rol (`--rol`): superficie de entrada y sonda por cada CRITICAL o
+  HIGH; recorrido y cada captura citada; `archivo:línea` y comandos; «leído» dicho
+  arriba. Nuevo `scripts/revision/sondas.mjs` (sin modelo): ejecuta los ataques y
+  casos borde que Seguridad y Lógica escriben como datos (`roles/_sondas.md`) y deja
+  `evidencia/sondas.json`. `capturas.sh` acepta una pantalla, deja también un WebP
+  reducido y ya no se cuelga (`L10`). `escenarios.json` admite `pantallas`. La página
+  suma Seguridad, Casos borde y UX/UI, con capturas incrustadas; un ataque
+  reproducido sube a «Necesita tu OK». `docs/evidencia/` guarda las capturas solo
+  dentro de la página. Los escenarios `comando` ya no pueden leer `.env`,
+  `local_privado/` ni rutas fuera del proyecto. Proyectos ya instalados: reinstalar
+  los roles, o sus informes se rechazarán.
 - Modo grupo y parada (`D14`/`D15`, `T1.13`): `fabrica grupo GN` corre en orden
   las tareas de la tabla «Grupos» de `planner.md` en un mismo worktree (nuevo
   `scripts/fabrica/grupo.mjs`: sin modelo ni git) y se detiene una sola vez: grupo
@@ -37,8 +56,7 @@
   ellas, con «todo» sin lista, con rutas de evidencia inexistentes o con
   «Ninguno» en supuestos cuando la spec los declara. `spec.mjs` trata una
   «Inferencia a confirmar» como HIGH. La plantilla de spec suma «Supuestos» y
-  un ejemplo ejecutable por criterio. Aún no está enchufado en `gemini.mjs`
-  (`T1.14`).
+  un ejemplo ejecutable por criterio.
 - Revisores sin API key (`D13` de IA Factory): `gemini.mjs` usa por defecto
   `agy` (Antigravity CLI) con la cuenta personal, `AGY_MODEL` por defecto
   `gemini-4-argon-medium`, en `--mode plan`, desde una carpeta temporal y con

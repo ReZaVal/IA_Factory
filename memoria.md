@@ -260,6 +260,25 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   coinciden); `T1.13` lo invoca antes de proponer los commits. El repo del
   cliente crece con cada tarea: revisar el tamaño si se versionan capturas (`T1.14`).
 
+### D16 — Entrega visual: pantallas y APIs; capturas reducidas en la página
+- **Decisión:** los próximos proyectos tendrán pantallas y APIs, así que se
+  construyen las dos entregas de la spec de evidencia §8. Las capturas de la
+  ronda aprobada se versionan reducidas (WebP) e incrustadas en `evidencia.html`;
+  los PNG originales no entran en `docs/evidencia/`.
+- **Razón:** elegida por el usuario (S-17, 2026-11-04). Cierra `P7` y la revisión
+  de tamaño que dejó abierta `D15`.
+- **Alternativas rechazadas:** solo pantallas, solo APIs o solo el contrato;
+  versionar los PNG completos (el repo del cliente crece más rápido); no
+  versionar capturas (no se podría volver a ver lo aprobado).
+- **Impacto:** `T1.14` hace pantallas; las APIs pasan a `T1.15`, que necesita
+  levantar el servidor del worktree, y `T2.1` depende ahora de `T1.15`.
+- **[decisión del agente, reversible] Sondas:** `agy` corre en `--mode plan` y no
+  ejecuta nada (`D13`), así que Seguridad y Lógica no pueden reproducir un ataque
+  por sí mismas. Escriben el ataque como escenario en la sección «Sondas» de su
+  informe y `sondas.mjs` (sin modelo) lo ejecuta con el motor de `prueba.mjs`.
+  Rechazadas: aceptar ataques solo descritos en texto (contradice la spec §7) y
+  mover los revisores a Claude (cambia `D13`).
+
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
 gatekeeper → `T2.1`.
@@ -300,9 +319,8 @@ gatekeeper → `T2.1`.
   `0` o un error? → Resuelta (S-12): da `0`. Registrada como `D5` en
   `IA_Factory_Test/memoria.md`, porque solo afecta al repo de prueba.
 
-- [ ] **P7 — Tipos de producto de los próximos proyectos.** Decide si la
-  entrega visual sigue con pantallas o con APIs (`D14`). Bloquea el alcance de
-  `T1.14`, no el spike.
+- [x] **P7 — Tipos de producto de los próximos proyectos.** → Resuelta (S-17):
+  pantallas y APIs, `D16`.
 
 - [x] **P8 — Destino de la evidencia aprobada.** → Resuelta (S-15): se guarda
   en el repo, `D15`.

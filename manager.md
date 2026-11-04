@@ -27,7 +27,8 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   mapeado sobre el harness, `D9` vía rápida FTD, `D10` permisos de los
   agentes amnésicos, `D11` tope de rondas por tarea, `D12` medición (`T2.7`)
   antes del auto-merge, `D13` revisores con la cuenta personal vía `agy`, sin
-  API keys, y UI en Claude, `D14` evidencia verificable por el humano.
+  API keys, y UI en Claude, `D14` evidencia verificable por el humano, `D15` evidencia al repo, `D16`
+  pantallas y APIs.
 - **Cambió en la última sesión (S-10):** `T1.8` cerrada (`D13`): el usuario no
   tiene API keys. `gemini.mjs` usa `agy` con su cuenta Google AI Pro, en
   `--mode plan`, desde una carpeta temporal; UI pasa al agente Claude
@@ -52,7 +53,12 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 - **Modo grupo (S-16):** `T1.13` ✅: `fabrica grupo GN` (tabla «Grupos» de
   `planner.md`); se detiene una vez; `--proponer` registra la evidencia y redacta
   los commits. Probado con agentes simulados, sin grupo real.
-- **Próximos pasos:** `T1.14`; `P6` antes de enviar
+- **Roles con evidencia (S-17):** `T1.14` ✅, `D16`: `evidencia.mjs` ya rige
+  todos los informes de revisión; Seguridad y Lógica escriben sondas que ejecuta
+  `sondas.mjs`; capturas por pantalla incrustadas en la página. Corrida completa real
+  de `T1.3`: APROBADO en la ronda 2 (la 1 la bloqueó `L11`, ya corregido). Lógica y
+  `revisor-ui` se probaron en real solo por separado, no dentro de la fábrica.
+- **Próximos pasos:** `T1.15` (APIs, `D16`); `P6` antes de enviar
   código de clientes; luego `T2.1` (🔒). El usuario no ha confirmado el cierre
   de la Fase 1.
 
@@ -68,7 +74,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 | T1.6 | `revision.md ## 3`; `memoria.md D9, D10, P5` | `scripts/fabrica/fabrica.mjs`, `revision.md`, `tests/fabrica.test.js` |
 | T1.7 | propuesta §5 Fase 5; `fabrica.mjs` (`correrPipeline`, `SALIDA`) | `fabrica.mjs`, `constructor.md`, `revision.md ## 3`, `tests/fabrica.test.js` |
 | T1.8 | `memoria.md D13`; `learn.md L8` | `gemini.mjs`, `fabrica.mjs`, `revisor-ui.md`, `revision.md ## 6`, `tests/agy.test.js` |
-| T1.9-T1.14 | `memoria.md D14`; `docs/superpowers/specs/2026-11-03-evidencia-verificable-design.md` (sección que cite la fila del backlog) | Ver columna «Tocar» de `planner.md §4` |
+| T1.9-T1.15 | `memoria.md D14`, `D16`; `docs/superpowers/specs/2026-11-03-evidencia-verificable-design.md` (sección que cite la fila del backlog) | Ver columna «Tocar» de `planner.md §4` |
 
 ## Fases del proyecto
 ### Fase 0 — Instalación del harness ✅
@@ -97,7 +103,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.13` ✅, `T1.14` ⬜ (`D14`) |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.14` ✅, `T1.15` ⬜ (`D14`, `D16`) |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |

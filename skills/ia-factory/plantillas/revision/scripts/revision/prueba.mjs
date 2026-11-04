@@ -24,6 +24,8 @@ const ESPECIALES = { NaN: "NaN", Infinity: "Infinity", "-Infinity": "-Infinity",
 // Un escenario `comando` es un argv sin shell: solo lectura (el orquestador lo corre fuera de los permisos del agente).
 const GIT_LECTURA = ["diff", "status", "log", "show", "ls-files"];
 const EJECUTABLES = ["grep", "ls", "cat", "wc"];
+// Quien escribe un comando es un modelo y su salida va a evidencia/, que se versiona (D15): nada de secretos.
+const SECRETO = /(^|[/:=]|^-[A-Za-z]+)\.env(?![a-z])|(^|[/:=])local_privado(\/|$)|^-[A-Za-z]*R|^--dereference-recursive/;
 const ES_TEST = /(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.py$/;
 
 /** Convierte un valor del JSON de escenarios en una expresión JS literal. */
@@ -79,6 +81,23 @@ export function validarEscenarios(esc) {
     else p.push(...validarPasos(e, donde));
   }
   p.push(...validarSupuestos(esc.supuestos, esc.escenarios));
+  p.push(...validarPantallas(esc.pantallas));
+  return p;
+}
+
+/** Recorrido de una tarea visible (spec de evidencia §8): cada pantalla, una ruta de la app servida. */
+function validarPantallas(pantallas = []) {
+  if (!Array.isArray(pantallas)) return ["`pantallas` debe ser una lista"];
+  const p = [];
+  const ids = new Set();
+  for (const s of pantallas) {
+    const donde = `pantalla ${s?.id || "?"}`;
+    if (!/^[a-z0-9-]+$/.test(s?.id ?? "")) p.push(`${donde}: id solo admite minúsculas, números y guiones`);
+    else if (ids.has(s.id)) p.push(`${donde}: id repetido`);
+    else ids.add(s.id);
+    if (typeof s?.titulo !== "string" || !s.titulo) p.push(`${donde}: falta titulo`);
+    if (!/^(\/(?!\/)|[#?])/.test(s?.ruta ?? "")) p.push(`${donde}: ruta debe ser relativa a la app (/…, #… o ?…)`);
+  }
   return p;
 }
 
@@ -105,6 +124,9 @@ function validarComando(e, donde) {
   if (!Array.isArray(e.comando) || !e.comando.every((x) => typeof x === "string")) return [`${donde}: comando debe ser un arreglo argv de textos`];
   const permitido = cmd === "git" ? GIT_LECTURA.includes(sub) : EJECUTABLES.includes(cmd);
   if (!permitido) p.push(`${donde}: comando no permitido (solo ${EJECUTABLES.join(", ")} y git ${GIT_LECTURA.join("|")})`);
+  const args = e.comando.slice(1);
+  if (args.some((a) => SECRETO.test(a))) p.push(`${donde}: comando que puede leer un secreto (.env, local_privado, -R)`);
+  if (args.some((a) => path.isAbsolute(a) || a.split("/").includes(".."))) p.push(`${donde}: comando con una ruta fuera del proyecto`);
   if (!Number.isInteger(e.espera?.codigo)) p.push(`${donde}: espera.codigo (entero) es obligatorio`);
   return p;
 }
@@ -246,6 +268,19 @@ export function registrarHashes(dir) {
   const hashes = Object.fromEntries(readdirSync(dir).filter((f) => f !== "hashes.json").sort().map((f) => [f, sha(path.join(dir, f))]));
   writeFileSync(path.join(dir, "hashes.json"), `${JSON.stringify(hashes, null, 2)}\n`);
   return hashes;
+}
+
+/**
+ * Sella archivos que llegan después de prueba.mjs (sondas, capturas). Solo añade: re-sellar
+ * uno ya registrado ocultaría una alteración. @param {string} dir @param {string[]} archivos
+ */
+export function anadirHashes(dir, archivos) {
+  const ruta = path.join(dir, "hashes.json");
+  const guardados = JSON.parse(readFileSync(ruta, "utf8"));
+  const nuevos = Object.fromEntries(archivos.map((f) => [f, sha(path.join(dir, f))]));
+  const yaSellados = archivos.filter((f) => f in guardados);
+  if (yaSellados.length) throw new Error(`${yaSellados.join(", ")} ya está sellado en evidencia/: corre prueba.mjs para empezar de nuevo`);
+  writeFileSync(ruta, `${JSON.stringify({ ...guardados, ...nuevos }, null, 2)}\n`);
 }
 
 /** Archivos de evidencia cambiados, borrados o añadidos desde que se registraron. @param {string} dir */

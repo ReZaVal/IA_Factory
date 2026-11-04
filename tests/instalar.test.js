@@ -41,7 +41,9 @@ const NUEVOS_1_1 = [
   "scripts/revision/evidencia.mjs",
   "scripts/revision/pagina.mjs",
   "scripts/revision/prueba.mjs",
+  "scripts/revision/roles/_sondas.md",
   "scripts/revision/roles/spec.md",
+  "scripts/revision/sondas.mjs",
   "scripts/revision/spec.mjs",
   "scripts/revision/via.mjs"
 ];

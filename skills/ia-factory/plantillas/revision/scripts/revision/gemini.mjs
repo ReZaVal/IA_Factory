@@ -4,7 +4,8 @@
 // motor por defecto es `agy` (Antigravity CLI con la cuenta personal, sin clave,
 // D13 de IA Factory); GEMINI_MOTOR=api usa la API con clave. El rol `spec` audita
 // la spec antes de construir: recibe spec + fila del backlog + chequeos
-// deterministas (spec.mjs), sin diff. UI la revisa el agente `revisor-ui`.
+// deterministas (spec.mjs), sin diff. UI la revisa el agente `revisor-ui`. Todo informe
+// pasa por evidencia.mjs (D14): uno inválido se reintenta y, si sigue inválido, no se guarda.
 // Uso: node scripts/revision/gemini.mjs <spec|seguridad|logica> --tarea TX.Y [--carril software] [--base REF]
 //      node scripts/revision/gemini.mjs --modelos
 import { readFile, writeFile, mkdir, mkdtemp, rm } from "node:fs/promises";
@@ -16,6 +17,8 @@ import { setTimeout as sleep } from "node:timers/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { filaBacklog, precheckSpec, tablaChequeos, buildSpecPrompt } from "./spec.mjs";
+import { validarInforme, supuestosDeSpec, existeEvidencia } from "./evidencia.mjs";
+import { ROLES_CON_SONDAS } from "./sondas.mjs";
 
 export const ROLES = ["spec", "seguridad", "logica"];
 const API = "https://generativelanguage.googleapis.com/v1beta";
@@ -27,6 +30,7 @@ const CARRIL = /^[a-z0-9-]+$/;
 const MAX_REINTENTOS = 3;
 const BACKOFF_MS = 1000;
 const MAX_ESPERA_MS = 90_000;
+const INTENTOS_INFORME = 2;
 const MOTORES = ["agy", "api"];
 const MODELO_AGY = "gemini-4-argon-medium";
 const LIMITE_AGY = "600s";
@@ -97,8 +101,8 @@ export function loadConfig(env, dotenvText) {
   };
 }
 
-/** @param {{ tarea: string, spec: string, diff: string }} ctx */
-export function buildPrompt({ tarea, spec, diff }) {
+/** @param {{ tarea: string, spec: string, diff: string, matriz?: string }} ctx */
+export function buildPrompt({ tarea, spec, diff, matriz = "" }) {
   return [
     `# Tarea ${tarea}`,
     "## Spec de la tarea",
@@ -106,7 +110,8 @@ export function buildPrompt({ tarea, spec, diff }) {
     "## Diff a revisar",
     "```diff",
     diff || "(diff vacío)",
-    "```"
+    "```",
+    ...(matriz ? ["## Evidencia ejecutada (`evidencia/matriz.md`, de prueba.mjs)", matriz] : [])
   ].join("\n\n");
 }
 
@@ -125,6 +130,23 @@ export function buildSystem({ contexto, carril, constitucion, rol, formato }) {
 
 /** Informe con la cabecera de `_formato.md`; sin ella, fabrica.mjs lo leería como aprobado. @param {string} informe */
 export const cumpleFormato = (informe) => INFORME_VALIDO.test(informe);
+
+/**
+ * Pide el informe y lo pasa por el contrato; al reintentar le dice al revisor qué falló.
+ * @param {(prompt: string) => Promise<string>} pedir
+ * @param {string} prompt
+ * @param {(informe: string) => string[]} validar devuelve los problemas
+ */
+export async function informeValido(pedir, prompt, validar) {
+  let problemas = [];
+  for (let intento = 1; intento <= INTENTOS_INFORME; intento++) {
+    const aviso = problemas.length ? `\n\n## Tu informe anterior fue rechazado\nCorrige esto y responde el informe completo:\n- ${problemas.join("\n- ")}` : "";
+    const informe = await pedir(`${prompt}${aviso}`);
+    problemas = validar(informe);
+    if (!problemas.length) return informe;
+  }
+  throw new Error(`informe rechazado por evidencia.mjs tras ${INTENTOS_INFORME} intentos:\n- ${problemas.join("\n- ")}`);
+}
 
 /**
  * `--mode plan` es lo único que impidió escribir: sin él agy edita, incluso fuera
@@ -349,15 +371,19 @@ async function main() {
     contexto: await readFile(path.join(roles, "_contexto.md"), "utf8"),
     carril: args.carril,
     constitucion: existsSync(constitucionPath) ? await readFile(constitucionPath, "utf8") : "",
-    rol: await readFile(path.join(roles, `${args.rol}.md`), "utf8"),
+    rol: [await readFile(path.join(roles, `${args.rol}.md`), "utf8"), ...(ROLES_CON_SONDAS.includes(args.rol) ? [await readFile(path.join(roles, "_sondas.md"), "utf8")] : [])].join("\n\n"),
     formato: await readFile(path.join(roles, "_formato.md"), "utf8")
   });
   const specPath = path.join(ROOT, "specs", `${args.tarea}.md`);
   const spec = existsSync(specPath) ? await readFile(specPath, "utf8") : "";
-  const { prompt, previo, base } = args.rol === "spec" ? await specInput(args.tarea, spec) : { prompt: buildPrompt({ tarea: args.tarea, spec, diff: await collectDiff(args.base) }), previo: "", base: args.base };
-  const informe = await (cfg.motor === "agy" ? callAgy : callGemini)({ ...cfg, system, prompt });
-
   const outDir = path.join(ROOT, ".revision", args.tarea);
+  const matrizPath = path.join(outDir, "evidencia", "matriz.md");
+  const matriz = existsSync(matrizPath) ? await readFile(matrizPath, "utf8") : "";
+  const { prompt, previo, base } = args.rol === "spec" ? await specInput(args.tarea, spec) : { prompt: buildPrompt({ tarea: args.tarea, spec, diff: await collectDiff(args.base), matriz }), previo: "", base: args.base };
+  const pedir = (texto) => (cfg.motor === "agy" ? callAgy : callGemini)({ ...cfg, system, prompt: texto });
+  const opciones = { existe: existeEvidencia(ROOT, args.tarea), specConSupuestos: supuestosDeSpec(spec).length > 0, rol: args.rol };
+  const informe = await informeValido(pedir, prompt, (texto) => validarInforme(texto, opciones).problemas);
+
   await mkdir(outDir, { recursive: true });
   const out = path.join(outDir, `${args.rol}.md`);
   await writeFile(out, `<!-- revisor: ${args.rol} · carril: ${args.carril} · modelo: ${cfg.motor === "agy" ? "agy/" : ""}${cfg.model} · base: ${base} -->\n\n${previo}${informe}\n`);
