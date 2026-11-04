@@ -1,0 +1,199 @@
+// T1.12 (spec de evidencia §9, D14/D15): pagina.mjs arma, sin modelo, la página de evidencia
+// de un grupo desde evidencia/ — un solo archivo que abre sin red, con lo asumido arriba.
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { execFileSync, spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync, realpathSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { probar } from "../skills/ia-factory/plantillas/revision/scripts/revision/prueba.mjs";
+import { datosDeTarea, paginaHtml, generarPagina, registrarEvidencia } from "../skills/ia-factory/plantillas/revision/scripts/revision/pagina.mjs";
+
+const PAGINA = path.resolve(import.meta.dirname, "../skills/ia-factory/plantillas/revision/scripts/revision/pagina.mjs");
+const ENV_GIT = { GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@e.com", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@e.com" };
+const TESTS = "node tests/tope.test.js";
+
+let dir;
+const git = (...a) => execFileSync("git", a, { cwd: dir, env: { ...process.env, ...ENV_GIT }, encoding: "utf8" });
+const escribir = (f, t) => { mkdirSync(path.dirname(path.join(dir, f)), { recursive: true }); writeFileSync(path.join(dir, f), t); };
+const paso = (id, etiqueta, args, valor) => ({ id, etiqueta, modulo: "src/tope.js", funcion: "tope", args, espera: { valor } });
+const ESCENARIOS = {
+  tarea: "T9.1",
+  supuestos: [
+    { id: "S1", criterios: [1], titulo: "Un descuento mayor que el subtotal da 0", origen: "specs/T9.1.md, «Riesgos»: «Inferencia a confirmar».", opciones: ["Tope en 0", "Lanzar error"] },
+    { id: "S2", criterios: [], titulo: "Nombre interno", origen: "constructor", opciones: ["a", "b"], bloqueante: false }
+  ],
+  escenarios: [
+    { id: "f1", flujo: true, criterio: null, titulo: "Descuento normal", supuesto: null, pasos: [paso("a", "Subtotal 100, descuento 30", [100, 30], 70)] },
+    { id: "f2", flujo: true, criterio: null, titulo: "Descuento mayor", supuesto: "S1", pasos: [paso("a", "Subtotal 100, descuento 150", [100, 150], 0)] },
+    { id: "e01", criterio: 1, titulo: "Tope en 0", pasos: [paso("a", "tope", [100, 150], 0)] },
+    { id: "e02", criterio: 2, titulo: "Descuento normal", pasos: [paso("a", "tope", [100, 30], 70)] }
+  ]
+};
+
+/** Proyecto con `tope` en HEAD roto y la versión buena en el árbol de trabajo; deja evidencia/ de T9.1. */
+function montar({ codigo = "export const tope = (s, d) => Math.max(0, s - d);\n", escenarios = ESCENARIOS } = {}) {
+  git("init", "--quiet", "-b", "main");
+  escribir("package.json", '{"type":"module"}\n');
+  escribir("src/tope.js", "export const tope = () => -1;\n");
+  escribir("specs/T9.1.md", "## Criterios de aceptación\n1. tope(100, 150) da 0 → test `tests/tope.test.js`: tope\n2. tope(100, 30) da 70 → test `tests/tope.test.js`: normal\n");
+  git("add", ".");
+  git("commit", "--quiet", "-m", "base");
+  escribir("src/tope.js", codigo);
+  escribir("tests/tope.test.js", 'import assert from "node:assert";\nimport { tope } from "../src/tope.js";\nassert.equal(tope(100, 150), 0);\nassert.equal(tope(100, 30), 70);\n');
+  escribir(".revision/T9.1/escenarios.json", JSON.stringify(escenarios));
+  return probar({ raiz: dir, tarea: "T9.1", tests: TESTS, zonas: ["UTC"] });
+}
+const html = () => paginaHtml({ id: "T9.1", tareas: [datosDeTarea(dir, "T9.1")] });
+
+beforeEach(() => { dir = realpathSync(mkdtempSync(path.join(tmpdir(), "ia-factory-pagina-"))); });
+afterEach(() => { rmSync(dir, { recursive: true, force: true }); });
+
+describe("datosDeTarea", () => {
+  it("sin evidencia/ → error que nombra prueba.mjs", () => {
+    expect(() => datosDeTarea(dir, "T9.1")).toThrow(/prueba\.mjs/);
+  });
+
+  it("lee resultados, matriz, supuestos e integridad", () => {
+    montar();
+    const d = datosDeTarea(dir, "T9.1");
+    expect(d).toMatchObject({ tarea: "T9.1", alterada: [] });
+    expect(d.resultados.total).toBe(4);
+    expect(d.supuestos.map((s) => s.id)).toEqual(["S1", "S2"]);
+    expect(d.matriz).toHaveLength(2);
+  });
+
+  it("detecta evidencia alterada después de generarla", () => {
+    montar();
+    escribir(".revision/T9.1/evidencia/suite.txt", "todo bien\n");
+    expect(datosDeTarea(dir, "T9.1").alterada.join()).toMatch(/suite\.txt: modificado/);
+  });
+});
+
+describe("paginaHtml (criterio de salida de T1.12)", () => {
+  it("abre sin red: sin recursos externos ni scripts, con CSP cerrada", () => {
+    montar();
+    const h = html();
+    expect(h).not.toMatch(/<script|<link|<img|<iframe|src=|href=/i);
+    expect(h).toMatch(/Content-Security-Policy[^>]*default-src 'none'/);
+    expect(h).toMatch(/^<!doctype html>/i);
+  });
+
+  it("el supuesto sin confirmar va arriba, en ámbar, antes del flujo", () => {
+    montar();
+    const h = html();
+    const aviso = h.indexOf("Un descuento mayor que el subtotal da 0");
+    expect(aviso).toBeGreaterThan(-1);
+    expect(h.indexOf("Necesita tu OK")).toBeLessThan(aviso);
+    expect(aviso).toBeLessThan(h.indexOf("Cómo funciona"));
+    expect(h).toMatch(/class="aviso"[\s\S]*Tope en 0[\s\S]*Lanzar error/);
+    expect(h).toMatch(/<article class="flujo asumido">[\s\S]*Descuento mayor/);
+  });
+
+  it("un supuesto confirmado sale del aviso y queda como nota", () => {
+    montar({ escenarios: { ...ESCENARIOS, supuestos: [{ ...ESCENARIOS.supuestos[0], confirmado: "da 0 (D5)" }] } });
+    const h = html();
+    expect(h).not.toMatch(/class="aviso"/);
+    expect(h).toMatch(/S1 confirmado: da 0 \(D5\)/);
+    expect(h).toMatch(/Nada pendiente/);
+  });
+
+  it("un supuesto no bloqueante no interrumpe: va aparte, sin aviso", () => {
+    montar();
+    const h = html();
+    expect(h.match(/class="aviso"/g)).toHaveLength(1);
+    expect(h).toMatch(/Supuestos internos[\s\S]*Nombre interno/);
+  });
+
+  it("muestra los valores obtenidos al ejecutar, no solo los esperados", () => {
+    montar();
+    expect(html()).toMatch(/Subtotal 100, descuento 150[\s\S]*<strong>0<\/strong>[\s\S]*La spec dice: 0/);
+  });
+
+  it("criterio → test → resultado, con «ejecutado» o «leído» y comando para repetir", () => {
+    montar();
+    const h = html();
+    expect(h).toMatch(/tests\/tope\.test\.js/);
+    expect(h).toMatch(/ejecutado/);
+    expect(h).toMatch(/Comando para repetirlo[\s\S]*TZ=UTC node --input-type=module/);
+  });
+
+  it("un bug sembrado aparece como FALLA y el titular lo dice", () => {
+    montar({ codigo: "export const tope = (s, d) => s - d;\n" });
+    const h = html();
+    expect(h).toMatch(/class="mal">falló/);
+    expect(h).toMatch(/Con fallos/);
+  });
+
+  it("evidencia alterada → aviso rojo arriba con los archivos", () => {
+    montar();
+    escribir(".revision/T9.1/evidencia/suite.txt", "todo bien\n");
+    const h = html();
+    expect(h).toMatch(/Evidencia alterada[\s\S]*suite\.txt: modificado/);
+    expect(h.indexOf("Evidencia alterada")).toBeLessThan(h.indexOf("Necesita tu OK"));
+  });
+
+  it("escapa lo que escribe un modelo: nada de HTML ejecutable", () => {
+    montar({ escenarios: { ...ESCENARIOS, supuestos: [{ ...ESCENARIOS.supuestos[0], titulo: "<img src=x onerror=alert(1)>" }] } });
+    const h = html();
+    expect(h).not.toMatch(/<img/);
+    expect(h).toContain("&lt;img src=x onerror=alert(1)&gt;");
+  });
+
+  it("junta varias tareas de un grupo: un solo aviso por supuesto y una sección por tarea", () => {
+    montar();
+    const d = datosDeTarea(dir, "T9.1");
+    const h = paginaHtml({ id: "G1", tareas: [d, { ...d, tarea: "T9.2", supuestos: [] }] });
+    expect(h).toMatch(/Evidencia de G1/);
+    expect(h.match(/<section class="tarea"/g)).toHaveLength(2);
+    expect(h.match(/class="aviso"/g)).toHaveLength(1);
+  });
+});
+
+describe("generarPagina y registrarEvidencia (D15: se guarda en el repo)", () => {
+  it("escribe .revision/<id>/evidencia.html", () => {
+    montar();
+    const ruta = generarPagina({ raiz: dir, id: "T9.1", tareas: ["T9.1"] });
+    expect(ruta).toBe(path.join(dir, ".revision/T9.1/evidencia.html"));
+    expect(readFileSync(ruta, "utf8")).toMatch(/Evidencia de T9\.1/);
+  });
+
+  it("registrar copia página y evidencia/ a una ruta que git no ignora", () => {
+    montar();
+    generarPagina({ raiz: dir, id: "T9.1", tareas: ["T9.1"] });
+    const destino = registrarEvidencia({ raiz: dir, id: "T9.1", tareas: ["T9.1"] });
+    expect(destino).toBe(path.join(dir, "docs/evidencia/T9.1"));
+    for (const f of ["evidencia.html", "T9.1/matriz.md", "T9.1/hashes.json", "T9.1/resultados.json"]) expect(existsSync(path.join(destino, f))).toBe(true);
+    escribir(".gitignore", ".revision/\n");
+    expect(git("status", "--porcelain", "-uall", "docs/evidencia")).toMatch(/docs\/evidencia\/T9\.1\/evidencia\.html/);
+  });
+
+  it("registrar se niega si la evidencia fue alterada", () => {
+    montar();
+    escribir(".revision/T9.1/evidencia/suite.txt", "todo bien\n");
+    expect(() => registrarEvidencia({ raiz: dir, id: "T9.1", tareas: ["T9.1"] })).toThrow(/alterada/);
+    expect(existsSync(path.join(dir, "docs/evidencia"))).toBe(false);
+  });
+});
+
+describe("CLI", () => {
+  const cli = (...args) => spawnSync(process.execPath, [PAGINA, ...args], { cwd: dir, encoding: "utf8" });
+
+  it("--tareas genera la página y dice dónde", () => {
+    montar();
+    const r = cli("--tareas", "T9.1");
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/\.revision\/T9\.1\/evidencia\.html/);
+  });
+
+  it("--registrar además la copia a docs/evidencia/", () => {
+    montar();
+    expect(cli("--tareas", "T9.1", "--registrar").status).toBe(0);
+    expect(existsSync(path.join(dir, "docs/evidencia/T9.1/evidencia.html"))).toBe(true);
+  });
+
+  it("sin --tareas → uso y código 2", () => {
+    const r = cli();
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/uso:/);
+  });
+});

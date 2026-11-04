@@ -46,7 +46,10 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 - **Evidencia ejecutada (S-14):** `T1.11` ✅: `prueba.mjs` + agente `probador`
   enchufados en `fabrica.mjs`; cierra `L7`. Probado con los escenarios del spike,
   no con un probador real.
-- **Próximos pasos:** `T1.12`-`T1.14`; `P6` antes de enviar
+- **Página de evidencia (S-15):** `T1.12` ✅: `pagina.mjs` genera
+  `evidencia.html` desde `evidencia/` (supuestos arriba en ámbar, sin red);
+  `fabrica.mjs` la deja y la enlaza; `D15`: se registra en `docs/evidencia/`.
+- **Próximos pasos:** `T1.13`-`T1.14`; `P6` antes de enviar
   código de clientes; luego `T2.1` (🔒). El usuario no ha confirmado el cierre
   de la Fase 1.
 
@@ -91,7 +94,7 @@ Se definen al activarse (`D6`, `D7`).
 | Fase | Estado |
 |---|---|
 | 0 — Harness | ✅ (`D1`-`D7`) |
-| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.11` ✅, `T1.12`-`T1.14` ⬜ (`D14`) |
+| 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.12` ✅, `T1.13`-`T1.14` ⬜ (`D14`) |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ⬜ |
 | 4 — Investigación | ⬜ |

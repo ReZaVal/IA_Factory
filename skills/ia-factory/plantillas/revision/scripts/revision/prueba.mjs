@@ -73,11 +73,29 @@ export function validarEscenarios(esc) {
     if (typeof e?.id !== "string" || !e.id) p.push(`${donde}: falta id`);
     else if (ids.has(e.id)) p.push(`${donde}: id repetido`);
     else ids.add(e.id);
-    if (!Number.isInteger(e?.criterio)) p.push(`${donde}: criterio debe ser el número del criterio de la spec`);
+    if (!e?.flujo && !Number.isInteger(e?.criterio)) p.push(`${donde}: criterio debe ser el número del criterio de la spec`);
     if (typeof e?.titulo !== "string" || !e.titulo) p.push(`${donde}: falta titulo`);
     if (e?.comando !== undefined) p.push(...validarComando(e, donde));
     else p.push(...validarPasos(e, donde));
   }
+  p.push(...validarSupuestos(esc.supuestos, esc.escenarios));
+  return p;
+}
+
+/** Supuestos que el probador declara (spec de evidencia §6) y los flujos que los citan. */
+function validarSupuestos(supuestos = [], escenarios) {
+  if (!Array.isArray(supuestos)) return ["`supuestos` debe ser una lista"];
+  const p = [];
+  for (const s of supuestos) {
+    const donde = `supuesto ${s?.id || "?"}`;
+    if (typeof s?.id !== "string" || !s.id) p.push(`${donde}: falta id`);
+    if (typeof s?.titulo !== "string" || !s.titulo) p.push(`${donde}: falta titulo`);
+    if (!Array.isArray(s?.criterios) || !s.criterios.every(Number.isInteger)) p.push(`${donde}: criterios debe ser una lista de números`);
+    if (!Array.isArray(s?.opciones) || s.opciones.length < 2) p.push(`${donde}: opciones necesita al menos dos alternativas`);
+    if (s?.bloqueante !== undefined && typeof s.bloqueante !== "boolean") p.push(`${donde}: bloqueante debe ser true o false`);
+  }
+  const ids = new Set(supuestos.map((s) => s?.id));
+  for (const e of escenarios) if (e?.supuesto && !ids.has(e.supuesto)) p.push(`escenario ${e.id}: el supuesto ${e.supuesto} no está declarado`);
   return p;
 }
 
@@ -177,9 +195,10 @@ export function criteriosDeSpec(spec) {
  * un criterio sin escenario queda «sin escenario» (lo cubre la suite, o se leyó).
  */
 export function matriz({ criterios, resultados, suiteVerde }) {
-  const numeros = [...new Set([...criterios.map((c) => c.n), ...resultados.map((r) => r.criterio)])].sort((a, b) => a - b);
+  const deCriterio = resultados.filter((r) => !r.flujo);
+  const numeros = [...new Set([...criterios.map((c) => c.n), ...deCriterio.map((r) => r.criterio)])].sort((a, b) => a - b);
   return numeros.map((n) => {
-    const propios = resultados.filter((r) => r.criterio === n);
+    const propios = deCriterio.filter((r) => r.criterio === n);
     const spec = criterios.find((c) => c.n === n);
     const resultado = !propios.length ? "sin escenario" : propios.every((r) => !r.fallos.length) ? "cumple" : "FALLA";
     return { criterio: n, texto: spec?.texto ?? "(no está en la spec)", test: spec?.test ?? null, escenarios: propios.map((r) => r.id), modo: propios.length ? "ejecutado" : "leído", resultado, suiteVerde };

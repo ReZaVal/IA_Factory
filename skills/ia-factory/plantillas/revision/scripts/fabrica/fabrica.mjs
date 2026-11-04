@@ -21,6 +21,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseDotenv } from "../revision/gemini.mjs";
 import { precheckSpec } from "../revision/spec.mjs";
+import { generarPagina } from "../revision/pagina.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // Rondas planificador ↔ auditor antes de llevar la spec al usuario (memoria P5 de IA Factory, provisional).
@@ -36,6 +37,7 @@ const REQUERIDOS = [
   "scripts/revision/gemini.mjs",
   "scripts/revision/via.mjs",
   "scripts/revision/prueba.mjs",
+  "scripts/revision/pagina.mjs",
   ...["planificador", "constructor", "probador", "revisor-codigo", "aprobador"].map((a) => `.claude/agents/${a}.md`)
 ];
 const CAPTURAS = ["360-claro", "360-oscuro", "1280-claro", "1280-oscuro"];
@@ -353,13 +355,25 @@ function lineasRondas(ctx) {
   return [`- Rondas de revisión: ${ultima} de ${RONDAS_REVISION}`, ...rondas.map(({ n, veredicto }) => `  - Ronda ${n}: ${veredicto} → \`${ruta(n)}\``)];
 }
 
-function informeFabrica(ctx, { resultado, motivo, escalar }, ultimoVeredicto) {
+/** La página de evidencia (D14, spec §9) sale de evidencia/, no de los agentes; sin evidencia no hay página. */
+function paginaEvidencia(ctx) {
+  if (!existsSync(ctx.rel("evidencia/resultados.json"))) return "";
+  try {
+    return path.relative(ctx.wt, generarPagina({ raiz: ctx.wt, id: ctx.tarea, tareas: [ctx.tarea] }));
+  } catch (err) {
+    ctx.paso("página de evidencia", `no se pudo generar: ${err.message}`);
+    return "";
+  }
+}
+
+function informeFabrica(ctx, { resultado, motivo, escalar }, ultimoVeredicto, pagina = "") {
   const costo = ctx.pasos().reduce((n, p) => n + p.costo, 0);
   return [
     `# Fábrica ${ctx.tarea}: ${resultado}`,
     `- Worktree: \`${ctx.wt}\` · carril: ${ctx.carril} · costo Claude: US$ ${costo.toFixed(2)}`,
     `- ${resultado === "usuario" || escalar ? "Necesita al usuario" : "Detalle"}: ${motivo}`,
     ...lineasRondas(ctx),
+    ...(pagina ? [`- Evidencia para ti: \`${pagina}\` (ábrela en el navegador; abre sin red)`] : []),
     "",
     "| Paso | Resultado | Costo (US$) |",
     "|---|---|---|",
@@ -379,7 +393,8 @@ async function main() {
     fin = { resultado: err.usuario ? "usuario" : "error", motivo: err.message };
   }
   const ultimo = fin.escalar ? await leer(ctx.rel("veredicto.md")) : "";
-  await writeFile(ctx.rel("fabrica.md"), `${informeFabrica(ctx, fin, ultimo)}\n`);
+  const pagina = paginaEvidencia(ctx);
+  await writeFile(ctx.rel("fabrica.md"), `${informeFabrica(ctx, fin, ultimo, pagina)}\n`);
   process.stdout.write(`${args.tarea}: ${fin.resultado} — ${fin.motivo}\n  → ${ctx.rel("fabrica.md")}\n`);
   process.exitCode = SALIDA[fin.resultado];
 }

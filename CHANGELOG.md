@@ -1,6 +1,16 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Página de evidencia (`D14`/`D15`, `T1.12`): el nuevo `scripts/revision/pagina.mjs`
+  (sin modelo) arma `.revision/<id>/evidencia.html` desde `evidencia/`: un solo
+  archivo, sin scripts ni recursos externos, con «Necesita tu OK» arriba (los
+  supuestos sin confirmar, en ámbar), el flujo de cada tarea con los valores
+  obtenidos al ejecutar, la matriz criterio → test → resultado
+  («ejecutado» o «leído») y el comando para repetir cada uno. Si los hashes de
+  `prueba.mjs` no coinciden, avisa en rojo arriba. `--registrar` copia página y
+  evidencia a `docs/evidencia/<id>/` (se niega si fue alterada). `escenarios.json`
+  admite `flujo` y `supuestos`; `fabrica.mjs` genera la página al terminar y la
+  enlaza en `fabrica.md`. Todo lo que escribe un modelo se escapa.
 - `prueba.mjs` y agente `probador` (`D14`, `T1.11`): el probador deriva de la
   spec (sin leer el código) `.revision/TX.Y/escenarios.json`; `prueba.mjs`, sin
   modelo y fuera de los permisos de los agentes, corre la suite, los tests

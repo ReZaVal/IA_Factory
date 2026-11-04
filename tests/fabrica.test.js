@@ -265,6 +265,22 @@ describe("fabrica TX.Y: pipeline completo", () => {
     expect(llamadas().find((l) => l.agente === "aprobador").prompt).toMatch(/evidencia\/ \(matriz\.md\)/);
   });
 
+  it("deja la página de evidencia (T1.12) y fabrica.md la enlaza", () => {
+    montarRepo();
+    expect(fabrica(["T9.1"]).codigo).toBe(SALIDA.APROBADO);
+    const pagina = readFileSync(path.join(wt(), ".revision/T9.1/evidencia.html"), "utf8");
+    expect(pagina).toMatch(/Evidencia de T9\.1/);
+    expect(pagina).not.toMatch(/<script|src=|href=/);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8")).toMatch(/Evidencia para ti: `\.revision\/T9\.1\/evidencia\.html`/);
+  });
+
+  it("con un bug sembrado la página dice «Con fallos»", () => {
+    montarRepo();
+    const mal = JSON.stringify({ tarea: "T9.1", escenarios: [{ id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 6 } }] }] });
+    fabrica(["T9.1"], { FAKE_ESCENARIOS: mal });
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/evidencia.html"), "utf8")).toMatch(/Con fallos[\s\S]*esperaba 6, obtuvo 5/);
+  });
+
   it("bug sembrado: el escenario falla → matriz con FALLA, ronda con CAMBIOS REQUERIDOS sin revisores ni aprobador", () => {
     montarRepo();
     const mal = JSON.stringify({ tarea: "T9.1", escenarios: [{ id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 6 } }] }] });

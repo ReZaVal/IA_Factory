@@ -246,7 +246,19 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   se crea el probador).
 - **Impacto:** tareas `T1.9`-`T1.14`, antes de `T2.1` porque cambia el contrato
   de los dictámenes. `D4`, `D10` y `D11` no cambian. `prueba.mjs` resuelve
-  `L7` al correr fuera de los permisos del agente. Abiertas: `P7` y `P8`.
+  `L7` al correr fuera de los permisos del agente. Abiertas: `P7` y `P8` (esta última resuelta en `D15`).
+
+### D15 — La evidencia aprobada se guarda en el repo
+- **Decisión:** al aprobar un grupo, la página y `evidencia/` se registran en
+  `docs/evidencia/<id>/` (`pagina.mjs --registrar`) y viajan en los commits que
+  la fábrica propone; `.revision/` sigue ignorado y efímero.
+- **Razón:** elegida por el usuario (S-15, 2026-11-04), con la recomendación del
+  agente: queda trazable qué se aprobó y con qué valores (`N-20`).
+- **Alternativas rechazadas:** descartarla al aprobar (el dueño no podría
+  volver a ver qué se le mostró).
+- **Impacto:** `T1.12` (`registrarEvidencia`, se niega si los hashes no
+  coinciden); `T1.13` lo invoca antes de proponer los commits. El repo del
+  cliente crece con cada tarea: revisar el tamaño si se versionan capturas (`T1.14`).
 
 ## 4. Contrato de datos / estructura
 Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
@@ -292,9 +304,8 @@ gatekeeper → `T2.1`.
   entrega visual sigue con pantallas o con APIs (`D14`). Bloquea el alcance de
   `T1.14`, no el spike.
 
-- [ ] **P8 — Destino de la evidencia aprobada.** ¿Se versiona en el repo como
-  registro (`N-20`) o se descarta al aprobar? Recomendación del agente:
-  guardarla. Bloquea `T1.12`.
+- [x] **P8 — Destino de la evidencia aprobada.** → Resuelta (S-15): se guarda
+  en el repo, `D15`.
 
 > Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
 > `T2.5`; P4, el cierre de cada fase de carril.

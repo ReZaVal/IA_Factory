@@ -38,6 +38,7 @@ const NUEVOS_1_1 = [
   "scripts/fabrica/fabrica.mjs",
   "scripts/fabrica/worktree.sh",
   "scripts/revision/evidencia.mjs",
+  "scripts/revision/pagina.mjs",
   "scripts/revision/prueba.mjs",
   "scripts/revision/roles/spec.md",
   "scripts/revision/spec.mjs",

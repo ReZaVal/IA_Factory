@@ -45,3 +45,12 @@ aparte, para que el humano vea qué se asumió).
 
 Devuelve: ruta del archivo, cuántos escenarios por criterio y los criterios que no pudiste
 convertir en escenario, con el motivo.
+
+## Flujo y supuestos (los ve el dueño en la página de evidencia)
+- **Flujo:** 1-4 escenarios con `"flujo": true` y `"criterio": null` que cuentan cómo funciona
+  la tarea de punta a punta con valores reales (cada paso lleva `etiqueta`). No sustituyen a los
+  escenarios de criterio. Si el flujo depende de un supuesto, añade `"supuesto": "S1"`.
+- **Supuestos:** en la raíz, `"supuestos": [{ "id": "S1", "criterios": [4], "titulo": "…",
+  "origen": "specs/TX.Y.md, «Riesgos»", "opciones": ["lo construido", "la alternativa"] }]`,
+  uno por cada «Inferencia a confirmar» o decisión sin `Dn` que la spec declare. Con
+  `"bloqueante": false` si no cambia nada observable. Nunca pongas `confirmado`: lo confirma el dueño.

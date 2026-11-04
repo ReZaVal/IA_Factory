@@ -58,6 +58,36 @@ describe("validarEscenarios", () => {
   });
 });
 
+describe("validarEscenarios: flujos y supuestos (T1.12)", () => {
+  const flujo = (extra = {}) => escenario({ id: "f1", flujo: true, criterio: null, titulo: "Cómo funciona", ...extra });
+  const supuesto = (extra = {}) => ({ id: "S1", criterios: [1], titulo: "Tope en 0", origen: "specs/T9.1.md, «Riesgos»", opciones: ["0", "error"], ...extra });
+
+  it("un flujo no necesita criterio", () => {
+    expect(validarEscenarios({ escenarios: [flujo()] })).toEqual([]);
+  });
+
+  it("un escenario que no es flujo sigue necesitando criterio", () => {
+    expect(validarEscenarios({ escenarios: [escenario({ criterio: null })] }).join()).toMatch(/criterio debe ser/);
+  });
+
+  it("supuestos bien formados y referenciados desde un flujo → válido", () => {
+    expect(validarEscenarios({ supuestos: [supuesto()], escenarios: [flujo({ supuesto: "S1" })] })).toEqual([]);
+  });
+
+  it.each([
+    ["sin id", supuesto({ id: "" }), /supuesto \?: falta id/],
+    ["sin opciones", supuesto({ opciones: [] }), /supuesto S1: opciones/],
+    ["criterios no numéricos", supuesto({ criterios: ["a"] }), /supuesto S1: criterios/],
+    ["bloqueante no booleano", supuesto({ bloqueante: "sí" }), /supuesto S1: bloqueante/]
+  ])("supuesto %s → problema", (_n, s, esperado) => {
+    expect(validarEscenarios({ supuestos: [s], escenarios: [escenario()] }).join("\n")).toMatch(esperado);
+  });
+
+  it("un flujo que cita un supuesto inexistente → problema", () => {
+    expect(validarEscenarios({ supuestos: [], escenarios: [flujo({ supuesto: "S9" })] }).join()).toMatch(/supuesto S9 no está declarado/);
+  });
+});
+
 describe("criteriosDeSpec y matriz", () => {
   const SPEC = "## Criterios de aceptación\n1. suma(2, 3) devuelve 5 → test `tests/suma.test.js`: básica\n2. resta no existe\n\n## Preguntas abiertas\n3. no soy criterio\n";
 
@@ -66,6 +96,11 @@ describe("criteriosDeSpec y matriz", () => {
       { n: 1, texto: expect.stringContaining("suma(2, 3)"), test: "tests/suma.test.js" },
       { n: 2, texto: "resta no existe", test: null }
     ]);
+  });
+
+  it("un flujo no es un criterio: no entra en la matriz", () => {
+    const filas = matriz({ criterios: criteriosDeSpec(SPEC), resultados: [{ id: "f1", flujo: true, criterio: null, fallos: [] }, { id: "e01", criterio: 1, fallos: [] }], suiteVerde: true });
+    expect(filas.map((f) => f.criterio)).toEqual([1, 2]);
   });
 
   it("marca «ejecutado» solo con escenario; sin él, «leído»", () => {
