@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Desarrollo: `vitest.config.js` sube `testTimeout` a 60 s; los tests de `fabrica.test.js`
+  ejecutan el pipeline completo y superaban los 5 s por defecto en máquinas lentas (WSL).
 - Evidencia de API (`D16`, `T1.15`): un escenario de `escenarios.json` puede llevar
   `peticiones` (método, ruta, cabeceras, cuerpo y la respuesta que dice la spec).
   Nuevo `scripts/revision/api.mjs` (sin modelo): `prueba.mjs --servidor "<cmd>"` (o
