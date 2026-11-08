@@ -30,7 +30,7 @@ describe("parseArgs", () => {
 
 describe("configFabrica", () => {
   it("entorno primero, luego .env.local, luego valores por defecto", () => {
-    expect(configFabrica({}, "")).toEqual({ claude: "claude", tests: "npm test", cobertura: "", permitidos: [] });
+    expect(configFabrica({}, "")).toEqual({ claude: "claude", tests: "npm test", cobertura: "", servidor: "", permitidos: [] });
     const cfg = configFabrica({ FABRICA_TESTS: "pytest" }, "FABRICA_TESTS=npm test\nFABRICA_PERMITIDOS=Bash(make lint:*), Bash(ls:*)\n");
     expect(cfg.tests).toBe("pytest");
     expect(cfg.permitidos).toEqual(["Bash(make lint:*)", "Bash(ls:*)"]);
@@ -809,5 +809,12 @@ describe("fabrica grupo GN", () => {
     expect(r.codigo).toBe(SALIDA.error);
     expect(r.error).toMatch(/T9\.2 depende de T9\.1/);
     expect(llamadas()).toEqual([]);
+  });
+});
+
+describe("FABRICA_SERVIDOR (T1.15)", () => {
+  it("se lee del entorno o de .env.local", () => {
+    expect(configFabrica({ FABRICA_SERVIDOR: "node app.js" }, "").servidor).toBe("node app.js");
+    expect(configFabrica({}, "FABRICA_SERVIDOR=npm start").servidor).toBe("npm start");
   });
 });

@@ -6,7 +6,8 @@
 // Guarda todo en .revision/TX.Y/evidencia/ con el hash de cada archivo; los agentes
 // pueden leerla, no escribirla.
 // Uso: node scripts/revision/prueba.mjs --tarea TX.Y [--raiz <worktree>] [--tests "<cmd>"]
-//        [--cobertura "<cmd>"] [--zonas UTC,America/Lima] [--verificar]
+//        [--cobertura "<cmd>"] [--zonas UTC,America/Lima] [--servidor "<cmd>"] [--verificar]
+//   --servidor: comando que levanta la app escuchando en $PORT; solo hace falta con escenarios de API (api.mjs).
 //   --verificar: solo comprueba que evidencia/ no cambió desde que se generó.
 // Salida: 0 todo en verde · 1 hay fallos de verificación · 2 entrada inválida o error.
 import { spawnSync } from "node:child_process";
@@ -15,6 +16,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, 
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { correrApi, validarPeticiones } from "./api.mjs";
 
 export const ZONAS = ["UTC", "America/Lima", "Asia/Tokyo"];
 const LIMITE_LLAMADA_MS = 10_000;
@@ -78,6 +80,7 @@ export function validarEscenarios(esc) {
     if (!e?.flujo && !Number.isInteger(e?.criterio)) p.push(`${donde}: criterio debe ser el número del criterio de la spec`);
     if (typeof e?.titulo !== "string" || !e.titulo) p.push(`${donde}: falta titulo`);
     if (e?.comando !== undefined) p.push(...validarComando(e, donde));
+    else if (e?.peticiones !== undefined) p.push(...validarPeticiones(e, donde));
     else p.push(...validarPasos(e, donde));
   }
   p.push(...validarSupuestos(esc.supuestos, esc.escenarios));
@@ -191,8 +194,10 @@ function correrComando(esc, proyecto) {
  * un escenario que falla en otra zona falla aunque pase en la primera.
  * @returns {object[]} un resultado por escenario, con `fallos` y el comando para repetirlo
  */
-export function correrEscenarios({ proyecto, escenarios, zonas = ZONAS }) {
+export function correrEscenarios({ proyecto, escenarios, zonas = ZONAS, servidor = "" }) {
+  const api = new Map(correrApi({ proyecto, servidor, escenarios }).resultados.map((r) => [r.id, r]));
   return escenarios.escenarios.map((esc) => {
+    if (api.has(esc.id)) return api.get(esc.id);
     if (esc.comando) return { ...esc, ...correrComando(esc, proyecto) };
     const [principal, ...resto] = zonas.map((tz) => ({ tz, ...correrLlamada(esc, proyecto, tz) }));
     const otras = resto.filter((z) => z.fallos.length).map((z) => `falla en ${z.tz}`);
@@ -317,7 +322,7 @@ export function matrizMd({ tarea, filas, suite, base, fallos }) {
  * Corre todo y escribe evidencia/. No lanza por fallos de verificación: los devuelve.
  * @returns {{ fallos: string[], resumen: string }}
  */
-export function probar({ raiz, tarea, tests, cobertura = "", zonas = ZONAS }) {
+export function probar({ raiz, tarea, tests, cobertura = "", zonas = ZONAS, servidor = "" }) {
   const dirTarea = path.join(raiz, ".revision", tarea);
   const entrada = path.join(dirTarea, "escenarios.json");
   if (!existsSync(entrada)) throw new Error(`falta ${path.relative(raiz, entrada)}: lo escribe el probador`);
@@ -350,7 +355,7 @@ export function probar({ raiz, tarea, tests, cobertura = "", zonas = ZONAS }) {
     fallos.push("no hay tests nuevos ni modificados respecto de HEAD: el constructor debe escribirlos (TDD)");
   }
 
-  const resultados = correrEscenarios({ proyecto: raiz, escenarios, zonas });
+  const resultados = correrEscenarios({ proyecto: raiz, escenarios, zonas, servidor });
   const malos = resultados.filter((r) => r.fallos.length);
   fallos.push(...malos.map((r) => `escenario ${r.id} (criterio ${r.criterio}, ${r.titulo}): ${r.fallos.join("; ")}`));
 
@@ -373,7 +378,7 @@ function main() {
   const args = process.argv.slice(2);
   const valor = (flag, defecto = "") => (args.includes(flag) ? args[args.indexOf(flag) + 1] : defecto);
   const tarea = valor("--tarea");
-  if (!/^T\d+\.\d+$/.test(tarea)) throw new Error("uso: prueba.mjs --tarea TX.Y [--raiz <worktree>] [--tests <cmd>] [--cobertura <cmd>] [--zonas a,b] [--verificar]");
+  if (!/^T\d+\.\d+$/.test(tarea)) throw new Error("uso: prueba.mjs --tarea TX.Y [--raiz <worktree>] [--tests <cmd>] [--cobertura <cmd>] [--zonas a,b] [--servidor <cmd>] [--verificar]");
   const raiz = path.resolve(valor("--raiz", "."));
   if (args.includes("--verificar")) {
     const cambios = verificarHashes(path.join(raiz, ".revision", tarea, "evidencia"));
@@ -383,7 +388,7 @@ function main() {
     return;
   }
   const zonas = valor("--zonas") ? valor("--zonas").split(",").filter(Boolean) : ZONAS;
-  const { fallos, resumen } = probar({ raiz, tarea, tests: valor("--tests", "npm test"), cobertura: valor("--cobertura"), zonas });
+  const { fallos, resumen } = probar({ raiz, tarea, tests: valor("--tests", "npm test"), cobertura: valor("--cobertura"), zonas, servidor: valor("--servidor") });
   process.stdout.write(`${resumen}\n  → .revision/${tarea}/evidencia/matriz.md\n`);
   if (fallos.length) {
     process.stderr.write(`Verificación con fallos:\n- ${fallos.join("\n- ")}\n`);

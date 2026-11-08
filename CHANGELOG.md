@@ -1,6 +1,15 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Evidencia de API (`D16`, `T1.15`): un escenario de `escenarios.json` puede llevar
+  `peticiones` (método, ruta, cabeceras, cuerpo y la respuesta que dice la spec).
+  Nuevo `scripts/revision/api.mjs` (sin modelo): `prueba.mjs --servidor "<cmd>"` (o
+  `FABRICA_SERVIDOR`) levanta la app del worktree en un puerto libre, hace cada
+  petición, guarda la respuesta real (cabeceras de sesión ocultas) y apaga el
+  servidor siempre. Respuesta distinta a la spec → falla la ronda; sin servidor
+  configurado, los escenarios de API fallan diciéndolo. La página muestra petición y
+  respuesta junto a «La spec dice» y el `curl` para repetirla. El `probador` aprende
+  el formato. Proyectos ya instalados: reinstalar para recibir `api.mjs`.
 - `fabrica.mjs` ya no se cae con `EPIPE` si un proceso hijo termina sin leer su
   entrada (`L13`).
 - `fabrica.mjs` copia en cada corrida la `memoria.md` del repo principal a

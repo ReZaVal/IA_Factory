@@ -52,6 +52,7 @@ const REQUERIDOS = [
   "scripts/revision/gemini.mjs",
   "scripts/revision/via.mjs",
   "scripts/revision/prueba.mjs",
+  "scripts/revision/api.mjs",
   "scripts/revision/pagina.mjs",
   "scripts/revision/evidencia.mjs",
   "scripts/revision/sondas.mjs",
@@ -91,7 +92,7 @@ export function parseArgs(argv) {
 
 /**
  * Entorno primero; si falta, `.env.local`. FABRICA_TESTS es el comando de la suite
- * (constructor y aprobador lo corren); FABRICA_COBERTURA, el de cobertura (opcional); FABRICA_PERMITIDOS, reglas extra separadas por coma.
+ * (constructor y aprobador lo corren); FABRICA_COBERTURA, el de cobertura (opcional); FABRICA_SERVIDOR, el que levanta la app en $PORT para la evidencia de API (opcional); FABRICA_PERMITIDOS, reglas extra separadas por coma.
  * @param {Record<string, string | undefined>} env
  * @param {string} dotenvText
  */
@@ -102,6 +103,7 @@ export function configFabrica(env, dotenvText) {
     claude: valor("FABRICA_CLAUDE") || "claude",
     tests: valor("FABRICA_TESTS") || "npm test",
     cobertura: valor("FABRICA_COBERTURA"),
+    servidor: valor("FABRICA_SERVIDOR"),
     permitidos: valor("FABRICA_PERMITIDOS").split(",").map((s) => s.trim()).filter(Boolean)
   };
 }
@@ -327,7 +329,7 @@ export const veredictoPorEvidencia = (tarea, fallos) =>
 
 /** Evidencia ejecutada de la ronda n. Devuelve los fallos (vacío si todo en verde). */
 async function probar(ctx, n) {
-  const args = ["scripts/revision/prueba.mjs", "--tarea", ctx.tarea, "--tests", ctx.cfg.tests, ...(ctx.cfg.cobertura ? ["--cobertura", ctx.cfg.cobertura] : [])];
+  const args = ["scripts/revision/prueba.mjs", "--tarea", ctx.tarea, "--tests", ctx.cfg.tests, ...(ctx.cfg.cobertura ? ["--cobertura", ctx.cfg.cobertura] : []), ...(ctx.cfg.servidor ? ["--servidor", ctx.cfg.servidor] : [])];
   const r = await correr(process.execPath, args, { cwd: ctx.wt });
   if (r.codigo === 2) throw new Error(`prueba.mjs: ${r.error.trim() || r.salida.trim()}`);
   const linea = r.salida.split("\n")[0];

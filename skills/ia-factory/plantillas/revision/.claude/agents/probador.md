@@ -60,3 +60,21 @@ Si la spec describe pantallas, añade en la raíz `"pantallas": [{ "id": "carrit
 con un producto", "ruta": "/carrito?demo=1" }]`, en el orden del recorrido. `id`: minúsculas, números y
 guiones. `ruta`: relativa a la app (`/…`, `#…` o `?…`). Solo se visitan URLs: un paso que exija hacer
 clic o llenar un formulario no se puede capturar; dilo en tu respuesta.
+
+## API (tarea con endpoints)
+Si la spec describe una API, el escenario lleva `peticiones` en vez de `pasos`; el script levanta el
+servidor del worktree (comando fijado por el dueño en `FABRICA_SERVIDOR`, no lo escribes tú) y hace cada
+petición de verdad:
+```json
+{ "id": "a01", "criterio": 2, "titulo": "Total con cupón",
+  "peticiones": [
+    { "id": "p1", "etiqueta": "Pido el total", "metodo": "POST", "ruta": "/api/total",
+      "cabeceras": { "x-demo": "1" }, "cuerpo": { "items": [{ "precio": 100 }], "cupon": "DIEZ" },
+      "espera": { "estado": 200, "cuerpo": { "total": 106.2 } } }
+  ] }
+```
+- `metodo`: GET, POST, PUT, PATCH, DELETE, HEAD u OPTIONS. `ruta`: empieza con una sola `/`, sin URL ni host.
+- `espera.estado` es obligatorio. Añade `cuerpo` (JSON igual al de la spec, sin claves de más),
+  `cuerpoContiene` (texto) o `cabeceras` (`{ "location": "/x" }`) solo si la spec los da. Nunca los saques del código.
+- Las peticiones de un escenario corren en orden; cubre también los errores que la spec nombra (404, 400…).
+- No uses credenciales reales: la evidencia se versiona (las cabeceras de sesión se ocultan, pero tampoco las pongas).

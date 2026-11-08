@@ -85,16 +85,34 @@ const paso = (p) => `<li class="paso ${p.obtenido?.error ? "paso-error" : ""} ${
   <span class="nota">La spec dice: ${esc(esperado(p.espera))}</span>
 </li>`;
 
+const json = (v) => JSON.stringify(v, null, 2);
+const cuerpoDe = (r) => (r.json !== undefined ? json(r.json) : r.texto) + (r.truncado ? "\n… (cortado)" : "");
+const esperadoApi = (e) => [`estado ${e.estado}`, "cuerpo" in e ? `cuerpo ${JSON.stringify(e.cuerpo)}` : "", e.cuerpoContiene !== undefined ? `cuerpo con «${e.cuerpoContiene}»` : "", ...Object.entries(e.cabeceras ?? {}).map(([k, v]) => `${k}: ${v}`)].filter(Boolean).join(" · ");
+
+/** Una petición real y la respuesta real, junto a lo que dice la spec. */
+const tarjetaPeticion = (q) => {
+  const r = q.respuesta;
+  return `<li class="paso peticion ${q.fallo ? "paso-falla" : ""}">
+  <span class="etiqueta">${esc(q.etiqueta ?? q.id)}</span>
+  <code>${esc(q.metodo)} ${esc(q.ruta)}</code>
+  ${q.cuerpo === undefined ? "" : `<pre><code>${esc(typeof q.cuerpo === "string" ? q.cuerpo : json(q.cuerpo))}</code></pre>`}
+  ${!r || r.error ? `<strong>${esc(r?.error ?? "sin respuesta")}</strong>` : `<strong>${esc(r.estado)}</strong><pre><code>${esc(cuerpoDe(r))}</code></pre>`}
+  <span class="nota">La spec dice: ${esc(esperadoApi(q.espera))}</span>
+  ${q.fallo ? `<span class="mal">${esc(q.fallo)}</span>` : ""}
+</li>`;
+};
+
 function tarjetaFlujo(f, sinConfirmar) {
   const asumido = f.supuesto && sinConfirmar.has(f.supuesto);
   return `<article class="flujo${asumido ? " asumido" : ""}">
   <h3>${esc(f.titulo)}${asumido ? ` <span class="marca">supuesto ${esc(f.supuesto)}</span>` : ""}</h3>
-  <ol>${f.pasos.map(paso).join("")}</ol>
+  <ol>${f.peticiones ? f.peticiones.map(tarjetaPeticion).join("") : f.pasos.map(paso).join("")}</ol>
   ${repetir(f)}
 </article>`;
 }
 
-const valorDe = (rs) => rs.map((r) => (r.comando ? r.salida || "sin salida" : r.pasos.map((p) => obtenido(p.obtenido)).join(" · "))).join(" | ");
+const resumenPeticion = (q) => `${q.metodo} ${q.ruta} → ${q.respuesta?.error ?? q.respuesta?.estado ?? "sin respuesta"}`;
+const valorDe = (rs) => rs.map((r) => (r.peticiones ? r.peticiones.map(resumenPeticion).join(" · ") : r.comando ? r.salida || "sin salida" : r.pasos.map((p) => obtenido(p.obtenido)).join(" · "))).join(" | ");
 const estado = { cumple: `<span class="bien">cumple</span>`, FALLA: `<span class="mal">falló</span>`, "sin escenario": `<span class="nota">sin escenario</span>` };
 
 function filaCriterio(f, resultados, conSupuesto) {
@@ -131,6 +149,13 @@ function seccionSeguridad(t) {
   ].join("\n");
 }
 
+function seccionApi(t) {
+  const deApi = t.resultados.resultados.filter((r) => r.peticiones && !r.flujo);
+  if (!deApi.length) return "";
+  const tarjetas = deApi.map((r) => `<article><h4>${esc(r.titulo)} <span class="sub">criterio ${esc(r.criterio)}</span></h4><ol>${r.peticiones.map(tarjetaPeticion).join("")}</ol>${repetir(r)}</article>`);
+  return `<h3>API</h3>\n<p class="sub">Cada petición se hizo al servidor del worktree; la respuesta es la real.</p>\n${tarjetas.join("\n")}`;
+}
+
 const seccionCasosBorde = (t) => {
   const sondas = sondasDe(t, "logica");
   return sondas.length ? `<h3>Casos borde</h3>\n${sondas.map(tarjetaSonda).join("\n")}` : "";
@@ -164,6 +189,7 @@ ${flujos.length ? flujos.map((f) => tarjetaFlujo(f, sinConfirmar)).join("\n") : 
 <div class="tabla"><table><thead><tr><th>#</th><th>Criterio</th><th>Test</th><th>Cómo</th><th>Obtenido</th><th>Estado</th><th>Repetir</th></tr></thead>
 <tbody>${matriz.map((f) => filaCriterio(f, resultados.resultados, conSupuesto)).join("")}</tbody></table></div>
 ${resultados.huecos.length ? `<p class="sub">Criterios sin escenario (solo los cubre la suite o se leyeron): ${resultados.huecos.join(", ")}.</p>` : ""}
+${seccionApi(t)}
 ${seccionCasosBorde(t)}
 ${seccionSeguridad(t)}
 ${seccionUi(t)}
@@ -190,6 +216,7 @@ article { background:var(--panel); border:1px solid var(--linea); border-radius:
 .marca { color:var(--ambar); font-size:.8rem; font-weight:600; }
 ol { list-style:none; margin:0 0 8px; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
 .paso { flex:1 1 200px; display:flex; flex-direction:column; gap:2px; padding:10px; border:1px solid var(--linea); border-radius:6px; min-width:0; }
+.peticion pre { margin:4px 0; padding:8px; overflow-x:auto; background:var(--fondo); border:1px solid var(--linea); border-radius:6px; font-size:.82rem; }
 .paso strong { font-size:1.25rem; overflow-wrap:anywhere; } .paso-error strong { font-size:1rem; } .paso-falla { border-color:var(--mal); }
 .etiqueta { font-size:.85rem; font-weight:600; }
 .tabla { overflow-x:auto; background:var(--panel); border:1px solid var(--linea); border-radius:8px; }

@@ -58,9 +58,12 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   `sondas.mjs`; capturas por pantalla incrustadas en la página. Corrida completa real
   de `T1.3`: APROBADO en la ronda 2 (la 1 la bloqueó `L11`, ya corregido). Lógica y
   `revisor-ui` se probaron en real solo por separado, no dentro de la fábrica.
-- **Próximos pasos:** `T1.15` (APIs, `D16`); `P6` antes de enviar
-  código de clientes; luego `T2.1` (🔒). El usuario no ha confirmado el cierre
-  de la Fase 1.
+- **Evidencia de API (S-18):** `T1.15` ✅, `D16`: `api.mjs` levanta el servidor
+  del worktree (`FABRICA_SERVIDOR`), ejecuta las `peticiones` del probador y la
+  página muestra petición y respuesta reales. Probado con un servidor de prueba,
+  no con una API real de proyecto.
+- **Próximos pasos:** `P6` antes de enviar código de clientes; luego `T2.1` (🔒).
+  El usuario no ha confirmado el cierre de la Fase 1.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline
