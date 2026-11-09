@@ -9,6 +9,8 @@
   CAMBIOS REQUERIDOS sin llamar a revisores. Resultados en `.revision/TX.Y/ml/`. Un escenario del
   probador puede correr `python3 -m pytest <ids de test>` (`L15`): sin eso, en Python solo había
   escenarios de lectura.
+- Si el `escenarios.json` del probador no es JSON o no pasa la validación, la fábrica lo reintenta una vez
+  con el motivo (`L16`) en vez de fallar la corrida.
 - La página de evidencia pinta los flujos que corren un comando (`L17`); el rol de Seguridad ML no cita
   `local_privado/` en sus comandos (el script lo rechaza).
 - Herramientas del carril ML (`T3.3`): `scripts/ml/verificar.mjs`, sin modelo. `semillas` marca

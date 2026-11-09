@@ -78,8 +78,8 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   Argon sin cuota hasta ≈ 2026-11-14. Sin `D20`. Ver `docs/superpowers/spikes/T2.7/informe.md`.
 - **Integración (S-26):** `T2.6` ✅: `integrar.mjs` probado de punta a punta en CoLLMena (PR #7 mezclado tras CI verde);
   falta `D20` (`T2.7`) para activar `automerge` en proyectos reales.
-- **Fase 3 (S-27):** `T3.1`-`T3.3` ✅ (constitución, roles ML en `roles/ml/`, `verificar.mjs`, repo de prueba
-  `/home/renzo/IA_Factory_ML_Test`). Arrancada con la Fase 2 sin cerrar (`T2.7`/`D20` esperan a Argon); `T3.4` es la siguiente.
+- **Fase 3 (S-27):** `T3.1`-`T3.4` ✅ (constitución, roles ML, `verificar.mjs`, repo de prueba
+  `/home/renzo/IA_Factory_ML_Test`; `fabrica T1.1` APROBADO en la ronda 1 con Flash, tras corregir `L15`-`L17`). Arrancada con la Fase 2 sin cerrar (`T2.7`/`D20` esperan a Argon); Fase 3 cerrada con salvedades (ver `planner.md` S-30); siguiente: Fase 4 (`T4.1`) o medir los roles ML con un leakage sembrado.
 - **Próximos pasos:** el dueño decidió esperar a Argon (cuota de `agy` ≈ 2026-11-14): entonces
   correr `node medir.mjs --modelos argon` (en el spike de `T2.7`), cerrar `T2.7` con `D20` y seguir con `T2.6`.
   Antes de planear la corrida, comprobar con una llamada barata que Argon responde (`L14`).
@@ -127,7 +127,7 @@ Se definen al activarse (`D6`, `D7`).
 | 0 — Harness | ✅ (`D1`-`D7`) |
 | 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.14` ✅, `T1.15` ⬜ (`D14`, `D16`) |
 | 2 — Gatekeeper y auto-merge | ⬜ |
-| 3 — ML | 🟡 `T3.1`-`T3.3` ✅, `T3.4` ⬜ |
+| 3 — ML | ✅ con salvedades (S-30) |
 | 4 — Investigación | ⬜ |
 | 5 — Multimedia | ⬜ |
 | 6 — Codex | ⬜ postergada |

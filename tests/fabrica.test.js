@@ -150,7 +150,8 @@ else if (agente === "constructor") {
   escribir("tests/" + nombre + ".test.js", 'import assert from "node:assert";\\nimport { ' + nombre + ' } from "../src/' + nombre + '.js";\\nassert.equal(' + nombre + "(5, 3), " + (nombre === "resta" ? 2 : 8) + ");\\n");
 }
 if (process.env.FAKE_CLAUDE_CUOTA === agente) { process.stdout.write(JSON.stringify({ result: "Claude usage limit reached", is_error: true })); process.exit(1); }
-if (agente === "probador") escribir(".revision/" + t + "/escenarios.json", env("FAKE_ESCENARIOS") || (t === "T9.2"
+if (agente === "probador" && process.env.FAKE_ESCENARIOS_MALO_UNA && !prompt.includes("fue rechazado")) escribir(".revision/" + t + "/escenarios.json", process.env.FAKE_ESCENARIOS_MALO_UNA);
+else if (agente === "probador") escribir(".revision/" + t + "/escenarios.json", env("FAKE_ESCENARIOS") || (t === "T9.2"
   ? JSON.stringify({ tarea: t, escenarios: [{ id: "e01", criterio: 1, titulo: "resta", pasos: [{ id: "r", modulo: "src/resta.js", funcion: "resta", args: [5, 3], espera: { valor: 2 } }] }] })
   : JSON.stringify({ tarea: t, escenarios: [{ id: "e01", criterio: 1, titulo: "suma", pasos: [{ id: "r", modulo: "src/suma.js", funcion: "suma", args: [2, 3], espera: { valor: 5 } }] }] })));
 // Informe que cumple el contrato común (evidencia.mjs); FAKE_INFORME_MALO lo rompe para ese agente.
@@ -372,12 +373,30 @@ describe("fabrica TX.Y: pipeline completo", () => {
     expect(existsSync(path.join(wt(), ".revision/T9.1/ml"))).toBe(false);
   });
 
-  it("escenarios.json inválido → error de la fábrica, no aprobación", () => {
+  it("escenarios.json inválido dos veces → error de la fábrica, no aprobación (L16)", () => {
     montarRepo();
     const r = fabrica(["T9.1"], { FAKE_ESCENARIOS: JSON.stringify({ escenarios: [{ id: "x" }] }) });
     expect(r.codigo).toBe(SALIDA.error);
     expect(r.salida).toMatch(/escenarios\.json inválido/);
+    expect(llamadas().filter((l) => l.agente === "probador")).toHaveLength(2);
     expect(llamadas().map((l) => l.agente)).not.toContain("aprobador");
+  });
+
+  it("escenarios.json inválido una vez: el probador reintenta con el motivo y la corrida sigue (L16)", () => {
+    montarRepo();
+    const malo = JSON.stringify({ tarea: "T9.1", escenarios: [{ id: "e01", criterio: 1, titulo: "x", comando: ["grep", "-n", "x", "local_privado/a"], espera: { codigo: 0 } }] });
+    const r = fabrica(["T9.1"], { FAKE_ESCENARIOS_MALO_UNA: malo });
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    const probador = llamadas().filter((l) => l.agente === "probador");
+    expect(probador).toHaveLength(2);
+    expect(probador[1].prompt).toMatch(/fue rechazado[\s\S]*secreto/);
+  });
+
+  it("escenarios.json que no es JSON: también se reintenta (L16)", () => {
+    montarRepo();
+    const r = fabrica(["T9.1"], { FAKE_ESCENARIOS_MALO_UNA: "no es json {" });
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    expect(llamadas().filter((l) => l.agente === "probador")[1].prompt).toMatch(/fue rechazado[\s\S]*JSON/);
   });
 
   it("SDD: alcance abierto en «Tocar» → corre también Lógica", () => {

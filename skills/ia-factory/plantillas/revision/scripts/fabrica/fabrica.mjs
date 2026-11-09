@@ -32,7 +32,7 @@ import { precheckSpec } from "../revision/spec.mjs";
 import { generarPagina, registrarEvidencia } from "../revision/pagina.mjs";
 import { validarInforme, supuestosDeSpec, existeEvidencia } from "../revision/evidencia.mjs";
 import { correrSondas, ROLES_CON_SONDAS } from "../revision/sondas.mjs";
-import { anadirHashes } from "../revision/prueba.mjs";
+import { anadirHashes, validarEscenarios } from "../revision/prueba.mjs";
 import { emitirRevisor, emitirAprobador } from "../revision/dictamen.mjs";
 import {
   parseGrupos, problemasDeGrupo, tituloDeTarea, confirmacionesDe, supuestosPendientes,
@@ -219,6 +219,22 @@ async function agente(ctx, rol, prompt, entregable) {
   if (r.codigo !== 0 || res.error) throw falloDe(ctx, rol, `${rol} falló (código ${r.codigo}): ${(res.texto || r.error).slice(0, 500)}`);
   if (entregable && !existsSync(path.join(ctx.wt, entregable))) throw new Error(`${rol} terminó sin dejar ${entregable}`);
   ctx.paso(rol, res.texto.split("\n")[0].slice(0, 160) || "ok", res.costo);
+}
+
+/** El probador escribe escenarios.json; si no es JSON o no pasa la validación se le devuelve el motivo (L16). */
+async function probadorConEscenarios(ctx) {
+  const entregable = `.revision/${ctx.tarea}/escenarios.json`;
+  const prompt = PROMPTS.probar(ctx.tarea);
+  await agente(ctx, "probador", prompt, entregable);
+  for (let intento = 1; ; intento++) {
+    let problemas;
+    try { problemas = validarEscenarios(JSON.parse(await leer(path.join(ctx.wt, entregable)))); }
+    catch (err) { problemas = [`no es JSON válido: ${err.message}`]; }
+    if (!problemas.length) return;
+    const lista = `- ${problemas.join("\n- ")}`;
+    if (intento >= INTENTOS_INFORME) throw new Error(`prueba.mjs: Error: escenarios.json inválido tras ${INTENTOS_INFORME} intentos:\n${lista}`);
+    await agente(ctx, "probador", `${prompt}\n\nTu ${entregable} fue rechazado por prueba.mjs. Corrígelo:\n${lista}`, entregable);
+  }
 }
 
 /** Un agente con informe: lo que entrega pasa el contrato (D14) o la ronda falla; nunca cuenta como aprobación. */
@@ -460,7 +476,7 @@ async function correrPipeline(ctx, { soloRevision, reiniciarRondas: reiniciar })
     const motivo = await especificar(ctx);
     if (motivo) return { resultado: "usuario", motivo };
     await agente(ctx, "constructor", PROMPTS.construir(ctx.tarea, ctx.cfg.tests));
-    await agente(ctx, "probador", PROMPTS.probar(ctx.tarea), `.revision/${ctx.tarea}/escenarios.json`);
+    await probadorConEscenarios(ctx);
   }
   for (let n = usadas + 1; ; n++) {
     const fin = await rondaRevision(ctx, n);
