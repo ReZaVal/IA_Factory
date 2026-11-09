@@ -14,6 +14,14 @@
   `veredicto.dictamen.json`: cada CRITICAL/HIGH decidido, sin ids inventados, y
   `APROBADO` sin confirmados ni tests rojos. Inválido → se reintenta una vez con el
   motivo; si sigue, falla la ronda. Proyectos ya instalados: reinstalar.
+- Gatekeeper (`D4`/`D18`, `T2.3`): nuevo `scripts/revision/gatekeeper.mjs` (sin modelo).
+  Lee `via.md` para saber qué dictámenes exigir, comprueba que cada uno es el que sale
+  hoy de su informe (hash) y que el del aprobador es coherente con los de los revisores,
+  y **vuelve a correr la suite** (`--tests`): no se fía del campo `tests` del aprobador.
+  Falta, alteración, JSON roto, aprobador sin aprobar o tests rojos → `RECHAZADO` (sale 2).
+  Todo en verde → `MERGE` solo con radio `bajo`, vía SDD y `--automerge` /
+  `FABRICA_AUTOMERGE=1`; si no, `PR`. Sin `--radio` (lo calcula `T2.4`) asume `nucleo`.
+  Deja `.revision/TX.Y/gatekeeper.json`. Aún no lo llama `fabrica.mjs` (`T2.6`).
 - Desarrollo: `vitest.config.js` sube `testTimeout` a 60 s; los tests de `fabrica.test.js`
   ejecutan el pipeline completo y superaban los 5 s por defecto en máquinas lentas (WSL).
 - Evidencia de API (`D16`, `T1.15`): un escenario de `escenarios.json` puede llevar

@@ -71,7 +71,7 @@ orquestador sigue siendo la sesión principal y `T1.6` se redefine.
 |---|---|---|---|---|
 | ✅ T2.1 | Formato de dictamen (JSON) + auto-merge como opt-in por proyecto + si hay log de despliegues (`D8`) | T1.15 | 1 | `Dn`; esquema en `memoria.md §4` |
 | ✅ T2.2 | Revisores y approver emiten JSON validado contra el esquema | T2.1 | 1 | Tests de esquema |
-| ⬜ T2.3 | Script gatekeeper: 4/4 + tests en verde, sin confiar en el agente (`H6`) | T2.2 | 1 | Rechaza dictámenes faltantes, alterados o con tests rojos |
+| ✅ T2.3 | Script gatekeeper: 4/4 + tests en verde, sin confiar en el agente (`H6`) | T2.2 | 1 | Rechaza dictámenes faltantes, alterados o con tests rojos |
 | ⬜ T2.4 | Radio de impacto por carril (rutas de núcleo) | T2.3 | 1 | Clasifica cambios de prueba en bajo / núcleo |
 | 🔒 ⬜ T2.5 | CI (GitHub Actions) con checks obligatorios + protección de rama | T2.4 | 1 | `P2` → `Dn`; workflow plantilla probado en repo de prueba |
 | ⬜ T2.6 | Merge automático o PR según radio; prueba E2E | T2.5 | 1 | Bajo riesgo → merge; núcleo → PR |
@@ -156,6 +156,7 @@ repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
 | S-19 | 2026-11-08 | `P6` | ✅ | `D17`: leídos los términos de Antigravity y el README del CLI. Pro personal: interacciones usadas por Google y revisables por personas, sin garantía de no entrenamiento (es de Enterprise); `agy -p` propio permitido. El usuario solo lo usará en proyectos propios. Cuota sin cifras publicadas (5 h + semanal). Sin cambios de código | **T2.1 🔒 (esperar OK del dueño al cierre de la Fase 1)** |
 | S-20 | 2026-11-09 | T2.1 | ✅ | `D18` (aprobada por el dueño): `dictamen.json` por rol con hash del informe, veredicto del gatekeeper `MERGE`/`PR`/`RECHAZADO`, `automerge` opt-in por proyecto, sin log de despliegues. Esquema en `memoria.md §4` y `dictamen.schema.json`; 4 tests. Sin código que lo emita o consuma aún | **T2.2 — roles emiten el JSON** |
 | S-21 | 2026-11-09 | T2.2 | ✅ | `dictamen.mjs`: validador del esquema (subconjunto de JSON Schema, sin dependencias), dictámenes de revisor derivados del informe con hash, juicio del aprobador completado y validado (`veredicto.juicio.json` → `veredicto.dictamen.json`); enchufado en `fabrica.mjs` tras los revisores y tras el aprobador, con un reintento. 718 tests en verde. **Falta:** corrida real con `claude` (aprobador real escribiendo el juicio); nadie consume aún los dictámenes | **T2.3 — gatekeeper** |
+| S-22 | 2026-11-09 | T2.3 | ✅ | `gatekeeper.mjs`: revalida desde los archivos (dictamen = lo que sale hoy del informe; aprobador coherente con los revisores), re-corre la suite y decide `MERGE`/`PR`/`RECHAZADO`; escribe `gatekeeper.json`. 735 tests en verde (17 nuevos: faltantes, alterados, JSON roto, tests rojos, FTD, auto-merge apagado, CLI). **Falta:** radio real (`T2.4`) y llamarlo desde `fabrica.mjs` (`T2.6`); el juicio del aprobador (criterios, razones) no se puede re-derivar: solo se valida su forma | **T2.4 — radio de impacto** |
 
 ## 7. Cómo se mantiene vivo
 Al cerrar tarea: ✅ + fila en §6. Al cerrar fase: recalcular §2 y §5, colapsar

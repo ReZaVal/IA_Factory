@@ -68,7 +68,9 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   `MERGE`/`PR`/`RECHAZADO`, `automerge` opt-in, sin log de despliegues.
 - **Dictamen emitido (S-21):** `T2.2` ✅: `dictamen.mjs` + enchufe en
   `fabrica.mjs`; el aprobador escribe `veredicto.juicio.json`. Sin corrida real aún.
-- **Próximos pasos:** `T2.3`.
+- **Gatekeeper (S-22):** `T2.3` ✅: `gatekeeper.mjs` revalida y re-corre la suite;
+  `MERGE` solo con radio bajo + SDD + `automerge`. Aún sin radio real ni enchufe.
+- **Próximos pasos:** `T2.4`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline
