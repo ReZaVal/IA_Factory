@@ -85,6 +85,31 @@ describe("integrar", () => {
     }
   });
 
+  it("los checks tardan en aparecer: reintenta «no checks reported» y luego mezcla", async () => {
+    let n = 0;
+    const base0 = simulador();
+    const run = (cmd, args, o) => (cmd === "gh" && args[1] === "checks" && n++ < 2 ? (llamadas.push(["gh", ...args]), { codigo: 1, salida: "", error: "no checks reported on the 'x' branch" }) : base0(cmd, args, o));
+    const pausas = [];
+    const r = await integrar(base({ run, pausa: async (ms) => pausas.push(ms) }));
+    expect(r.accion).toBe("merge");
+    expect(pausas).toEqual([5000, 5000]);
+    expect(ghs().filter((g) => g === "pr checks")).toHaveLength(3);
+  });
+
+  it("si los checks nunca aparecen, deja el PR abierto tras agotar la espera", async () => {
+    const pausas = [];
+    const r = await integrar(base({ run: simulador({ "pr checks": { codigo: 1, salida: "", error: "no checks reported" } }), pausa: async (ms) => pausas.push(ms), espera: { intentos: 3, cadaMs: 10 } }));
+    expect(r.accion).toBe("pr");
+    expect(pausas).toHaveLength(2);
+    expect(ghs()).not.toContain("pr merge");
+  });
+
+  it("un CI en rojo no se reintenta", async () => {
+    const pausas = [];
+    await integrar(base({ run: simulador({ "pr checks": { codigo: 1, salida: "", error: "tests failed" } }), pausa: async (ms) => pausas.push(ms) }));
+    expect(pausas).toEqual([]);
+  });
+
   it("si la mezcla falla, el PR queda abierto", async () => {
     const r = await integrar(base({ run: simulador({ "pr merge": { codigo: 1, salida: "", error: "not mergeable" } }) }));
     expect(r).toMatchObject({ accion: "pr" });

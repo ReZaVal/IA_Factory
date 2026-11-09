@@ -22,6 +22,12 @@ export function ejecutar(cmd, args, { cwd }) {
   return { codigo: r.status ?? 1, salida: (r.stdout ?? "").trim(), error: (r.stderr ?? "").trim() };
 }
 
+// GitHub tarda unos segundos en registrar los checks de un PR recién abierto: sin esta espera,
+// `gh pr checks` dice «no checks reported» y el MERGE nunca ocurriría (visto en la prueba real).
+const ESPERA_CHECKS = { intentos: 12, cadaMs: 5000 };
+const SIN_CHECKS = /no checks reported/i;
+const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
+
 const RAMAS_PROHIBIDAS = /^(main|master|develop|HEAD)$/;
 
 /** Título del PR: «TX.Y: …» con la primera línea del veredicto, o solo la tarea. */
@@ -46,10 +52,10 @@ export function cuerpoPr({ tarea, ronda, veredicto, gate }) {
 
 /**
  * @param {{ raiz: string, tarea: string, ronda: number, base?: string, tests?: string, automerge?: boolean, dryRun?: boolean,
- *   run?: typeof ejecutar, evaluarGate?: typeof evaluar }} a
+ *   run?: typeof ejecutar, evaluarGate?: typeof evaluar, espera?: { intentos: number, cadaMs: number }, pausa?: (ms: number) => Promise<void> }} a
  * @returns {Promise<{ accion: "rechazado"|"pr"|"merge"|"simulado", gate: any, url?: string, motivos: string[] }>}
  */
-export async function integrar({ raiz, tarea, ronda, base = "main", tests, automerge = false, dryRun = false, run = ejecutar, evaluarGate = evaluar }) {
+export async function integrar({ raiz, tarea, ronda, base = "main", tests, automerge = false, dryRun = false, run = ejecutar, evaluarGate = evaluar, espera = ESPERA_CHECKS, pausa = dormir }) {
   const git = (...args) => run("git", args, { cwd: raiz });
   const rama = git("rev-parse", "--abbrev-ref", "HEAD").salida;
   if (!rama || RAMAS_PROHIBIDAS.test(rama)) throw new Error(`estás en «${rama || "?"}»: integra desde la rama de la tarea, nunca desde la base`);
@@ -71,7 +77,11 @@ export async function integrar({ raiz, tarea, ronda, base = "main", tests, autom
   if (!url) throw new Error(`no pude abrir ni encontrar el PR: ${crear.error}`);
   if (gate.resultado === "PR") return { accion: "pr", gate, url, motivos: gate.motivos };
 
-  const ci = gh("pr", "checks", url, "--watch", "--fail-fast");
+  let ci = gh("pr", "checks", url, "--watch", "--fail-fast");
+  for (let i = 1; i < espera.intentos && ci.codigo !== 0 && SIN_CHECKS.test(`${ci.error} ${ci.salida}`); i++) {
+    await pausa(espera.cadaMs);
+    ci = gh("pr", "checks", url, "--watch", "--fail-fast");
+  }
   if (ci.codigo !== 0) return { accion: "pr", gate, url, motivos: [`el CI no quedó en verde (${ci.error || ci.salida || "sin checks"}): el PR queda abierto para el humano`] };
   const mezcla = gh("pr", "merge", url, "--merge");
   if (mezcla.codigo !== 0) return { accion: "pr", gate, url, motivos: [`no se pudo mezclar (${mezcla.error}): el PR queda abierto`] };

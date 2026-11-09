@@ -27,7 +27,9 @@
   sube la rama y abre el PR, `MERGE` abre el PR, espera `gh pr checks --watch` y lo mezcla; CI rojo,
   sin checks o mezcla fallida dejan el PR abierto. Se niega en la base y con cambios sin confirmar.
   `--dry-run` no sube nada. Auto-merge apagado por defecto (`--automerge` / `FABRICA_AUTOMERGE=1`).
-  Probado con git real y `gh` simulado; no contra GitHub. `revision.md` documenta el flujo.
+  Espera hasta 1 min a que GitHub registre los checks de un PR recién abierto (sin eso, «no checks
+  reported» impedía el merge). Probado con git real y `gh` simulado, y de punta a punta en un repo
+  público real (PR abierto, check `tests` verde, PR mezclado). `revision.md` documenta el flujo.
 - CI y protección de rama (`D19`, `T2.5`): el carril trae `.github/workflows/fabrica.yml`
   (job `tests` obligatorio, `radio` informativo en el resumen del PR; adapta `npm test` y
   Node) y `scripts/fabrica/proteger-rama.sh <dueño/repo>`, que sin `--aplicar` solo muestra

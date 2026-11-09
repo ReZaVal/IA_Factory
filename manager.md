@@ -76,8 +76,8 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   (PR #6, check `tests` verde, protección aplicada a `main`). Su check es de humo.
 - **Medición (S-25):** `T2.7` 🟡: Claude 4/5 (perdió L1; L2 solo MEDIUM/LOW); Flash 3/5 (Lógica no responde en `agy`);
   Argon sin cuota hasta ≈ 2026-11-14. Sin `D20`. Ver `docs/superpowers/spikes/T2.7/informe.md`.
-- **Integración (S-26):** `T2.6` 🟡: `integrar.mjs` probado con `gh` simulado; falta la prueba
-  E2E real (hace un merge, requiere permiso) y `D20` para activar `automerge`.
+- **Integración (S-26):** `T2.6` ✅: `integrar.mjs` probado de punta a punta en CoLLMena (PR #7 mezclado tras CI verde);
+  falta `D20` (`T2.7`) para activar `automerge` en proyectos reales.
 - **Próximos pasos:** el dueño decidió esperar a Argon (cuota de `agy` ≈ 2026-11-14): entonces
   correr `node medir.mjs --modelos argon` (en el spike de `T2.7`), cerrar `T2.7` con `D20` y seguir con `T2.6`.
   Antes de planear la corrida, comprobar con una llamada barata que Argon responde (`L14`).
