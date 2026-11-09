@@ -1,6 +1,11 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Fase 2 (`D18`, `T2.1`): contrato del dictamen en JSON. Nuevo
+  `scripts/revision/dictamen.schema.json` (revisores, aprobador y veredicto del
+  gatekeeper, con hash del informe); el auto-merge queda como opt-in por proyecto
+  (`automerge`, apagado por defecto) y no hay log de despliegues. Aún no lo emiten
+  los roles (`T2.2`) ni lo usa ningún script (`T2.3`).
 - Desarrollo: `vitest.config.js` sube `testTimeout` a 60 s; los tests de `fabrica.test.js`
   ejecutan el pipeline completo y superaban los 5 s por defecto en máquinas lentas (WSL).
 - Evidencia de API (`D16`, `T1.15`): un escenario de `escenarios.json` puede llevar

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dictamen.schema.json",
+  "title": "Dictamen de revisor, del aprobador y veredicto del gatekeeper (D18)",
+  "oneOf": [
+    { "$ref": "#/$defs/dictamenRevisor" },
+    { "$ref": "#/$defs/dictamenAprobador" },
+    { "$ref": "#/$defs/gatekeeper" }
+  ],
+  "$defs": {
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "tarea": { "type": "string", "pattern": "^T\\d+\\.\\d+$" },
+    "base": {
+      "type": "object",
+      "required": ["version", "tarea", "ronda", "rol", "veredicto", "hallazgos", "evidencia", "hash_informe"],
+      "properties": {
+        "version": { "const": 1 },
+        "tarea": { "$ref": "#/$defs/tarea" },
+        "ronda": { "type": "integer", "minimum": 1 },
+        "hallazgos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "severidad", "ubicacion", "descripcion", "correccion"],
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "severidad": { "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+              "ubicacion": { "type": "string", "pattern": ".+:\\d+" },
+              "descripcion": { "type": "string", "minLength": 1 },
+              "correccion": { "type": "string" }
+            }
+          }
+        },
+        "evidencia": { "type": "array", "items": { "type": "string", "pattern": "^(evidencia|\\.revision)/" } },
+        "hash_informe": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "dictamenRevisor": {
+      "allOf": [{ "$ref": "#/$defs/base" }],
+      "type": "object",
+      "required": ["rol", "veredicto"],
+      "properties": {
+        "rol": { "enum": ["seguridad", "logica", "ui", "codigo"] },
+        "veredicto": { "enum": ["SIN BLOQUEANTES", "CON BLOQUEANTES"] }
+      }
+    },
+    "dictamenAprobador": {
+      "allOf": [{ "$ref": "#/$defs/base" }],
+      "type": "object",
+      "required": ["rol", "veredicto", "hallazgos_confirmados", "hallazgos_descartados", "criterios", "tests", "dictamenes_vistos"],
+      "properties": {
+        "rol": { "const": "aprobador" },
+        "veredicto": { "enum": ["APROBADO", "CAMBIOS REQUERIDOS", "BLOQUEADO"] },
+        "hallazgos_confirmados": { "$ref": "#/$defs/conRazon" },
+        "hallazgos_descartados": { "$ref": "#/$defs/conRazon" },
+        "criterios": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["numero", "modo", "evidencia"],
+            "properties": {
+              "numero": { "type": "integer", "minimum": 1 },
+              "modo": { "enum": ["ejecutado", "leído"] },
+              "evidencia": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "tests": {
+          "type": "object",
+          "required": ["comando", "salida", "fecha"],
+          "properties": {
+            "comando": { "type": "string", "minLength": 1 },
+            "salida": { "type": "integer" },
+            "fecha": { "type": "string", "format": "date-time" }
+          }
+        },
+        "dictamenes_vistos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["rol", "hash"],
+            "properties": { "rol": { "type": "string" }, "hash": { "$ref": "#/$defs/hash" } }
+          }
+        }
+      }
+    },
+    "conRazon": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "razon"],
+        "properties": { "id": { "type": "string" }, "razon": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "gatekeeper": {
+      "type": "object",
+      "required": ["tarea", "ronda", "resultado", "radio", "motivos"],
+      "properties": {
+        "tarea": { "$ref": "#/$defs/tarea" },
+        "ronda": { "type": "integer", "minimum": 1 },
+        "resultado": { "enum": ["MERGE", "PR", "RECHAZADO"] },
+        "radio": { "enum": ["bajo", "nucleo"] },
+        "motivos": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

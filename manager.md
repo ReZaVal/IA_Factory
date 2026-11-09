@@ -28,7 +28,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   agentes amnésicos, `D11` tope de rondas por tarea, `D12` medición (`T2.7`)
   antes del auto-merge, `D13` revisores con la cuenta personal vía `agy`, sin
   API keys, y UI en Claude, `D14` evidencia verificable por el humano, `D15` evidencia al repo, `D16`
-  pantallas y APIs.
+  pantallas y APIs, `D17` `agy` solo en proyectos propios.
 - **Cambió en la última sesión (S-10):** `T1.8` cerrada (`D13`): el usuario no
   tiene API keys. `gemini.mjs` usa `agy` con su cuenta Google AI Pro, en
   `--mode plan`, desde una carpeta temporal; UI pasa al agente Claude
@@ -62,8 +62,11 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   del worktree (`FABRICA_SERVIDOR`), ejecuta las `peticiones` del probador y la
   página muestra petición y respuesta reales. Probado con un servidor de prueba,
   no con una API real de proyecto.
-- **Próximos pasos:** `P6` antes de enviar código de clientes; luego `T2.1` (🔒).
-  El usuario no ha confirmado el cierre de la Fase 1.
+- **Términos de `agy` (S-19):** `P6` → `D17`: solo proyectos propios, nunca
+  código de clientes. Cuota sin cifras (5 h + tope semanal); se mide en `T2.7`.
+- **Dictamen (S-20):** `T2.1` ✅, `D18`: dictamen JSON con hash, gatekeeper
+  `MERGE`/`PR`/`RECHAZADO`, `automerge` opt-in, sin log de despliegues.
+- **Próximos pasos:** `T2.2`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline
