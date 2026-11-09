@@ -43,7 +43,14 @@ Detalle en `resultados.json`, `tabla.md` e informes en `resultados/<modelo>/`.
 La causa de `L14` era que Flash intentaba ejecutar comandos y `agy` en modo `plan` se lo negaba. Añadiendo al
 contexto, solo en el repo temporal, «No tienes herramientas: no puedes ejecutar comandos, tests ni leer archivos.
 Razona solo con la spec y el diff…», Flash entregó el informe de Lógica (68 s) al primer intento. Encontró `L2` como
-bloqueante y siguió sin ver `L1`. Una corrida: no prueba que sea estable. **El producto no cambió:** si se adopta,
+bloqueante y siguió sin ver `L1`. **Repetido 3 veces con y sin la frase** (`repetir.mjs`, `repeticiones/`):
+
+| Flash 3.8, Lógica | Entregó informe | `L1` paginar | `L2` promedio vacío | FP HIGH/CRITICAL |
+|---|---|---|---|---|
+| sin la frase | **0/3** (en total 0/5 con las corridas previas) | — | — | — |
+| con la frase | **3/3** (73–107 s) | 3/3 bloqueante | 3/3 bloqueante | 0 |
+
+Sumando la corrida anterior con la frase, `L1` salió en 3 de 4 y `L2` en 4 de 4. Son pocas corridas de una sola tarea: indica un efecto fuerte sobre *si responde*, no una tasa fiable de detección. **El producto no cambió:** si se adopta,
 la frase iría en `_contexto.md` o en el rol Lógica.
 
 ## Salvedades

@@ -57,8 +57,8 @@
     "rolesCompletos": 2
   },
   "flash": {
-    "detectados": 4,
-    "detectadosBloqueantes": 4,
+    "detectados": 5,
+    "detectadosBloqueantes": 5,
     "total": 5,
     "falsosPositivos": 0,
     "ruido": 1,
@@ -90,10 +90,10 @@
       {
         "id": "L1",
         "titulo": "paginar numera desde 0: la página 1 se salta los primeros elementos",
-        "detectado": false,
-        "comoBloqueante": false,
-        "porSuRol": false,
-        "severidad": null
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
       },
       {
         "id": "L2",

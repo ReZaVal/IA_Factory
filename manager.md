@@ -74,7 +74,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   Lista de núcleo = la heredada de `via.mjs`, pendiente de tu visto bueno.
 - **CI (S-24):** `P2` → `D19`: repos públicos. `T2.5` ✅: probado en `ReZaVal/CoLLMena`
   (PR #6, check `tests` verde, protección aplicada a `main`). Su check es de humo.
-- **Medición (S-25):** `T2.7` 🟡: Claude 4/5 (perdió L1; L2 solo MEDIUM/LOW); Flash 3/5, o 4/5 con «no ejecutes nada» en Lógica (solo spike);
+- **Medición (S-25):** `T2.7` 🟡: Claude 4/5 (perdió L1; L2 solo MEDIUM/LOW); Flash 3/5, o 4–5/5 con «no ejecutes nada» en Lógica (solo spike; 4 corridas);
   Argon sin cuota hasta ≈ 2026-11-14. Sin `D20`. Ver `docs/superpowers/spikes/T2.7/informe.md`.
 - **Integración (S-26):** `T2.6` ✅: `integrar.mjs` probado de punta a punta en CoLLMena (PR #7 mezclado tras CI verde);
   falta `D20` (`T2.7`) para activar `automerge` en proyectos reales.
