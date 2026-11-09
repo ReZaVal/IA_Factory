@@ -381,7 +381,7 @@ Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen
   `/home/renzo/IA_Factory_Test` (carrito: IVA y cupones), elegido por el
   usuario; una copia de un proyecto real queda como segunda prueba. Corrida
   real hecha (S-11): `T1.1` y `T1.2` aprobadas por la fábrica con `agy`. Carril ML (S-28): repo sintético
-  `/home/renzo/IA_Factory_ML_Test` (churn, sklearn), creado a pedido del usuario. Faltan
+  `/home/renzo/IA_Factory_ML_Test` (churn, sklearn), creado a pedido del usuario. Corrida real ML (S-30): `T1.1` APROBADO con Flash. Faltan
   investigación y multimedia.
 
 - [ ] **P5 — Rondas y paso del auditor de spec.** `T1.3` dejó provisional:

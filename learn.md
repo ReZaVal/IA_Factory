@@ -19,6 +19,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 | L4 | Nombres de función en «Archivos» contados como alcance extra | Los chequeos deterministas se prueban también con specs escritas por el planificador real, no solo con las sintéticas | `spec.mjs` (`archivosDeSpec`), `tests/spec.test.js` |
 | L5 | Un error de Gemini cortaba la fábrica, fuese transitorio o permanente | Al llamar a una API externa, separar transitorio de permanente: reintentar con tope lo primero y fallar rápido con qué hacer lo segundo; no asumir en la plantilla un plan de pago | `gemini.mjs` (`clasificarError`, `pedirConReintentos`), `revision.md ## 6`, `tests/revision.test.js` |
 | L17 | La página de evidencia se caía con un flujo que era un `comando` (pytest) | Al añadir una forma nueva de escenario, buscar todo lo que despacha por forma y probar la página con ella | `pagina.mjs` (`pasoComando`), `tests/pagina.test.js` |
+| L16 | Un `escenarios.json` inválido tumbaba la corrida entera sin dar al probador la oportunidad de corregir | Toda salida de un modelo que un script valida se reintenta con el motivo antes de fallar | `fabrica.mjs` (`probadorConEscenarios`), `tests/fabrica.test.js` |
 | L15 | El probador no podía ejecutar nada en un proyecto Python (`modulo/funcion` es solo JS) y escribió escenarios tautológicos | Al abrir un carril con otro lenguaje, comprobar qué parte de la evidencia ejecutada asume JavaScript | `prueba.mjs` (`validarComando`), `probador.md`, `tests/prueba.test.js` |
 | L13 | Un hijo que terminaba sin leer stdin tumbaba la fábrica con `EPIPE`, de forma intermitente | Todo `stdin` de un proceso hijo lleva su manejador de `error`; ante un test intermitente, leer el mensaje completo antes de culpar al tiempo | `fabrica.mjs` (`correr`), `tests/fabrica.test.js` |
 | L11 | Una `Dn` sin commitear no llegaba al worktree y el aprobador bloqueaba | Lo que decide el dueño entre corridas se le pasa a la fábrica desde el repo principal; el flujo «decide y relanza» se prueba completo, con la decisión sin commitear | `fabrica.mjs` (`prepararTarea`), `aprobador.md`, `tests/fabrica.test.js` |
@@ -167,13 +168,15 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   (`prueba.mjs`, `pagina.mjs`, `api.mjs`) y probar la página con ella.
 
 ### L16 — Un `escenarios.json` inválido tumbaba la corrida entera
-- **Estado:** 🔴 Abierto (S-30, `T3.4`)
+- **Estado:** ✅ Resuelto (S-30, `T3.4`)
 - **Síntoma:** el probador escribió un escenario con `local_privado` en un `git ls-files`;
   `prueba.mjs` lo rechazó (correcto, `SECRETO`) y `fabrica.mjs` salió con `error` tras gastar
   planificador, constructor y probador (US$ 1,43), sin dar al probador la oportunidad de corregir.
 - **Causa raíz probable:** los informes de revisión se reintentan una vez con el motivo
   (`INTENTOS_INFORME`), pero el `escenarios.json` del probador no.
-- **Solución propuesta (sin aplicar):** reintentar al probador una vez con la lista de problemas.
+- **Solución aplicada:** `probadorConEscenarios` valida con `validarEscenarios` y, si falla (o no es JSON),
+  reintenta una vez al probador con la lista de problemas; si vuelve a fallar, error como antes.
+  Repetido en la tercera corrida real (e10, `local_privado`), que gastó US$ 0,51 sin esa red.
 - **Regla derivada:** toda salida de un modelo que un script valida se reintenta con el motivo antes de fallar.
 
 ### L15 — El probador no podía ejecutar nada en un proyecto Python
