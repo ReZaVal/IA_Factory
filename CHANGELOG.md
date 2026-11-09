@@ -1,6 +1,13 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Fase 3 (`T3.1`): carril ML. Nuevo `carriles/ml/constitucion-ml.md` (13 reglas duras:
+  datos y secretos, experimento antes que código, partición sin leakage,
+  reproducibilidad); `instalar.sh --carril ml` la instala junto con `dominio-datos.md`.
+  Sin herramientas aún (`T3.3`).
+- Roles del carril ML (`T3.2`): prompts de datos/leakage, métricas y gráficos en
+  `scripts/revision/roles/ml/`; `gemini.mjs` resuelve el rol por carril (`rutaRol`) y
+  vuelve al común si el carril no trae el suyo (software no cambia).
 - Fase 2 (`D18`, `T2.1`): contrato del dictamen en JSON. Nuevo
   `scripts/revision/dictamen.schema.json` (revisores, aprobador y veredicto del
   gatekeeper, con hash del informe); el auto-merge queda como opt-in por proyecto
