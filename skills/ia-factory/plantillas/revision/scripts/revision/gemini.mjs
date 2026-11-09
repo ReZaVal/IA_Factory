@@ -116,6 +116,13 @@ export function buildPrompt({ tarea, spec, diff, matriz = "" }) {
 }
 
 /**
+ * Los revisores Gemini no tienen herramientas (`agy` va en `--mode plan`, la API solo recibe texto). Sin
+ * decírselo, Flash 3.8 intentaba ejecutar comandos en Lógica y no entregaba informe (0 de 5 corridas, con la
+ * frase 4 de 4; learn.md L14, spike T2.7).
+ */
+export const SIN_HERRAMIENTAS = "## Importante\nNo tienes herramientas: no puedes ejecutar comandos, tests ni leer archivos. Razona solo con la spec y el diff que recibes y responde directamente con el informe.";
+
+/**
  * Instrucción de sistema: contexto del proyecto, reglas duras del carril
  * (`constitucion-<carril>.md`, memoria.md D8 de IA Factory), rol y formato.
  * Sin constitución (proyecto instalado con 1.0) las reglas siguen en `_contexto.md`.
@@ -125,7 +132,7 @@ export function buildSystem({ contexto, carril, constitucion, rol, formato }) {
   const reglas = constitucion
     ? `# Reglas duras del carril (constitucion-${carril}.md)\n\nUn cambio que rompe una de estas reglas es al menos HIGH, aunque la spec lo pida.\n\n${constitucion}`
     : "";
-  return [contexto, reglas, rol, formato].filter(Boolean).join("\n\n");
+  return [contexto, SIN_HERRAMIENTAS, reglas, rol, formato].filter(Boolean).join("\n\n");
 }
 
 /** Informe con la cabecera de `_formato.md`; sin ella, fabrica.mjs lo leería como aprobado. @param {string} informe */

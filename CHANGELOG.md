@@ -22,6 +22,10 @@
   Todo en verde → `MERGE` solo con radio `bajo`, vía SDD y `--automerge` /
   `FABRICA_AUTOMERGE=1`; si no, `PR`. Sin `--radio` (lo calcula `T2.4`) asume `nucleo`.
   Deja `.revision/TX.Y/gatekeeper.json`. Aún no lo llama `fabrica.mjs` (`T2.6`).
+- Revisores Gemini (`L14`, `T2.7`): `buildSystem` añade a todos los roles «No tienes herramientas: no puedes
+  ejecutar comandos, tests ni leer archivos…». Sin eso, Flash 3.8 intentaba ejecutar comandos en Lógica, `agy`
+  se lo negaba y no entregaba informe (0 de 5 corridas; con la frase, 4 de 4). Medido solo en Lógica; Seguridad
+  y el auditor de spec reciben la misma frase sin medir su efecto.
 - Integración (`D4`/`D18`, `T2.6`): nuevo `scripts/revision/integrar.mjs`. Con la rama de la tarea
   ya confirmada y limpia, pide el veredicto al gatekeeper y actúa: `RECHAZADO` no toca nada, `PR`
   sube la rama y abre el PR, `MERGE` abre el PR, espera `gh pr checks --watch` y lo mezcla; CI rojo,
