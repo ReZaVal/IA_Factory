@@ -33,6 +33,7 @@ import { generarPagina, registrarEvidencia } from "../revision/pagina.mjs";
 import { validarInforme, supuestosDeSpec, existeEvidencia } from "../revision/evidencia.mjs";
 import { correrSondas, ROLES_CON_SONDAS } from "../revision/sondas.mjs";
 import { anadirHashes } from "../revision/prueba.mjs";
+import { emitirRevisor, emitirAprobador } from "../revision/dictamen.mjs";
 import {
   parseGrupos, problemasDeGrupo, tituloDeTarea, confirmacionesDe, supuestosPendientes,
   archivosNuevos, rutasDeStatus, propuestaDeCommits, parseArgsGrupo
@@ -64,7 +65,7 @@ const VISTAS = [[360, "claro"], [360, "oscuro"], [1280, "claro"], [1280, "oscuro
 const PANTALLA_INICIO = { id: "inicio", titulo: "Inicio", ruta: "" };
 const INTENTOS_INFORME = 2;
 // Informes de una ronda; al pedir cambios se mueven a .revision/TX.Y/ronda-N/.
-const DE_RONDA = [...["via", "seguridad", "logica", "ui", "codigo", "veredicto"].map((f) => `${f}.md`), "evidencia"];
+const DE_RONDA = [...["via", "seguridad", "logica", "ui", "codigo", "veredicto"].flatMap((f) => [`${f}.md`, `${f}.dictamen.json`]), "veredicto.juicio.json", "evidencia"];
 const DIR_RONDA = /^ronda-\d+$/;
 const CUOTA = /cuota|quota|usage limit|rate.?limit|limit reached|resource.?exhausted/i;
 // Roles antes de que exista lo que se revisa: relanzar debe repetir la construcción.
@@ -165,7 +166,8 @@ export const PROMPTS = {
   codigo: (t) => `Revisa ${t}: el diff es \`git diff HEAD\` más los archivos de \`git ls-files --others --exclude-standard\`. Escribe .revision/${t}/codigo.md. ${SIN_HUMANO}`,
   probar: (t) => `Deriva de specs/${t}.md los escenarios ejecutables y escríbelos en .revision/${t}/escenarios.json según tus instrucciones. No leas el código de la app ni los tests: el valor esperado sale solo de la spec. ${SIN_HUMANO}`,
   corregir: (t, tests, n) => `El aprobador pidió cambios en ${t} (ronda ${n}): corrige cada punto de .revision/${t}/ronda-${n}/veredicto.md (los informes de esa ronda están junto a él) contra specs/${t}.md, con TDD hasta que \`${tests}\` quede en verde. Escribe .revision/${t}/ronda-${n}/correcciones.md con una fila por punto: qué hiciste o por qué no lo corriges. ${SIN_HUMANO}`,
-  aprobar: (t, tests, n) => `Emite el veredicto de ${t} (ronda ${n} de ${RONDAS_REVISION}). ${n > 1 ? `Las rondas anteriores están en .revision/${t}/ronda-*/ (veredicto.md y correcciones.md): comprueba que lo pedido quedó corregido. ` : ""}La evidencia ejecutada está en .revision/${t}/evidencia/ (matriz.md) y los ataques y casos borde ejecutados, en evidencia/sondas.json: cítala y marca cada criterio «ejecutado» o «leído»; si alguno quedó «leído», dilo antes de la primera sección \`##\`, con su número. La memoria vigente del proyecto, con las decisiones aún sin commitear, está en .revision/${t}/memoria.md: esa es la que vale, no la del worktree. La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${SIN_HUMANO}`
+  aprobar: (t, tests, n) => `Emite el veredicto de ${t} (ronda ${n} de ${RONDAS_REVISION}). ${n > 1 ? `Las rondas anteriores están en .revision/${t}/ronda-*/ (veredicto.md y correcciones.md): comprueba que lo pedido quedó corregido. ` : ""}La evidencia ejecutada está en .revision/${t}/evidencia/ (matriz.md) y los ataques y casos borde ejecutados, en evidencia/sondas.json: cítala y marca cada criterio «ejecutado» o «leído»; si alguno quedó «leído», dilo antes de la primera sección \`##\`, con su número. La memoria vigente del proyecto, con las decisiones aún sin commitear, está en .revision/${t}/memoria.md: esa es la que vale, no la del worktree. La vía está en .revision/${t}/via.md; la suite se corre con \`${tests}\`. Escribe .revision/${t}/veredicto.md empezando por la línea \`# Veredicto: APROBADO\`, \`# Veredicto: CAMBIOS REQUERIDOS\` o \`# Veredicto: BLOQUEADO\`. ${PROMPTS.juicio(t, tests)} ${SIN_HUMANO}`,
+  juicio: (t, tests) => `Escribe también .revision/${t}/veredicto.juicio.json (JSON, sin texto alrededor) con: "hallazgos_confirmados" y "hallazgos_descartados" (listas de {"id","razon"}; el id es «<rol>-<n°>» de la tabla del informe, p. ej. «seguridad-2»; cada CRITICAL o HIGH de los informes va en una de las dos), "criterios" (lista de {"numero","modo":"ejecutado"|"leído","evidencia"}, uno por criterio de la matriz) y "tests" ({"comando":"${tests}","salida":<código de salida real>,"fecha":<ISO 8601>}). Un script lo valida contra dictamen.schema.json.`
 };
 
 /** @returns {Promise<{ codigo: number, salida: string, error: string }>} */
@@ -300,6 +302,26 @@ async function revisar(ctx, revisores) {
   }
 }
 
+/** Dictamen JSON de cada revisor que corrió, derivado de su informe ya validado (D18). */
+async function emitirDictamenes(ctx, revisores, n) {
+  for (const rol of revisores) await emitirRevisor({ raiz: ctx.wt, tarea: ctx.tarea, ronda: n, rol });
+  ctx.paso(`dictámenes (ronda ${n})`, revisores.join(" "));
+}
+
+/** El aprobador escribe su juicio; el script lo completa y valida. Si es inválido, se lo devuelve (D18). */
+async function dictamenAprobador(ctx, revisores, n) {
+  const juicio = `.revision/${ctx.tarea}/veredicto.juicio.json`;
+  for (let intento = 1; ; intento++) {
+    try {
+      await emitirAprobador({ raiz: ctx.wt, tarea: ctx.tarea, ronda: n, roles: revisores });
+      return ctx.paso(`dictamen del aprobador (ronda ${n})`, "válido");
+    } catch (err) {
+      if (intento >= INTENTOS_INFORME) throw new Error(`aprobador: ${juicio} rechazado tras ${INTENTOS_INFORME} intentos: ${err.message}`);
+      await agente(ctx, "aprobador", `${PROMPTS.juicio(ctx.tarea, ctx.cfg.tests)}\n\nTu ${juicio} fue rechazado: ${err.message}`, juicio);
+    }
+  }
+}
+
 /** Crea (o reutiliza) el worktree de la tarea y comprueba que la fábrica viaja en él. */
 async function crearWorktree(tarea) {
   const r = await correr(path.join(ROOT, "scripts/fabrica/worktree.sh"), ["crear", tarea], { cwd: ROOT });
@@ -355,12 +377,14 @@ async function rondaRevision(ctx, n) {
     return { resultado: "usuario", motivo: `la tarea cambia algo visible: sirve la app del worktree y relanza con --solo-revision --url <url>` };
   }
   await revisar(ctx, revisores);
+  await emitirDictamenes(ctx, revisores, n);
   const sondas = correrSondas({ raiz: ctx.wt, tarea: ctx.tarea, roles: revisores.filter((r) => ROLES_CON_SONDAS.includes(r)) });
   ctx.paso(`sondas (ronda ${n})`, sondas.resumen);
   const leidos = JSON.parse(await readFile(ctx.rel("evidencia/matriz.json"), "utf8")).filter((f) => f.modo === "leído").map((f) => f.criterio);
   await agenteConInforme(ctx, "aprobador", PROMPTS.aprobar(ctx.tarea, ctx.cfg.tests, n), `.revision/${ctx.tarea}/veredicto.md`, { rol: "aprobador", leidos });
   const veredicto = veredictoDe(await readFile(ctx.rel("veredicto.md"), "utf8"));
   if (!veredicto) throw new Error(`veredicto.md no empieza por «# Veredicto: …»`);
+  await dictamenAprobador(ctx, revisores, n);
   ctx.ronda(n, veredicto);
   return { resultado: veredicto, motivo: `.revision/${ctx.tarea}/veredicto.md` };
 }

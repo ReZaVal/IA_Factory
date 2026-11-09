@@ -16,13 +16,13 @@ import { validarEscenarios } from "./prueba.mjs";
 export const SECCIONES_EVIDENCIA = ["Qué verifiqué", "Evidencia", "Qué supuse", "Qué no pude verificar"];
 const SIN_CONTENIDO = /^(ninguna|ninguno|—|-|n\/a)?\.?$/i;
 const ITEM = /^\s*(?:[-*]|\d+\.)\s+\S|^\s*\|(?![\s|:-]*$).*\|/;
-const RUTA_DE_EVIDENCIA = /^(?:evidencia|\.revision)\/[\w.@/-]+$/;
+export const RUTA_DE_EVIDENCIA = /^(?:evidencia|\.revision)\/[\w.@/-]+$/;
 const BLOQUEANTE = /^(CRITICAL|HIGH)$/i;
 const UBICACION = /\S:\d+/;
 const NADA = /^nada\.?$/i;
 
 /** Cuerpo de cada `## Título` (en minúsculas), sin comentarios HTML. @param {string} informe */
-function seccionesDe(informe) {
+export function seccionesDe(informe) {
   const mapa = new Map();
   let actual = null;
   for (const linea of informe.replace(/<!--[\s\S]*?-->/g, "").split("\n")) {

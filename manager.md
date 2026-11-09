@@ -28,7 +28,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   agentes amnésicos, `D11` tope de rondas por tarea, `D12` medición (`T2.7`)
   antes del auto-merge, `D13` revisores con la cuenta personal vía `agy`, sin
   API keys, y UI en Claude, `D14` evidencia verificable por el humano, `D15` evidencia al repo, `D16`
-  pantallas y APIs.
+  pantallas y APIs, `D17` `agy` solo en proyectos propios.
 - **Cambió en la última sesión (S-10):** `T1.8` cerrada (`D13`): el usuario no
   tiene API keys. `gemini.mjs` usa `agy` con su cuenta Google AI Pro, en
   `--mode plan`, desde una carpeta temporal; UI pasa al agente Claude
@@ -62,8 +62,25 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   del worktree (`FABRICA_SERVIDOR`), ejecuta las `peticiones` del probador y la
   página muestra petición y respuesta reales. Probado con un servidor de prueba,
   no con una API real de proyecto.
-- **Próximos pasos:** `P6` antes de enviar código de clientes; luego `T2.1` (🔒).
-  El usuario no ha confirmado el cierre de la Fase 1.
+- **Términos de `agy` (S-19):** `P6` → `D17`: solo proyectos propios, nunca
+  código de clientes. Cuota sin cifras (5 h + tope semanal); se mide en `T2.7`.
+- **Dictamen (S-20):** `T2.1` ✅, `D18`: dictamen JSON con hash, gatekeeper
+  `MERGE`/`PR`/`RECHAZADO`, `automerge` opt-in, sin log de despliegues.
+- **Dictamen emitido (S-21):** `T2.2` ✅: `dictamen.mjs` + enchufe en
+  `fabrica.mjs`; el aprobador escribe `veredicto.juicio.json`. Sin corrida real aún.
+- **Gatekeeper (S-22):** `T2.3` ✅: `gatekeeper.mjs` revalida y re-corre la suite;
+  `MERGE` solo con radio bajo + SDD + `automerge`. Aún sin radio real ni enchufe.
+- **Radio (S-23):** `T2.4` ✅: `radio.mjs` + `nucleo.json`; el gatekeeper lo calcula solo.
+  Lista de núcleo = la heredada de `via.mjs`, pendiente de tu visto bueno.
+- **CI (S-24):** `P2` → `D19`: repos públicos. `T2.5` ✅: probado en `ReZaVal/CoLLMena`
+  (PR #6, check `tests` verde, protección aplicada a `main`). Su check es de humo.
+- **Medición (S-25):** `T2.7` 🟡: Claude 4/5 (perdió L1; L2 solo MEDIUM/LOW); Flash 3/5 (Lógica no responde en `agy`);
+  Argon sin cuota hasta ≈ 2026-11-14. Sin `D20`. Ver `docs/superpowers/spikes/T2.7/informe.md`.
+- **Integración (S-26):** `T2.6` ✅: `integrar.mjs` probado de punta a punta en CoLLMena (PR #7 mezclado tras CI verde);
+  falta `D20` (`T2.7`) para activar `automerge` en proyectos reales.
+- **Próximos pasos:** el dueño decidió esperar a Argon (cuota de `agy` ≈ 2026-11-14): entonces
+  correr `node medir.mjs --modelos argon` (en el spike de `T2.7`), cerrar `T2.7` con `D20` y seguir con `T2.6`.
+  Antes de planear la corrida, comprobar con una llamada barata que Argon responde (`L14`).
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

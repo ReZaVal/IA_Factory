@@ -1,6 +1,49 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Fase 2 (`D18`, `T2.1`): contrato del dictamen en JSON. Nuevo
+  `scripts/revision/dictamen.schema.json` (revisores, aprobador y veredicto del
+  gatekeeper, con hash del informe); el auto-merge queda como opt-in por proyecto
+  (`automerge`, apagado por defecto) y no hay log de despliegues. Aún no lo emiten
+  los roles (`T2.2`) ni lo usa ningún script (`T2.3`).
+- Dictamen emitido (`D18`, `T2.2`): nuevo `scripts/revision/dictamen.mjs` (sin modelo).
+  Cada revisor que corre deja `<rol>.dictamen.json`, derivado de su informe ya
+  validado (hallazgos con id `<rol>-<n°>` y SHA-256 del `.md`); un veredicto que
+  contradice sus hallazgos se rechaza. El aprobador escribe `veredicto.juicio.json`
+  (confirmados, descartados, criterios, tests) y el script lo completa y valida en
+  `veredicto.dictamen.json`: cada CRITICAL/HIGH decidido, sin ids inventados, y
+  `APROBADO` sin confirmados ni tests rojos. Inválido → se reintenta una vez con el
+  motivo; si sigue, falla la ronda. Proyectos ya instalados: reinstalar.
+- Gatekeeper (`D4`/`D18`, `T2.3`): nuevo `scripts/revision/gatekeeper.mjs` (sin modelo).
+  Lee `via.md` para saber qué dictámenes exigir, comprueba que cada uno es el que sale
+  hoy de su informe (hash) y que el del aprobador es coherente con los de los revisores,
+  y **vuelve a correr la suite** (`--tests`): no se fía del campo `tests` del aprobador.
+  Falta, alteración, JSON roto, aprobador sin aprobar o tests rojos → `RECHAZADO` (sale 2).
+  Todo en verde → `MERGE` solo con radio `bajo`, vía SDD y `--automerge` /
+  `FABRICA_AUTOMERGE=1`; si no, `PR`. Sin `--radio` (lo calcula `T2.4`) asume `nucleo`.
+  Deja `.revision/TX.Y/gatekeeper.json`. Aún no lo llama `fabrica.mjs` (`T2.6`).
+- Integración (`D4`/`D18`, `T2.6`): nuevo `scripts/revision/integrar.mjs`. Con la rama de la tarea
+  ya confirmada y limpia, pide el veredicto al gatekeeper y actúa: `RECHAZADO` no toca nada, `PR`
+  sube la rama y abre el PR, `MERGE` abre el PR, espera `gh pr checks --watch` y lo mezcla; CI rojo,
+  sin checks o mezcla fallida dejan el PR abierto. Se niega en la base y con cambios sin confirmar.
+  `--dry-run` no sube nada. Auto-merge apagado por defecto (`--automerge` / `FABRICA_AUTOMERGE=1`).
+  Espera hasta 1 min a que GitHub registre los checks de un PR recién abierto (sin eso, «no checks
+  reported» impedía el merge). Probado con git real y `gh` simulado, y de punta a punta en un repo
+  público real (PR abierto, check `tests` verde, PR mezclado). `revision.md` documenta el flujo.
+- CI y protección de rama (`D19`, `T2.5`): el carril trae `.github/workflows/fabrica.yml`
+  (job `tests` obligatorio, `radio` informativo en el resumen del PR; adapta `npm test` y
+  Node) y `scripts/fabrica/proteger-rama.sh <dueño/repo>`, que sin `--aplicar` solo muestra
+  la regla (check `tests`, rama al día, admins incluidos, sin force-push). Pide repo
+  público o plan Pro/Team. Probado contra GitHub real en un repo público (el check corrió y la
+  protección quedó aplicada).
+- Radio de impacto (`D4`, `T2.4`): nuevo `scripts/revision/radio.mjs` (sin modelo) clasifica
+  el diff contra la base en `bajo` o `nucleo`. Reutiliza la lista de núcleo de `via.mjs`
+  (ahora partida en estructura y semántica, mismo comportamiento) y se afina por proyecto
+  con `scripts/revision/nucleo.json` (`patrones`: regex extra; el carril software trae la
+  plantilla vacía). Un test solo cuenta como núcleo si toca la estructura (CI, `.claude`,
+  la fábrica, `.env`, constitución): un test de autenticación no sube el radio. Sin cambios,
+  sin git, base inválida o `nucleo.json` roto → `nucleo` con el motivo. El gatekeeper lo
+  llama solo (base = `--base`, la de `via.md` o `HEAD`); `--radio` queda para pruebas.
 - Desarrollo: `vitest.config.js` sube `testTimeout` a 60 s; los tests de `fabrica.test.js`
   ejecutan el pipeline completo y superaban los 5 s por defecto en máquinas lentas (WSL).
 - Evidencia de API (`D16`, `T1.15`): un escenario de `escenarios.json` puede llevar

@@ -1,0 +1,16 @@
+{
+  "modelo": "claude-sonnet-5-5",
+  "motor": "claude",
+  "roles": {
+    "seguridad": {
+      "ok": true,
+      "segundos": 4305.121,
+      "costo": 2.257804
+    },
+    "logica": {
+      "ok": true,
+      "segundos": 60.22,
+      "costo": 0.1803786
+    }
+  }
+}

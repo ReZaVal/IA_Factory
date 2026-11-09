@@ -227,8 +227,7 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
 - **Impacto:** reemplaza a `D12` en el modelo de validación; `T2.7` compara
   Argon y Flash por `agy`. `D6` sigue vigente, aunque GPT-OSS 120B en la
   cuenta queda como candidato sin probar. El Revisor UI pierde la revisión
-  cruzada. Código de clientes: **no** por `agy` hasta leer sus términos de
-  privacidad y uso automatizado (`P6`). Cuota de `agy` sin medir.
+  cruzada. Código de clientes: **no** por `agy` (`D17`). Cuota de `agy` sin medir.
 
 ### D14 — Evidencia verificable por el humano antes de seguir
 - **Decisión:** se adopta `docs/superpowers/specs/2026-11-03-evidencia-verificable-design.md`.
@@ -279,17 +278,100 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   Rechazadas: aceptar ataques solo descritos en texto (contradice la spec §7) y
   mover los revisores a Claude (cambia `D13`).
 
+### D17 — `agy` solo en proyectos propios; nunca código de clientes
+- **Decisión:** la fábrica con `agy` (`D13`) se usa solo en proyectos propios
+  del usuario y en repos de prueba. No se le pasa código de clientes, y no hay
+  carril alternativo para clientes porque el usuario no tiene ese caso.
+- **Razón:** elegida por el usuario (S-19, 2026-11-08) tras leer los términos
+  (`antigravity.google/terms`, README de `antigravity-cli`). Con Google AI Pro
+  personal, Google usa las interacciones para mejorar sus productos, personal
+  y contratistas pueden revisarlas, sigue usando datos aunque se apague la
+  telemetría y pide no enviar información confidencial. La garantía de «zero
+  model training» es del nivel Enterprise (términos de Google Cloud), no de Pro.
+  El uso automatizado con el propio `agy -p` está permitido: lo prohibido es
+  acceder con software de terceros (p. ej. reutilizar su OAuth).
+- **Alternativas rechazadas:** revisores solo Claude cuando el proyecto es de
+  un cliente (no hace falta: no habrá clientes); Gemini por Workspace / Google
+  Cloud con términos empresariales (de pago, `§4` de `agente.md`; queda como
+  opción si algún día hay clientes).
+- **Impacto:** cierra `P6`. El código propio igual se comparte con Google y
+  puede ser revisado por personas: no poner secretos ni datos personales en los
+  prompts (`agente.md §4`). `settings.json` de `agy` no tiene opt-out
+  configurado (nombre del ajuste sin documentar). Cuota: renovación cada 5 h
+  más tope semanal, sin cifras publicadas; se mide con uso real (`T2.7`).
+
+### D18 — Dictamen JSON, gatekeeper determinista y auto-merge opt-in
+- **Decisión:** (A) cada revisor y el aprobador dejan un `dictamen.json` junto a
+  su informe `.md`; el `.md` lo lee la persona y el JSON lo lee el gatekeeper
+  (`T2.3`). El esquema está en `§4`. El gatekeeper no se fía del campo `tests` del
+  aprobador: vuelve a correr la suite (`H6`). (B) El auto-merge es **opt-in por
+  proyecto**: clave `automerge` apagada por defecto; solo se enciende con `T2.5`
+  hecha, el modelo de revisores decidido en `T2.7` y una `Dn` del usuario en la
+  `memoria.md` de ese proyecto. La vía FTD nunca hace merge (`D9`). (C) No hay log
+  de despliegues por ahora: el veredicto del gatekeeper se guarda en
+  `docs/evidencia/` (`D15`).
+- **Razón:** elegida por el usuario (S-20, 2026-11-09) tras la propuesta del
+  agente. Un JSON con hash del informe permite detectar informes alterados sin
+  confiar en el agente; el opt-in confirma la inferencia de `D4`.
+- **Alternativas rechazadas:** seguir con Markdown + regex como entrada del
+  gatekeeper (frágil, sin hash); auto-merge activo por defecto (contradice
+  `agente.md §4`); `fabrica-log.md` ya (aún no hay despliegues que registrar,
+  cierra lo que `D8` dejó a `T2.1`).
+- **Impacto:** `T2.2` hace que los roles emitan el JSON y lo validen; `T2.3`
+  implementa el gatekeeper; `T2.5` y `T2.7` son requisitos para activar
+  `automerge`. Cierra la parte de `T2.1`; `D4` ya no tiene inferencia pendiente.
+
+### D19 — Repos públicos para el auto-merge; protección de rama con un check `tests`
+- **Decisión:** el merge automático (`D4`) solo se activa en repos **públicos**
+  (o con GitHub Pro/Team, si algún día se tiene). La protección de rama exige el
+  check `tests` y rama al día, incluye a los admins y prohíbe force-push y borrado.
+  No exige revisión humana: en el núcleo el gatekeeper abre un PR y lo mezcla la
+  persona. Se entrega como plantilla (`.github/workflows/fabrica.yml`, job `tests`
+  obligatorio y `radio` informativo) y `scripts/fabrica/proteger-rama.sh`, que sin
+  `--aplicar` solo muestra la regla.
+- **Razón:** elegida por el usuario (S-24, 2026-11-09), cierra `P2`. Los repos
+  privados en plan gratuito no admiten checks obligatorios.
+- **Alternativas rechazadas:** GitHub Pro/Team (de pago, `agente.md §4`); repos
+  privados sin protección (el merge automático quedaría sin freno); que el
+  gatekeeper corra en CI (`.revision/` no se versiona, así que no tendría los
+  dictámenes).
+- **Impacto:** un repo público no puede contener secretos ni código de clientes:
+  `automerge` solo en proyectos propios, coherente con `D17`. `T2.5` se probó en
+  `ReZaVal/CoLLMena` (S-24, a pedido del usuario); `T2.6` depende de `T2.7`.
+
 ## 4. Contrato de datos / estructura
-Pendiente: formato del dictamen de cada revisor (JSON) y del veredicto del
-gatekeeper → `T2.1`.
+Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen.schema.json`
+(JSON Schema 2020-12). Resumen (`D18`):
+
+**Dictamen de revisor** (`seguridad`, `logica`, `ui`, `codigo`) — `.revision/TX.Y/<rol>.dictamen.json`
+- `version` (1), `tarea`, `ronda`, `rol`.
+- `veredicto`: `SIN BLOQUEANTES` | `CON BLOQUEANTES` (CON si hay CRITICAL o HIGH).
+- `hallazgos[]`: `id`, `severidad` (CRITICAL|HIGH|MEDIUM|LOW), `ubicacion`
+  (`archivo:línea`), `descripcion`, `correccion`.
+- `evidencia[]`: rutas de `evidencia/`.
+- `hash_informe`: SHA-256 del `.md` del rol.
+
+**Dictamen del aprobador** — `.revision/TX.Y/veredicto.dictamen.json` (el agente escribe
+`veredicto.juicio.json` con `hallazgos_*`, `criterios` y `tests`; el script añade el resto)
+- Los campos base, con `veredicto`: `APROBADO` | `CAMBIOS REQUERIDOS` | `BLOQUEADO`.
+- `hallazgos_confirmados[]` y `hallazgos_descartados[]`: `id` + `razon`.
+- `criterios[]`: `numero`, `modo` (`ejecutado`|`leído`), `evidencia`.
+- `tests`: `comando`, `salida` (código), `fecha`.
+- `dictamenes_vistos[]`: `rol` + `hash` de cada dictamen de revisor.
+
+**Veredicto del gatekeeper** (lo escribe un script, sin modelo) — `.revision/TX.Y/gatekeeper.json`
+- `tarea`, `ronda`, `resultado`: `MERGE` | `PR` | `RECHAZADO`.
+- `radio`: `bajo` | `nucleo` (`T2.4`); `motivos[]`.
+- `MERGE` solo si: 4/4 dictámenes válidos y con hash vigente, aprobador
+  `APROBADO` sin CRITICAL/HIGH confirmados, suite en verde re-ejecutada por el
+  script, `radio = bajo`, vía no FTD y `automerge` activo en el proyecto.
 
 ## 5. Preguntas abiertas
 - [ ] **P1 — Ritmo, duración de sesión y deadline.** Provisional: 1 sesión por
   semana de 1-2 h, sin deadline (como Supervisión de Contratistas). Confirmar;
   cambia el cronograma de `planner.md §5`.
-- [ ] **P2 — Protección de rama en repos privados.** El auto-merge seguro (`D4`)
-  necesita checks obligatorios en GitHub: ¿GitHub Pro/Team, o repos cliente
-  públicos? Bloquea `T2.5`.
+- [x] **P2 — Protección de rama en repos privados.** ¿GitHub Pro/Team, o repos
+  públicos? → Resuelta (S-24): repos públicos, `D19`.
 - [x] **P3 — Estructura del Brain.** Cómo se mapean `02-DOCS/wiki/` (index, log,
   carpetas por carril) y `constitution.md` sobre el harness. → Resuelta en
   `D8` (S-02).
@@ -310,10 +392,11 @@ gatekeeper → `T2.1`.
   forma (presupuesto por tarea) quedó decidida en `D11`. Sigue abierto solo
   lo del auditor de spec.
 
-- [ ] **P6 — Términos y cuota de Antigravity CLI.** ¿Permiten uso automatizado
+- [x] **P6 — Términos y cuota de Antigravity CLI.** ¿Permiten uso automatizado
   y código de clientes con Google AI Pro? ¿Cuánta cuota da por día? La FAQ de
   Gemini CLI no aplica a esta herramienta. Bloquea usar `agy` con código de
-  clientes (`D13`).
+  clientes (`D13`) → Resuelta (S-19): solo proyectos
+  propios, `D17`.
 
 - [x] **P9 — Tope en `0` de `T1.2`.** ¿Un descuento mayor que el subtotal da
   `0` o un error? → Resuelta (S-12): da `0`. Registrada como `D5` en
@@ -325,5 +408,4 @@ gatekeeper → `T2.1`.
 - [x] **P8 — Destino de la evidencia aprobada.** → Resuelta (S-15): se guarda
   en el repo, `D15`.
 
-> Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
-> `T2.5`; P4, el cierre de cada fase de carril.
+> Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P4, el cierre de cada fase de carril.

@@ -1,0 +1,110 @@
+{
+  "claude": {
+    "detectados": 4,
+    "detectadosBloqueantes": 3,
+    "total": 5,
+    "falsosPositivos": 1,
+    "ruido": 0,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "XSS: el título de la nota va sin escapar en renderNota",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S2",
+        "titulo": "Inyección de fórmulas en el CSV: =, +, -, @ al inicio de celda",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "S3",
+        "titulo": "Clave de exportación escrita en el código",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "L1",
+        "titulo": "paginar numera desde 0: la página 1 se salta los primeros elementos",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      },
+      {
+        "id": "L2",
+        "titulo": "promedio de lista vacía da NaN en vez de 0",
+        "detectado": true,
+        "comoBloqueante": false,
+        "porSuRol": true,
+        "severidad": "LOW"
+      }
+    ],
+    "falsos": [
+      {
+        "rol": "seguridad",
+        "ubicacion": "src/notas.js:51-54",
+        "descripcion": "`destinoExportacion()` prepara el envío del CSV a un servicio externo con `Authorization: Bearer`. El contexto dice que los datos nunca salen del dispositivo salvo por la descarga que hace la persona. Eso expone notas de texto libre y posibles datos personales a un tercero, sin que la spec lo pida."
+      }
+    ],
+    "rolesCompletos": 2
+  },
+  "flash": {
+    "detectados": 3,
+    "detectadosBloqueantes": 3,
+    "total": 5,
+    "falsosPositivos": 0,
+    "ruido": 0,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "XSS: el título de la nota va sin escapar en renderNota",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S2",
+        "titulo": "Inyección de fórmulas en el CSV: =, +, -, @ al inicio de celda",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "S3",
+        "titulo": "Clave de exportación escrita en el código",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "L1",
+        "titulo": "paginar numera desde 0: la página 1 se salta los primeros elementos",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      },
+      {
+        "id": "L2",
+        "titulo": "promedio de lista vacía da NaN en vez de 0",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      }
+    ],
+    "falsos": [],
+    "rolesCompletos": 1
+  }
+}

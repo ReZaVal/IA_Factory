@@ -15,25 +15,30 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 // Tamaño máximo de un arreglo menor, sin contar tests.
 export const LIMITES = { archivos: 3, lineas: 60 };
 // Núcleo: lo que nunca va por la vía rápida (dependencias, CI, datos guardados,
-// autenticación, secretos y la propia fábrica). El radio de impacto por carril
-// lo afina la Fase 2 de IA Factory (radio de impacto).
-const NUCLEO = [
-  /(^|\/)(package(-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|requirements[^/]*\.txt|pyproject\.toml|go\.(mod|sum)|Cargo\.(toml|lock)|Gemfile(\.lock)?|composer\.json)$/,
+// autenticación, secretos y la propia fábrica). El radio de impacto del merge
+// (radio.mjs, T2.4) reutiliza estas mismas listas.
+// Estructura de la fábrica y del proyecto: cambiarla cambia las reglas del juego, también en un test.
+export const NUCLEO_ESTRUCTURA = [
   /(^|\/)\.github\//,
-  /(^|\/)(migra\w*|schema\w*|db)(\/|\.|$)/i,
-  /(auth|login|sesion|session|permis\w*|crypt\w*|secret\w*|token\w*)/i,
   /(^|\/)\.env/,
   /^local_privado\//,
   /^scripts\/(revision|fabrica)\//,
   /^\.claude\//,
   /^constitucion-[^/]+\.md$/
 ];
+// Lo que toca dependencias, datos guardados o acceso: un test de eso no cambia el riesgo.
+export const NUCLEO_SEMANTICO = [
+  /(^|\/)(package(-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|requirements[^/]*\.txt|pyproject\.toml|go\.(mod|sum)|Cargo\.(toml|lock)|Gemfile(\.lock)?|composer\.json)$/,
+  /(^|\/)(migra\w*|schema\w*|db)(\/|\.|$)/i,
+  /(auth|login|sesion|session|permis\w*|crypt\w*|secret\w*|token\w*)/i
+];
+export const NUCLEO = [...NUCLEO_SEMANTICO, ...NUCLEO_ESTRUCTURA];
 // Tests y la spec de la tarea no cuentan como código para el tamaño.
-const TEST = [/(^|\/)(tests?|__tests__)\//, /\.(test|spec)\.[a-z]+$/, /^specs\//];
+export const TEST = [/(^|\/)(tests?|__tests__)\//, /\.(test|spec)\.[a-z]+$/, /^specs\//];
 const VISIBLE = [/\.(html?|css|scss|sass|less|jsx|tsx|vue|svelte|astro)$/, /(^|\/)(components?|views?|pages?|public|styles?)\//];
 
-const algun = (patrones, ruta) => patrones.some((p) => p.test(ruta));
-const esTest = (ruta) => algun(TEST, ruta);
+export const algun = (patrones, ruta) => patrones.some((p) => p.test(ruta));
+export const esTest = (ruta) => algun(TEST, ruta);
 const lista = (rutas) => rutas.map((r) => `\`${r}\``).join(", ");
 
 /** @typedef {{ ruta: string, lineas: number }} Cambio */

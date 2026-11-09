@@ -1,0 +1,63 @@
+{
+  "descripcion": "Defectos sembrados en fixture/src/notas.js (T2.7). Cada defecto se localiza por `anclas` (regex de una línea) más `tramo` líneas hacia abajo. `palabras` solo sirve de respaldo cuando el hallazgo no trae una línea válida. `rol` es el revisor responsable; si otro lo encuentra cuenta como cruzado.",
+  "defectos": [
+    {
+      "id": "S1",
+      "rol": "seguridad",
+      "titulo": "XSS: el título de la nota va sin escapar en renderNota",
+      "archivo": "src/notas.js",
+      "palabras": "titulo|título|escap|xss|html|inyecci",
+      "anclas": [
+        "<h3>\\$\\{nota\\.titulo\\}</h3>"
+      ],
+      "tramo": 1
+    },
+    {
+      "id": "S2",
+      "rol": "seguridad",
+      "titulo": "Inyección de fórmulas en el CSV: =, +, -, @ al inicio de celda",
+      "archivo": "src/notas.js",
+      "palabras": "f[oó]rmula|inyecci|csv|=|@|hoja de c[aá]lculo|excel",
+      "anclas": [
+        "function celdaCsv",
+        "export function exportarCsv"
+      ],
+      "tramo": 5
+    },
+    {
+      "id": "S3",
+      "rol": "seguridad",
+      "titulo": "Clave de exportación escrita en el código",
+      "archivo": "src/notas.js",
+      "palabras": "clave|secreto|token|hardcode|credencial|api key|bearer",
+      "anclas": [
+        "const CLAVE_EXPORTACION",
+        "Bearer \\$\\{CLAVE_EXPORTACION\\}"
+      ],
+      "tramo": 1
+    },
+    {
+      "id": "L1",
+      "rol": "logica",
+      "titulo": "paginar numera desde 0: la página 1 se salta los primeros elementos",
+      "archivo": "src/notas.js",
+      "palabras": "p[aá]gina|desde 1|off.by.one|indice|índice|paginar",
+      "anclas": [
+        "export function paginar"
+      ],
+      "tramo": 5
+    },
+    {
+      "id": "L2",
+      "rol": "logica",
+      "titulo": "promedio de lista vacía da NaN en vez de 0",
+      "archivo": "src/notas.js",
+      "palabras": "vac[ií]a|nan|divisi[oó]n|cero|promedio",
+      "anclas": [
+        "export function promedio"
+      ],
+      "tramo": 4
+    }
+  ],
+  "ruido": "Código correcto a propósito: escaparHtml, celdaCsv (comas y comillas), ordenarPorNota (no muta). Un hallazgo HIGH/CRITICAL que no corresponda a un defecto sembrado cuenta como falso positivo."
+}

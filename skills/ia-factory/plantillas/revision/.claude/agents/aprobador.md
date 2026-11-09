@@ -53,6 +53,14 @@ evidencia, marcado «ejecutado» o «leído»; y las secciones «Qué verifiqué
 `scripts/revision/roles/_formato.md`. Un script rechaza el veredicto sin ellas o
 con un «leído» que no se diga arriba.
 
+Además de `veredicto.md`, escribe `.revision/TX.Y/veredicto.juicio.json` (solo JSON):
+`hallazgos_confirmados` y `hallazgos_descartados` (listas de `{id, razon}`, con el id
+`<rol>-<n°>` de la tabla del informe; cada CRITICAL/HIGH va en una), `criterios`
+(`{numero, modo: ejecutado|leído, evidencia}`) y `tests` (`{comando, salida, fecha}` de la
+corrida real de la suite). El script completa el resto (veredicto, hash, dictámenes vistos),
+lo valida contra `scripts/revision/dictamen.schema.json` y rechaza un `APROBADO` con
+confirmados o con tests que no salieron en 0 (`D18`).
+
 Escribe el veredicto en `.revision/TX.Y/veredicto.md` y devuelve un resumen de
 una línea para la bitácora de `planner.md §6`. Aprobar **no** autoriza el commit:
 eso lo confirma el usuario (`agente.md §4`).
