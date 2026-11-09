@@ -154,6 +154,21 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   No detecta escrituras fuera del repo; ahí la defensa es solo `--mode plan`.
 - **Regla derivada:** ver §1.
 
+### L14 — Flash 3.8 no entrega el informe de Lógica en `agy`; Argon agotó su cuota
+- **Estado:** 🔴 Abierto (S-25, `T2.7`)
+- **Síntoma:** (1) `gemini-3.8-flash-medium` respondió Seguridad (64 s) pero en Lógica
+  intentó ejecutar un comando, `agy -p` se lo negó («a tool required the "command"
+  permission that headless mode cannot prompt for») y terminó sin respuesta tres veces
+  seguidas, en dos corridas. (2) `gemini-4-argon-medium` devolvió «Individual quota
+  reached… Resets in 116h» al primer intento: la cuota de Argon se había gastado antes.
+- **Causa raíz probable:** (1) Lógica invita a verificar ejecutando; `--mode plan` lo
+  impide y Flash no se recupera. Sin confirmar si una regla `permissions.allow` o un
+  prompt más explícito («no ejecutes nada») lo arregla. (2) uso previo de la cuenta; la
+  cuota de Argon y la de Flash son distintas.
+- **Solución aplicada:** ninguna. `T2.7` queda incompleta (informe del spike).
+- **Regla derivada:** una cuota agotada de `agy` puede durar días: antes de planear una
+  medición larga, comprobar con una llamada barata que el modelo responde.
+
 ### L13 — `EPIPE` tumbaba la fábrica de forma intermitente
 - **Estado:** ✅ Resuelto (S-17, `T1.14`)
 - **Síntoma:** la suite fallaba 1 de cada 3 veces, en tests distintos, con

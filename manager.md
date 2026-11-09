@@ -74,7 +74,9 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   Lista de núcleo = la heredada de `via.mjs`, pendiente de tu visto bueno.
 - **CI (S-24):** `P2` → `D19`: repos públicos. `T2.5` ✅: probado en `ReZaVal/CoLLMena`
   (PR #6, check `tests` verde, protección aplicada a `main`). Su check es de humo.
-- **Próximos pasos:** `T2.7` (🔒), luego `T2.6`.
+- **Medición (S-25):** `T2.7` 🟡: Claude 4/5 (perdió L1; L2 solo MEDIUM/LOW); Flash 3/5 (Lógica no responde en `agy`);
+  Argon sin cuota hasta ≈ 2026-11-14. Sin `D20`. Ver `docs/superpowers/spikes/T2.7/informe.md`.
+- **Próximos pasos:** cerrar `T2.7` (decide el dueño), luego `T2.6`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

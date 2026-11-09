@@ -1,0 +1,14 @@
+{
+  "modelo": "gemini-4-argon-medium",
+  "motor": "agy",
+  "roles": {
+    "seguridad": {
+      "ok": false,
+      "error": "seguridad/gemini-4-argon-medium: Error: Cuota de agy agotada: Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 116h24m43s."
+    },
+    "logica": {
+      "ok": false,
+      "error": "logica/gemini-4-argon-medium: Error: Cuota de agy agotada: Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 116h24m38s."
+    }
+  }
+}
