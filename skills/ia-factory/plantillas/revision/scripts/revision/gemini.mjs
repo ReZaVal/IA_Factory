@@ -21,6 +21,19 @@ import { validarInforme, supuestosDeSpec, existeEvidencia } from "./evidencia.mj
 import { ROLES_CON_SONDAS } from "./sondas.mjs";
 
 export const ROLES = ["spec", "seguridad", "logica"];
+
+/**
+ * Prompt del rol: `roles/<carril>/<rol>.md` si el carril trae el suyo (p. ej. ml),
+ * si no el común `roles/<rol>.md` (software y `spec` viven ahí). Así dos carriles
+ * en un proyecto no se pisan los roles.
+ * @param {string} roles
+ * @param {string} carril
+ * @param {string} rol
+ */
+export function rutaRol(roles, carril, rol) {
+  const propio = path.join(roles, carril, `${rol}.md`);
+  return existsSync(propio) ? propio : path.join(roles, `${rol}.md`);
+}
 const API = "https://generativelanguage.googleapis.com/v1beta";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // Nunca salen a la API: datos reales de inspección y secretos (agente.md §4).
@@ -378,7 +391,7 @@ async function main() {
     contexto: await readFile(path.join(roles, "_contexto.md"), "utf8"),
     carril: args.carril,
     constitucion: existsSync(constitucionPath) ? await readFile(constitucionPath, "utf8") : "",
-    rol: [await readFile(path.join(roles, `${args.rol}.md`), "utf8"), ...(ROLES_CON_SONDAS.includes(args.rol) ? [await readFile(path.join(roles, "_sondas.md"), "utf8")] : [])].join("\n\n"),
+    rol: [await readFile(rutaRol(roles, args.carril, args.rol), "utf8"), ...(ROLES_CON_SONDAS.includes(args.rol) ? [await readFile(path.join(roles, "_sondas.md"), "utf8")] : [])].join("\n\n"),
     formato: await readFile(path.join(roles, "_formato.md"), "utf8")
   });
   const specPath = path.join(ROOT, "specs", `${args.tarea}.md`);

@@ -65,7 +65,7 @@ const VISTAS = [[360, "claro"], [360, "oscuro"], [1280, "claro"], [1280, "oscuro
 const PANTALLA_INICIO = { id: "inicio", titulo: "Inicio", ruta: "" };
 const INTENTOS_INFORME = 2;
 // Informes de una ronda; al pedir cambios se mueven a .revision/TX.Y/ronda-N/.
-const DE_RONDA = [...["via", "seguridad", "logica", "ui", "codigo", "veredicto"].flatMap((f) => [`${f}.md`, `${f}.dictamen.json`]), "veredicto.juicio.json", "evidencia"];
+const DE_RONDA = [...["via", "seguridad", "logica", "ui", "codigo", "veredicto"].flatMap((f) => [`${f}.md`, `${f}.dictamen.json`]), "veredicto.juicio.json", "evidencia", "ml"];
 const DIR_RONDA = /^ronda-\d+$/;
 const CUOTA = /cuota|quota|usage limit|rate.?limit|limit reached|resource.?exhausted/i;
 // Roles antes de que exista lo que se revisa: relanzar debe repetir la construcción.
@@ -93,7 +93,7 @@ export function parseArgs(argv) {
 
 /**
  * Entorno primero; si falta, `.env.local`. FABRICA_TESTS es el comando de la suite
- * (constructor y aprobador lo corren); FABRICA_COBERTURA, el de cobertura (opcional); FABRICA_SERVIDOR, el que levanta la app en $PORT para la evidencia de API (opcional); FABRICA_PERMITIDOS, reglas extra separadas por coma.
+ * (constructor y aprobador lo corren); FABRICA_COBERTURA, el de cobertura (opcional); FABRICA_SERVIDOR, el que levanta la app en $PORT para la evidencia de API (opcional); FABRICA_REPRODUCIR, el comando que entrena y evalúa (carril ML: se corre dos veces y debe dar lo mismo; FABRICA_REPRODUCIR_ARCHIVO, el archivo de métricas que compara en vez de la salida); FABRICA_PERMITIDOS, reglas extra separadas por coma.
  * @param {Record<string, string | undefined>} env
  * @param {string} dotenvText
  */
@@ -105,6 +105,8 @@ export function configFabrica(env, dotenvText) {
     tests: valor("FABRICA_TESTS") || "npm test",
     cobertura: valor("FABRICA_COBERTURA"),
     servidor: valor("FABRICA_SERVIDOR"),
+    reproducir: valor("FABRICA_REPRODUCIR"),
+    reproducirArchivo: valor("FABRICA_REPRODUCIR_ARCHIVO"),
     permitidos: valor("FABRICA_PERMITIDOS").split(",").map((s) => s.trim()).filter(Boolean)
   };
 }
@@ -349,8 +351,39 @@ async function prepararTarea(tarea, wt) {
 export const veredictoPorEvidencia = (tarea, fallos) =>
   `# Veredicto: CAMBIOS REQUERIDOS\n\nLa evidencia ejecutada por prueba.mjs falla (\`.revision/${tarea}/evidencia/matriz.md\`); no se llamó a los revisores.\n\n## Qué corregir\n${fallos.map((f) => `- ${f}`).join("\n")}\n`;
 
+/**
+ * Carril ML (T3.3-T3.4): si el proyecto trae scripts/ml/verificar.mjs, busca aleatoriedad sin semilla y,
+ * con FABRICA_REPRODUCIR, exige que dos corridas den lo mismo. Sin modelo. Devuelve los fallos.
+ */
+async function verificacionesMl(ctx, n) {
+  if (!existsSync(path.join(ctx.wt, "scripts/ml/verificar.mjs"))) return [];
+  await mkdir(ctx.rel("ml"), { recursive: true });
+  const ejecutar = async (nombre, args) => {
+    const r = await correr(process.execPath, ["scripts/ml/verificar.mjs", ...args], { cwd: ctx.wt });
+    if (r.codigo === 2) throw new Error(`verificar.mjs ${nombre}: ${r.error.trim()}`);
+    await writeFile(ctx.rel(`ml/${nombre}.json`), r.salida);
+    return { codigo: r.codigo, datos: JSON.parse(r.salida) };
+  };
+  const fallos = [];
+  const semillas = await ejecutar("semillas", ["semillas"]);
+  const sin = semillas.datos.hallazgos.filter((h) => h.gravedad === "error");
+  fallos.push(...sin.map((h) => `semillas: ${h.archivo}:${h.linea} ${h.detalle}`));
+  ctx.paso(`semillas (ronda ${n})`, sin.length ? `FALLA — ${sin.length} sin semilla` : `${semillas.datos.archivos} archivos .py, ${semillas.datos.hallazgos.length} avisos`);
+  if (ctx.cfg.reproducir) {
+    const repro = await ejecutar("reproducir", ["reproducir", ...(ctx.cfg.reproducirArchivo ? ["--archivo", ctx.cfg.reproducirArchivo] : []), "--", "sh", "-c", ctx.cfg.reproducir]);
+    if (!repro.datos.ok) fallos.push(`reproducir: ${repro.datos.motivo}`);
+    ctx.paso(`reproducir (ronda ${n})`, repro.datos.ok ? "dos corridas, mismo resultado" : `FALLA — ${repro.datos.motivo}`);
+  }
+  return fallos;
+}
+
 /** Evidencia ejecutada de la ronda n. Devuelve los fallos (vacío si todo en verde). */
 async function probar(ctx, n) {
+  const fallosPrueba = await probarEscenarios(ctx, n);
+  return [...fallosPrueba, ...(await verificacionesMl(ctx, n))];
+}
+
+async function probarEscenarios(ctx, n) {
   const args = ["scripts/revision/prueba.mjs", "--tarea", ctx.tarea, "--tests", ctx.cfg.tests, ...(ctx.cfg.cobertura ? ["--cobertura", ctx.cfg.cobertura] : []), ...(ctx.cfg.servidor ? ["--servidor", ctx.cfg.servidor] : [])];
   const r = await correr(process.execPath, args, { cwd: ctx.wt });
   if (r.codigo === 2) throw new Error(`prueba.mjs: ${r.error.trim() || r.salida.trim()}`);

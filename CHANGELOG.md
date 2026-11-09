@@ -1,6 +1,22 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Fase 3 (`T3.1`): carril ML. Nuevo `carriles/ml/constitucion-ml.md` (13 reglas duras:
+  datos y secretos, experimento antes que código, partición sin leakage,
+  reproducibilidad); `instalar.sh --carril ml` la instala junto con `dominio-datos.md`.
+- Carril ML en la fábrica (`T3.4`): si el proyecto trae `scripts/ml/verificar.mjs`, cada ronda corre
+  `semillas` (y `reproducir` con `FABRICA_REPRODUCIR`/`FABRICA_REPRODUCIR_ARCHIVO`); un fallo da
+  CAMBIOS REQUERIDOS sin llamar a revisores. Resultados en `.revision/TX.Y/ml/`. Un escenario del
+  probador puede correr `python3 -m pytest <ids de test>` (`L15`): sin eso, en Python solo había
+  escenarios de lectura.
+- La página de evidencia pinta los flujos que corren un comando (`L17`); el rol de Seguridad ML no cita
+  `local_privado/` en sus comandos (el script lo rechaza).
+- Herramientas del carril ML (`T3.3`): `scripts/ml/verificar.mjs`, sin modelo. `semillas` marca
+  aleatoriedad sin semilla en el código Python (C6); `reproducir` exige la misma salida o
+  métrica en N corridas (C10). Aún no lo llama `fabrica.mjs` (`T3.4`).
+- Roles del carril ML (`T3.2`): prompts de datos/leakage, métricas y gráficos en
+  `scripts/revision/roles/ml/`; `gemini.mjs` resuelve el rol por carril (`rutaRol`) y
+  vuelve al común si el carril no trae el suyo (software no cambia).
 - Fase 2 (`D18`, `T2.1`): contrato del dictamen en JSON. Nuevo
   `scripts/revision/dictamen.schema.json` (revisores, aprobador y veredicto del
   gatekeeper, con hash del informe); el auto-merge queda como opt-in por proyecto

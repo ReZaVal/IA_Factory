@@ -41,6 +41,10 @@ aparte, para que el humano vea qué se asumió).
   `{"$congelar": …}` (objeto congelado, para probar que no se muta), `{"$paso": "<id>"}` (resultado de un paso previo).
 - `modulo`: ruta relativa dentro del proyecto, sin `..`. `funcion`: identificador exportado.
 - `comando`: argv sin shell, solo lectura: `git diff|status|log|show|ls-files`, `grep`, `ls`, `cat`, `wc`.
+  **Proyectos Python:** `modulo`/`funcion` solo corre JavaScript; para ejecutar el comportamiento corre los
+  tests que prueban cada criterio: `["python3", "-m", "pytest", "-q", "tests/test_x.py::test_y"]`
+  (ids de test, `-q`, `-x`, `-v`, `-k <texto simple>`; nada más). No cites `local_privado/`: se rechaza.
+  Un escenario que solo comprueba que un archivo o un test existe (`grep`/`ls`) no prueba el criterio.
 - Ids únicos. Una función con fechas: un escenario por borde (el script lo corre en varias zonas horarias).
 
 Devuelve: ruta del archivo, cuántos escenarios por criterio y los criterios que no pudiste
