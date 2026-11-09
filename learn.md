@@ -165,7 +165,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   impide y Flash no se recupera. Sin confirmar si una regla `permissions.allow` o un
   prompt más explícito («no ejecutes nada») lo arregla. (2) uso previo de la cuenta; la
   cuota de Argon y la de Flash son distintas.
-- **Solución aplicada:** ninguna. `T2.7` queda incompleta (informe del spike).
+- **Solución aplicada:** probada solo en el spike (S-26): añadir «No tienes herramientas: no ejecutes nada…» al contexto hizo que Flash entregara el informe de Lógica al primer intento. Una corrida; **no está en el producto**. Argon sigue sin cuota.
 - **Regla derivada:** una cuota agotada de `agy` puede durar días: antes de planear una
   medición larga, comprobar con una llamada barata que el modelo responde.
 
