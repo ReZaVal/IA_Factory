@@ -22,6 +22,14 @@
   Todo en verde → `MERGE` solo con radio `bajo`, vía SDD y `--automerge` /
   `FABRICA_AUTOMERGE=1`; si no, `PR`. Sin `--radio` (lo calcula `T2.4`) asume `nucleo`.
   Deja `.revision/TX.Y/gatekeeper.json`. Aún no lo llama `fabrica.mjs` (`T2.6`).
+- Radio de impacto (`D4`, `T2.4`): nuevo `scripts/revision/radio.mjs` (sin modelo) clasifica
+  el diff contra la base en `bajo` o `nucleo`. Reutiliza la lista de núcleo de `via.mjs`
+  (ahora partida en estructura y semántica, mismo comportamiento) y se afina por proyecto
+  con `scripts/revision/nucleo.json` (`patrones`: regex extra; el carril software trae la
+  plantilla vacía). Un test solo cuenta como núcleo si toca la estructura (CI, `.claude`,
+  la fábrica, `.env`, constitución): un test de autenticación no sube el radio. Sin cambios,
+  sin git, base inválida o `nucleo.json` roto → `nucleo` con el motivo. El gatekeeper lo
+  llama solo (base = `--base`, la de `via.md` o `HEAD`); `--radio` queda para pruebas.
 - Desarrollo: `vitest.config.js` sube `testTimeout` a 60 s; los tests de `fabrica.test.js`
   ejecutan el pipeline completo y superaban los 5 s por defecto en máquinas lentas (WSL).
 - Evidencia de API (`D16`, `T1.15`): un escenario de `escenarios.json` puede llevar

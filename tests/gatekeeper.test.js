@@ -20,6 +20,8 @@ let raiz, dir;
 const escribir = (f, t) => writeFileSync(path.join(dir, f), t);
 const leer = (f) => readFileSync(path.join(dir, f), "utf8");
 const base = (extra = {}) => ({ raiz, tarea: "T9.1", ronda: 1, radio: "bajo", automerge: true, correrTests: verde, ...extra });
+const calculaNucleo = () => ({ radio: "nucleo", motivos: ["toca el núcleo: `package.json`"] });
+const calculaBajo = () => ({ radio: "bajo", motivos: [] });
 
 /** Una ronda completa y válida; `informes` pisa el informe de algún rol. */
 async function ronda({ v = "SDD", roles = ["seguridad", "logica", "codigo"], informes = {}, juicio = JUICIO, veredicto = "APROBADO" } = {}) {
@@ -49,7 +51,19 @@ describe("gatekeeper.evaluar", () => {
   it("radio núcleo, o sin radio calculado → PR", async () => {
     await ronda();
     expect((await evaluar(base({ radio: "nucleo" }))).resultado).toBe("PR");
-    expect((await evaluar(base({ radio: undefined }))).resultado).toBe("PR");
+    const sin = await evaluar(base({ radio: undefined, calcularRadio: calculaNucleo }));
+    expect(sin.resultado).toBe("PR");
+    expect(sin.motivos.join()).toMatch(/toca el núcleo: `package\.json`/);
+  });
+
+  it("sin --radio lo calcula con la base de via.md (o la dada) y MERGE si es bajo", async () => {
+    await ronda();
+    escribir("via.md", `<!-- base: main -->\n\n${via("SDD", ["seguridad", "logica", "codigo"])}`);
+    const bases = [];
+    const calc = (r, b) => (bases.push([r, b]), calculaBajo());
+    expect((await evaluar(base({ radio: undefined, calcularRadio: calc }))).resultado).toBe("MERGE");
+    await evaluar(base({ radio: undefined, base: "origin/main", calcularRadio: calc }));
+    expect(bases).toEqual([[raiz, "main"], [raiz, "origin/main"]]);
   });
 
   it("auto-merge sin activar → PR aunque todo esté en verde (D18)", async () => {

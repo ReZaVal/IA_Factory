@@ -70,7 +70,9 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   `fabrica.mjs`; el aprobador escribe `veredicto.juicio.json`. Sin corrida real aún.
 - **Gatekeeper (S-22):** `T2.3` ✅: `gatekeeper.mjs` revalida y re-corre la suite;
   `MERGE` solo con radio bajo + SDD + `automerge`. Aún sin radio real ni enchufe.
-- **Próximos pasos:** `T2.4`.
+- **Radio (S-23):** `T2.4` ✅: `radio.mjs` + `nucleo.json`; el gatekeeper lo calcula solo.
+  Lista de núcleo = la heredada de `via.mjs`, pendiente de tu visto bueno.
+- **Próximos pasos:** `T2.5` (🔒, `P2`).
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

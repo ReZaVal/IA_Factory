@@ -1,0 +1,4 @@
+{
+  "descripcion": "Rutas extra que cuentan como núcleo en este proyecto (regex, se suman a la lista de via.mjs). Un cambio que las toque va a PR para el humano, no a merge automático (D4). Ejemplos: \"^src/pagos/\", \"^src/auth/\".",
+  "patrones": []
+}

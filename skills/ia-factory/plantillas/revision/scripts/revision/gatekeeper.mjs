@@ -3,8 +3,10 @@
 // agente, si la tarea puede mezclarse sola, va a PR o se rechaza. Revalida todo desde los archivos:
 // cada dictamen contra su informe (hash), el del aprobador contra los de los revisores, y vuelve a
 // correr la suite (el campo `tests` del aprobador no cuenta).
-// Uso: node scripts/revision/gatekeeper.mjs --tarea TX.Y --ronda N [--tests "<cmd>"] [--radio bajo|nucleo] [--automerge] [--raiz <carpeta>]
-//   --radio: lo calcula T2.4; sin él se asume `nucleo` (el caso prudente).
+// Uso: node scripts/revision/gatekeeper.mjs --tarea TX.Y --ronda N [--tests "<cmd>"] [--radio bajo|nucleo] [--base REF] [--automerge] [--raiz <carpeta>]
+//   --radio: fuerza el radio (pruebas); sin él lo calcula radio.mjs contra --base (o la de via.md, o HEAD)
+//   y, si no puede, asume `nucleo`.
+//   --base REF: contra qué se compara el diff para el radio.
 //   --automerge o FABRICA_AUTOMERGE=1: el proyecto activó el auto-merge (D18); si no, nunca MERGE.
 // Escribe .revision/TX.Y/gatekeeper.json. Salida: 0 MERGE o PR · 2 RECHAZADO · 1 error.
 import { readFile, writeFile } from "node:fs/promises";
@@ -12,6 +14,7 @@ import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { radioDe } from "./radio.mjs";
 import { validar, textoDictamen, dictamenDeRevisor, dictamenDeAprobador, ESQUEMA } from "./dictamen.mjs";
 
 const leer = (ruta) => readFile(ruta, "utf8").catch(() => null);
@@ -70,14 +73,17 @@ export function correrSuite(comando, raiz) {
 }
 
 /**
- * @param {{ raiz: string, tarea: string, ronda: number, tests?: string, radio?: "bajo"|"nucleo", automerge?: boolean,
+ * @param {{ raiz: string, tarea: string, ronda: number, tests?: string, radio?: "bajo"|"nucleo", base?: string, automerge?: boolean, calcularRadio?: typeof radioDe,
  *   correrTests?: (comando: string, raiz: string) => { salida: number, resumen: string } }} a
  * @returns {Promise<{ tarea: string, ronda: number, resultado: "MERGE"|"PR"|"RECHAZADO", radio: "bajo"|"nucleo", motivos: string[] }>}
  */
-export async function evaluar({ raiz, tarea, ronda, tests = "npm test", radio = "nucleo", automerge = false, correrTests = correrSuite }) {
+export async function evaluar({ raiz, tarea, ronda, tests = "npm test", radio, base, automerge = false, correrTests = correrSuite, calcularRadio = radioDe }) {
   const dir = path.join(raiz, ".revision", tarea);
+  const viaTexto = await leer(path.join(dir, "via.md"));
+  const calculado = radio ? null : calcularRadio(raiz, base ?? viaTexto?.match(/<!--\s*base:\s*(\S+)\s*-->/)?.[1] ?? "HEAD");
+  radio ??= calculado.radio;
   const rechazo = (motivos) => ({ tarea, ronda, resultado: "RECHAZADO", radio, motivos });
-  const via = leerVia(await leer(path.join(dir, "via.md")));
+  const via = leerVia(viaTexto);
   if (!via) return rechazo(["falta via.md o no dice la vía y los revisores: no se sabe qué dictámenes exigir"]);
 
   const hechos = await Promise.all(via.roles.map((rol) => revisarRevisor({ dir, tarea, ronda, rol })));
@@ -93,7 +99,7 @@ export async function evaluar({ raiz, tarea, ronda, tests = "npm test", radio = 
 
   const aparte = [];
   if (via.via === "FTD") aparte.push("vía FTD: nunca merge automático (D9)");
-  if (radio !== "bajo") aparte.push("el cambio toca el núcleo o no se calculó el radio: va a PR (D4)");
+  if (radio !== "bajo") aparte.push(`va a PR (D4): ${calculado?.motivos.join("; ") ?? "radio forzado a núcleo"}`);
   if (radio === "bajo" && !automerge) aparte.push("el proyecto no activó el auto-merge (D18): va a PR");
   return { tarea, ronda, resultado: aparte.length ? "PR" : "MERGE", radio, motivos: aparte.length ? aparte : ["4/4 dictámenes vigentes, suite en verde, radio bajo"] };
 }
@@ -103,11 +109,11 @@ async function main() {
   const valor = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
   const tarea = valor("--tarea");
   const ronda = Number(valor("--ronda"));
-  if (!tarea || !ronda) throw new Error('uso: gatekeeper.mjs --tarea TX.Y --ronda N [--tests "<cmd>"] [--radio bajo|nucleo] [--automerge] [--raiz <carpeta>]');
+  if (!tarea || !ronda) throw new Error('uso: gatekeeper.mjs --tarea TX.Y --ronda N [--tests "<cmd>"] [--radio bajo|nucleo] [--base REF] [--automerge] [--raiz <carpeta>]');
   const radio = valor("--radio");
   if (radio && !["bajo", "nucleo"].includes(radio)) throw new Error("--radio debe ser bajo o nucleo");
   const raiz = path.resolve(valor("--raiz") ?? ".");
-  const veredicto = await evaluar({ raiz, tarea, ronda, tests: valor("--tests"), radio, automerge: args.includes("--automerge") || process.env.FABRICA_AUTOMERGE === "1" });
+  const veredicto = await evaluar({ raiz, tarea, ronda, tests: valor("--tests"), radio, base: valor("--base"), automerge: args.includes("--automerge") || process.env.FABRICA_AUTOMERGE === "1" });
   const problemas = validar(veredicto, ESQUEMA.$defs.gatekeeper, ESQUEMA);
   if (problemas.length) throw new Error(`veredicto del gatekeeper inválido: ${problemas.join("; ")}`);
   if (existsSync(path.join(raiz, ".revision", tarea))) await writeFile(path.join(raiz, ".revision", tarea, "gatekeeper.json"), textoDictamen(veredicto));
