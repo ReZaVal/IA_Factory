@@ -1,7 +1,7 @@
 // T3.1 (memoria.md D8): el carril ML trae su constitución y el doc de dominio de datos.
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, existsSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, existsSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -80,6 +80,13 @@ describe("roles ML (T3.2)", () => {
     execFileSync(INSTALAR, [dir, "--carril", "ml"], { encoding: "utf8" });
     for (const r of ["seguridad", "logica", "ui"]) expect(existsSync(path.join(dir, `scripts/revision/roles/ml/${r}.md`))).toBe(true);
     expect(existsSync(path.join(dir, "scripts/revision/roles/logica.md"))).toBe(false);
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("--carril ml instala scripts/ml/verificar.mjs ejecutable (T3.3)", () => {
+    const dir = mkdtempSync(path.join(tmpdir(), "ml-"));
+    execFileSync(INSTALAR, [dir, "--carril", "ml"], { encoding: "utf8" });
+    expect(statSync(path.join(dir, "scripts/ml/verificar.mjs")).mode & 0o111).toBeTruthy();
     rmSync(dir, { recursive: true, force: true });
   });
 });
