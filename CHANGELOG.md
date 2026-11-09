@@ -22,6 +22,12 @@
   Todo en verde → `MERGE` solo con radio `bajo`, vía SDD y `--automerge` /
   `FABRICA_AUTOMERGE=1`; si no, `PR`. Sin `--radio` (lo calcula `T2.4`) asume `nucleo`.
   Deja `.revision/TX.Y/gatekeeper.json`. Aún no lo llama `fabrica.mjs` (`T2.6`).
+- Integración (`D4`/`D18`, `T2.6`): nuevo `scripts/revision/integrar.mjs`. Con la rama de la tarea
+  ya confirmada y limpia, pide el veredicto al gatekeeper y actúa: `RECHAZADO` no toca nada, `PR`
+  sube la rama y abre el PR, `MERGE` abre el PR, espera `gh pr checks --watch` y lo mezcla; CI rojo,
+  sin checks o mezcla fallida dejan el PR abierto. Se niega en la base y con cambios sin confirmar.
+  `--dry-run` no sube nada. Auto-merge apagado por defecto (`--automerge` / `FABRICA_AUTOMERGE=1`).
+  Probado con git real y `gh` simulado; no contra GitHub. `revision.md` documenta el flujo.
 - CI y protección de rama (`D19`, `T2.5`): el carril trae `.github/workflows/fabrica.yml`
   (job `tests` obligatorio, `radio` informativo en el resumen del PR; adapta `npm test` y
   Node) y `scripts/fabrica/proteger-rama.sh <dueño/repo>`, que sin `--aplicar` solo muestra

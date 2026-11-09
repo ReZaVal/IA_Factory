@@ -59,6 +59,19 @@ SDD):
   fábrica (`scripts/revision/`, `scripts/fabrica/`, `.claude/`) ni la
   constitución.
 
+### Del veredicto al merge (gatekeeper e integración)
+Con el commit ya confirmado en la rama de la tarea, `scripts/revision/integrar.mjs --tarea TX.Y --ronda N`
+vuelve a pedir el veredicto a `gatekeeper.mjs` (no usa uno viejo) y actúa:
+
+| Gatekeeper | Qué hace `integrar.mjs` |
+|---|---|
+| `RECHAZADO` (dictamen faltante o alterado, aprobador sin aprobar, suite roja al re-correrla) | nada |
+| `PR` (núcleo, vía FTD o auto-merge apagado) | sube la rama y abre un PR para el humano |
+| `MERGE` (4/4 vigentes, SDD, radio `bajo`, auto-merge activo) | abre el PR, espera el CI obligatorio y lo mezcla; si el CI falla o no reporta, queda abierto |
+
+El auto-merge es opt-in: `--automerge` o `FABRICA_AUTOMERGE=1` (apagado por defecto), y solo en repos con la
+protección de rama de `scripts/fabrica/proteger-rama.sh`. `--dry-run` cuenta qué haría sin subir nada.
+
 ## 3. Flujo de una tarea
 1. **Spec:** subagente `planificador` → `specs/TX.Y.md`. Si deja preguntas
    abiertas, se resuelven con el usuario antes de seguir.

@@ -46,6 +46,7 @@ const NUEVOS_1_1 = [
   "scripts/revision/api.mjs",
   "scripts/revision/dictamen.mjs",
   "scripts/revision/dictamen.schema.json",
+  "scripts/revision/integrar.mjs",
   "scripts/revision/nucleo.json",
   "scripts/revision/radio.mjs",
   "scripts/revision/prueba.mjs",
