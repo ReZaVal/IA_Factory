@@ -333,7 +333,8 @@ Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen
 - `evidencia[]`: rutas de `evidencia/`.
 - `hash_informe`: SHA-256 del `.md` del rol.
 
-**Dictamen del aprobador** — `.revision/TX.Y/veredicto.dictamen.json`
+**Dictamen del aprobador** — `.revision/TX.Y/veredicto.dictamen.json` (el agente escribe
+`veredicto.juicio.json` con `hallazgos_*`, `criterios` y `tests`; el script añade el resto)
 - Los campos base, con `veredicto`: `APROBADO` | `CAMBIOS REQUERIDOS` | `BLOQUEADO`.
 - `hallazgos_confirmados[]` y `hallazgos_descartados[]`: `id` + `razon`.
 - `criterios[]`: `numero`, `modo` (`ejecutado`|`leído`), `evidencia`.

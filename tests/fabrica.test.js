@@ -164,6 +164,10 @@ if (agente === "revisor-codigo") escribir(".revision/" + t + "/codigo.md", verif
 const ronda = fs.readFileSync(process.env.FAKE_LOG, "utf8").split("\\n").filter((l) => l.includes('"agente":"aprobador"')).length;
 const veredictos = (process.env.FAKE_VEREDICTO || "APROBADO").split(",");
 if (agente === "aprobador") escribir(".revision/" + t + "/veredicto.md", verifique("# Veredicto: " + veredictos[Math.min(ronda, veredictos.length) - 1] + "\\n" + (process.env.FAKE_ARRIBA || "") + "\\n" + contrato("\\x60evidencia/matriz.md\\x60")));
+if (agente === "aprobador") {
+  const malo = process.env.FAKE_JUICIO_MALO === "1" || (process.env.FAKE_JUICIO_MALO_UNA === "1" && !prompt.includes("fue rechazado"));
+  escribir(".revision/" + t + "/veredicto.juicio.json", malo ? "{" : JSON.stringify({ hallazgos_confirmados: [], hallazgos_descartados: [], criterios: [{ numero: 1, modo: "ejecutado", evidencia: "matriz.md" }], tests: { comando: "npm test", salida: 0, fecha: "2026-11-09T00:00:00Z" } }));
+}
 process.stdout.write(JSON.stringify({ result: agente + " listo", total_cost_usd: 0.01, is_error: false }));
 `;
 
@@ -438,6 +442,28 @@ describe("fabrica TX.Y: pipeline completo", () => {
     const r = fabrica(["T9.1"], { FAKE_INFORME_MALO: "revisor-codigo" });
     expect(r.codigo).toBe(SALIDA.error);
     expect(llamadas().map((l) => l.agente)).not.toContain("aprobador");
+  });
+
+  it("cada revisor y el aprobador dejan su dictamen JSON válido, con el hash del informe (D18)", () => {
+    montarRepo();
+    expect(fabrica(["T9.1"]).codigo).toBe(SALIDA.APROBADO);
+    const dir = path.join(wt(), ".revision/T9.1");
+    const codigo = JSON.parse(readFileSync(path.join(dir, "codigo.dictamen.json"), "utf8"));
+    expect(codigo).toMatchObject({ rol: "codigo", veredicto: "SIN BLOQUEANTES", tarea: "T9.1", ronda: 1 });
+    const apr = JSON.parse(readFileSync(path.join(dir, "veredicto.dictamen.json"), "utf8"));
+    expect(apr).toMatchObject({ rol: "aprobador", veredicto: "APROBADO" });
+    expect(apr.dictamenes_vistos.map((d) => d.rol).sort()).toEqual(["codigo", "seguridad"]);
+  });
+
+  it("juicio del aprobador inválido una vez: se reintenta con el motivo y la corrida sigue", () => {
+    montarRepo();
+    expect(fabrica(["T9.1"], { FAKE_JUICIO_MALO_UNA: "1" }).codigo).toBe(SALIDA.APROBADO);
+    expect(llamadas().filter((l) => l.agente === "aprobador")).toHaveLength(2);
+  });
+
+  it("juicio del aprobador inválido dos veces: falla la ronda", () => {
+    montarRepo();
+    expect(fabrica(["T9.1"], { FAKE_JUICIO_MALO: "1" }).codigo).toBe(SALIDA.error);
   });
 
   it("veredicto sin las secciones del contrato: nunca cuenta como aprobación", () => {

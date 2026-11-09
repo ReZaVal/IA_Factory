@@ -66,7 +66,9 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   código de clientes. Cuota sin cifras (5 h + tope semanal); se mide en `T2.7`.
 - **Dictamen (S-20):** `T2.1` ✅, `D18`: dictamen JSON con hash, gatekeeper
   `MERGE`/`PR`/`RECHAZADO`, `automerge` opt-in, sin log de despliegues.
-- **Próximos pasos:** `T2.2`.
+- **Dictamen emitido (S-21):** `T2.2` ✅: `dictamen.mjs` + enchufe en
+  `fabrica.mjs`; el aprobador escribe `veredicto.juicio.json`. Sin corrida real aún.
+- **Próximos pasos:** `T2.3`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

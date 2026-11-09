@@ -6,6 +6,14 @@
   gatekeeper, con hash del informe); el auto-merge queda como opt-in por proyecto
   (`automerge`, apagado por defecto) y no hay log de despliegues. Aún no lo emiten
   los roles (`T2.2`) ni lo usa ningún script (`T2.3`).
+- Dictamen emitido (`D18`, `T2.2`): nuevo `scripts/revision/dictamen.mjs` (sin modelo).
+  Cada revisor que corre deja `<rol>.dictamen.json`, derivado de su informe ya
+  validado (hallazgos con id `<rol>-<n°>` y SHA-256 del `.md`); un veredicto que
+  contradice sus hallazgos se rechaza. El aprobador escribe `veredicto.juicio.json`
+  (confirmados, descartados, criterios, tests) y el script lo completa y valida en
+  `veredicto.dictamen.json`: cada CRITICAL/HIGH decidido, sin ids inventados, y
+  `APROBADO` sin confirmados ni tests rojos. Inválido → se reintenta una vez con el
+  motivo; si sigue, falla la ronda. Proyectos ya instalados: reinstalar.
 - Desarrollo: `vitest.config.js` sube `testTimeout` a 60 s; los tests de `fabrica.test.js`
   ejecutan el pipeline completo y superaban los 5 s por defecto en máquinas lentas (WSL).
 - Evidencia de API (`D16`, `T1.15`): un escenario de `escenarios.json` puede llevar
