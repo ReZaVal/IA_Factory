@@ -102,11 +102,15 @@ const tarjetaPeticion = (q) => {
 </li>`;
 };
 
+/** Flujo que corre un comando (p. ej. un test de pytest): lo que se hizo y la salida literal. */
+const pasoComando = (f) => `<li><span class="nota">${esc(f.etiqueta ?? f.comando.join(" "))}</span> <code>${esc(f.comando.join(" "))}</code>
+  <span class="valor">${esc(f.salida || "sin salida")}</span>${f.fallos?.length ? `<span class="mal">${esc(f.fallos.join("; "))}</span>` : ""}</li>`;
+
 function tarjetaFlujo(f, sinConfirmar) {
   const asumido = f.supuesto && sinConfirmar.has(f.supuesto);
   return `<article class="flujo${asumido ? " asumido" : ""}">
   <h3>${esc(f.titulo)}${asumido ? ` <span class="marca">supuesto ${esc(f.supuesto)}</span>` : ""}</h3>
-  <ol>${f.peticiones ? f.peticiones.map(tarjetaPeticion).join("") : f.pasos.map(paso).join("")}</ol>
+  <ol>${f.peticiones ? f.peticiones.map(tarjetaPeticion).join("") : f.comando ? pasoComando(f) : f.pasos.map(paso).join("")}</ol>
   ${repetir(f)}
 </article>`;
 }

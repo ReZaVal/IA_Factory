@@ -66,7 +66,7 @@ describe("roles ML (T3.2)", () => {
   const leer = (n) => (existsSync(path.join(ROLES_ML, n)) ? readFileSync(path.join(ROLES_ML, n), "utf8") : "");
 
   it.each([
-    ["seguridad.md", [/leakage|fuga/i, /partici[oó]n/i, /Superficie de entrada/, /## Sondas/, /semilla/i]],
+    ["seguridad.md", [/leakage|fuga/i, /partici[oó]n/i, /Superficie de entrada/, /## Sondas/, /semilla/i, /no (cites|escribas|nombres).*local_privado/i]],
     ["logica.md", [/m[eé]trica/i, /baseline/i, /## Sondas/, /test.*una sola vez|conjunto de test/is, /desbalance/i]],
     ["ui.md", [/gr[aá]fico/i, /## Recorrido/, /eje/i, /leyenda/i]]
   ])("%s trae su especialidad y lo que exige el contrato", (archivo, patrones) => {

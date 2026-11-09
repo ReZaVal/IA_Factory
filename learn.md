@@ -18,6 +18,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 | L3 | El worktree salía sin dependencias (lo ignorado por git no viaja) | Probar la fábrica con una suite que dependa de algo ignorado por git, dentro del worktree; preparar con `FABRICA_PREPARAR` | `worktree.sh`, `revision.md ## 3`, `tests/worktree.test.js` |
 | L4 | Nombres de función en «Archivos» contados como alcance extra | Los chequeos deterministas se prueban también con specs escritas por el planificador real, no solo con las sintéticas | `spec.mjs` (`archivosDeSpec`), `tests/spec.test.js` |
 | L5 | Un error de Gemini cortaba la fábrica, fuese transitorio o permanente | Al llamar a una API externa, separar transitorio de permanente: reintentar con tope lo primero y fallar rápido con qué hacer lo segundo; no asumir en la plantilla un plan de pago | `gemini.mjs` (`clasificarError`, `pedirConReintentos`), `revision.md ## 6`, `tests/revision.test.js` |
+| L17 | La página de evidencia se caía con un flujo que era un `comando` (pytest) | Al añadir una forma nueva de escenario, buscar todo lo que despacha por forma y probar la página con ella | `pagina.mjs` (`pasoComando`), `tests/pagina.test.js` |
 | L15 | El probador no podía ejecutar nada en un proyecto Python (`modulo/funcion` es solo JS) y escribió escenarios tautológicos | Al abrir un carril con otro lenguaje, comprobar qué parte de la evidencia ejecutada asume JavaScript | `prueba.mjs` (`validarComando`), `probador.md`, `tests/prueba.test.js` |
 | L13 | Un hijo que terminaba sin leer stdin tumbaba la fábrica con `EPIPE`, de forma intermitente | Todo `stdin` de un proceso hijo lleva su manejador de `error`; ante un test intermitente, leer el mensaje completo antes de culpar al tiempo | `fabrica.mjs` (`correr`), `tests/fabrica.test.js` |
 | L11 | Una `Dn` sin commitear no llegaba al worktree y el aprobador bloqueaba | Lo que decide el dueño entre corridas se le pasa a la fábrica desde el repo principal; el flujo «decide y relanza» se prueba completo, con la decisión sin commitear | `fabrica.mjs` (`prepararTarea`), `aprobador.md`, `tests/fabrica.test.js` |
@@ -154,6 +155,16 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   quien venga: mis logs dentro del repo dieron un falso «modificó el árbol».
   No detecta escrituras fuera del repo; ahí la defensa es solo `--mode plan`.
 - **Regla derivada:** ver §1.
+
+### L17 — La página de evidencia se caía con un flujo que corre un comando
+- **Estado:** ✅ Resuelto (S-30, `T3.4`)
+- **Síntoma:** en `IA_Factory_ML_Test`, `pagina.mjs` lanzó `Cannot read properties of undefined (reading 'map')`
+  y la fábrica dejó la corrida sin página («no se pudo generar»).
+- **Causa raíz:** `tarjetaFlujo` solo pintaba flujos con `pasos` o `peticiones`; con `L15` un flujo puede ser un
+  `comando` (un test de pytest) y no tiene ninguno de los dos.
+- **Solución aplicada:** `pasoComando` pinta etiqueta, comando y salida; test en `tests/pagina.test.js`.
+- **Regla derivada:** al añadir una forma nueva de escenario, buscar cada lugar que los despacha por forma
+  (`prueba.mjs`, `pagina.mjs`, `api.mjs`) y probar la página con ella.
 
 ### L16 — Un `escenarios.json` inválido tumbaba la corrida entera
 - **Estado:** 🔴 Abierto (S-30, `T3.4`)

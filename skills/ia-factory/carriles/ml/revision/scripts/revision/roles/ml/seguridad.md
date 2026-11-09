@@ -29,3 +29,6 @@ Un «sin fuga» sin lista de lo comprobado no vale: un script lo rechaza.
   encontrar nada (con `"hallazgo": null`). Un script los ejecuta; ver «Sondas».
   Para código Python usa `comando` de solo lectura (`grep -n "fit(" …`, `git diff`) o
   `sinEjecutar` explicando por qué; las sondas con `modulo` solo corren JavaScript.
+  **No cites `local_privado/` ni `.env` en ningún `comando`**: el script rechaza esas rutas (pueden
+  tener datos o secretos) y tu informe falla. Para comprobar que las salidas derivan de la carpeta
+  privada busca la constante en el código (`grep -n "PRIVADO" src/…`), no la carpeta.

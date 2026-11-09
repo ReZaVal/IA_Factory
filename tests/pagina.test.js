@@ -89,6 +89,14 @@ describe("paginaHtml (criterio de salida de T1.12)", () => {
     expect(h).toMatch(/<article class="flujo asumido">[\s\S]*Descuento mayor/);
   });
 
+  it("un flujo que corre un comando (p. ej. pytest) se pinta con su comando y su salida (L17)", () => {
+    const flujoComando = { id: "f3", flujo: true, criterio: null, titulo: "Corre el módulo", etiqueta: "Busca la función", comando: ["grep", "-c", "tope", "src/tope.js"], espera: { codigo: 0 } };
+    montar({ escenarios: { ...ESCENARIOS, escenarios: [...ESCENARIOS.escenarios, flujoComando] } });
+    const h = html();
+    expect(h).toMatch(/<article class="flujo">[\s\S]*Corre el módulo[\s\S]*Busca la función[\s\S]*grep/);
+    expect(h).toMatch(/Comando para repetirlo/);
+  });
+
   it("un supuesto confirmado sale del aviso y queda como nota", () => {
     montar({ escenarios: { ...ESCENARIOS, supuestos: [{ ...ESCENARIOS.supuestos[0], confirmado: "da 0 (D5)" }] } });
     const h = html();
