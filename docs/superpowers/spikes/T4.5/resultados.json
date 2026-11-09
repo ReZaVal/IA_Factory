@@ -1,0 +1,168 @@
+{
+  "claude": {
+    "detectados": 8,
+    "detectadosBloqueantes": 7,
+    "total": 9,
+    "falsosPositivos": 0,
+    "ruido": 0,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "Cita fuera del corpus (Smith & Jones, 2019) con DOI inventado",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": false,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "S2",
+        "titulo": "Frase literal del corpus sin comillas ni página (C5)",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      },
+      {
+        "id": "S3",
+        "titulo": "Nombres y correos de participantes en el repo (C12)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": false,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S4",
+        "titulo": "Clave de servicio escrita en el script (C13)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": false,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "S5",
+        "titulo": "[POR VERIFICAR] sin resolver en el documento (C2)",
+        "detectado": true,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": "MEDIUM"
+      },
+      {
+        "id": "L1",
+        "titulo": "Causalidad afirmada desde un estudio descriptivo (C7)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L2",
+        "titulo": "Diferencia del texto (8.50) distinta de la del script (8.00) (C10)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L3",
+        "titulo": "Afirmación empírica (80% prefiere B) sin fuente ni dato (C6)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L4",
+        "titulo": "sd dividida por n (poblacional) cuando la spec pide muestral (n − 1)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      }
+    ],
+    "falsos": [],
+    "rolesCompletos": 1
+  },
+  "flash": {
+    "detectados": 8,
+    "detectadosBloqueantes": 8,
+    "total": 9,
+    "falsosPositivos": 0,
+    "ruido": 1,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "Cita fuera del corpus (Smith & Jones, 2019) con DOI inventado",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "S2",
+        "titulo": "Frase literal del corpus sin comillas ni página (C5)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "S3",
+        "titulo": "Nombres y correos de participantes en el repo (C12)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S4",
+        "titulo": "Clave de servicio escrita en el script (C13)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S5",
+        "titulo": "[POR VERIFICAR] sin resolver en el documento (C2)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L1",
+        "titulo": "Causalidad afirmada desde un estudio descriptivo (C7)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L2",
+        "titulo": "Diferencia del texto (8.50) distinta de la del script (8.00) (C10)",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      },
+      {
+        "id": "L3",
+        "titulo": "Afirmación empírica (80% prefiere B) sin fuente ni dato (C6)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L4",
+        "titulo": "sd dividida por n (poblacional) cuando la spec pide muestral (n − 1)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      }
+    ],
+    "falsos": [],
+    "rolesCompletos": 2
+  }
+}

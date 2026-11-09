@@ -27,3 +27,5 @@ tamaño de muestra repetido), con el valor que dicta la spec. Un script los ejec
 «Sondas». Para scripts en Python usa `comando` de solo lectura o `sinEjecutar` con el
 motivo. La evidencia de `prueba.mjs` llega en tu material: no repitas lo que ya está en la
 matriz, busca lo que falta.
+
+**Rutas en las sondas:** siempre relativas a la raíz del proyecto (`paper.md`, `scripts/analisis.mjs`); nunca absolutas (`/tmp/...`, `file://...`) ni con `..`: el script rechaza esas rutas y tu informe falla. Tu material puede mostrar una carpeta temporal; ignórala.

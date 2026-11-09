@@ -179,6 +179,11 @@ worktree y relanza con `--solo-revision --url <url>`) · `1` error.
   `merge`, `rebase` y `reset`, negados. Lo no permitido se niega solo. Las
   variables van en el entorno o en `.env.local` (`FABRICA_CLAUDE` cambia el
   binario de `claude`).
+- **Carril investigación:** el constructor y el aprobador necesitan correr los verificadores
+  del corpus y el script de análisis del proyecto; añádelos en `.env.local`, p. ej.
+  `FABRICA_PERMITIDOS=Bash(node scripts/investigacion/corpus.mjs:*),Bash(node scripts/investigacion/verificar-doi.mjs:*),Bash(node scripts/<analisis>.mjs:*)`
+  (`verificar-doi.mjs` consulta Crossref por red). Sin ellos no pueden cumplir el checklist
+  de `dominio-investigacion.md`; la fábrica sí los corre por su cuenta cada ronda.
 - No hace commit ni merge: con APROBADO, el orquestador propone el commit.
 
 #### Modo grupo

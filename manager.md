@@ -20,15 +20,15 @@ Regla de oro: decisión que cambia → `memoria.md` primero, luego producto y
 plan. Error detectado → `learn.md` antes de corregirlo.
 
 ## Contexto activo
-- **En qué estoy:** Fase 1. `T1.1`-`T1.8` ✅ y corrida real hecha (S-11). El
-  usuario aprobó la spec de evidencia (`D14`): `T1.9`-`T1.14` van antes de `T2.1`.
-  Vigentes: `D3` propuesta por fases, `D4` auto-merge con 4/4 + bajo riesgo,
-  `D5` cuatro carriles, `D6` sin Codex, `D7` ingesta al final, `D8` Brain
-  mapeado sobre el harness, `D9` vía rápida FTD, `D10` permisos de los
-  agentes amnésicos, `D11` tope de rondas por tarea, `D12` medición (`T2.7`)
-  antes del auto-merge, `D13` revisores con la cuenta personal vía `agy`, sin
-  API keys, y UI en Claude, `D14` evidencia verificable por el humano, `D15` evidencia al repo, `D16`
-  pantallas y APIs, `D17` `agy` solo en proyectos propios.
+- **En qué estoy:** Fases 1-4 hechas (la 2 con `T2.7`/`D20` pendientes de Argon, la 3 y la 4 con
+  salvedades; ver `planner.md` S-30 y S-35). Siguiente: Fase 5 (`T5.1`, multimedia) o medir los
+  roles de investigación con defectos sembrados. Vigentes: `D3` propuesta por fases, `D4` auto-merge
+  con 4/4 + bajo riesgo, `D5` cuatro carriles, `D6` sin Codex, `D7` ingesta al final, `D8` Brain
+  mapeado sobre el harness, `D9` vía rápida FTD, `D10` permisos de los agentes amnésicos, `D11` tope
+  de rondas por tarea, `D12` medición (`T2.7`) antes del auto-merge, `D13` revisores con la cuenta
+  personal vía `agy`, sin API keys, y UI en Claude, `D14` evidencia verificable por el humano, `D15`
+  evidencia al repo, `D16` pantallas y APIs, `D17` `agy` solo en proyectos propios, `D18` dictamen
+  JSON y gatekeeper, `D19` repos públicos para CI. El resto de este bloque es historia por sesión.
 - **Cambió en la última sesión (S-10):** `T1.8` cerrada (`D13`): el usuario no
   tiene API keys. `gemini.mjs` usa `agy` con su cuenta Google AI Pro, en
   `--mode plan`, desde una carpeta temporal; UI pasa al agente Claude

@@ -97,3 +97,19 @@ describe("plantilla y convenciones", () => {
     rmSync(dir, { recursive: true, force: true });
   });
 });
+
+describe("dominio-investigacion.md (cabo suelto de T4.5)", () => {
+  it("la plantilla trae las secciones que piden los agentes y la instalación la copia", () => {
+    const t = readFileSync(path.join(PROYECTO, "dominio-investigacion.md"), "utf8");
+    for (const s of [/## 1\. Fuentes/, /## 2\. Estilo/, /## 3\. Metodolog/, /## 4\. Cifras/, /## 5\. Datos/, /## 6\. Checklist/, /verificar-doi\.mjs/, /corpus\.mjs validar/])
+      expect(t).toMatch(s);
+    const dir = mkdtempSync(path.join(tmpdir(), "inv-"));
+    execFileSync(path.join(RAIZ, "instalar.sh"), [dir, "--carril", "investigacion"], { encoding: "utf8" });
+    expect(existsSync(path.join(dir, "dominio-investigacion.md"))).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+  });
+  it("revision.md documenta los permisos del carril (FABRICA_PERMITIDOS)", () => {
+    const t = readFileSync(path.join(RAIZ, "skills/ia-factory/plantillas/revision.md"), "utf8");
+    expect(t).toMatch(/Bash\(node scripts\/investigacion\/verificar-doi\.mjs:\*\)/);
+  });
+});

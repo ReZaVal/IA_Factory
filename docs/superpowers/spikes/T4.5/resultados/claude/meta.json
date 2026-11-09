@@ -1,0 +1,16 @@
+{
+  "modelo": "claude-sonnet-5-5",
+  "motor": "claude",
+  "roles": {
+    "seguridad": {
+      "ok": false,
+      "error": "informe rechazado por evidencia.mjs tras 2 intentos:\n- «Superficie de entrada» no lista las entradas revisadas"
+    },
+    "logica": {
+      "ok": true,
+      "segundos": 95.522,
+      "costo": 1.3408892000000001
+    }
+  },
+  "variantes": {}
+}

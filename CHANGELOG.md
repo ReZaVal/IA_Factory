@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Carril investigación: plantilla `dominio-investigacion.md` (se instala con el carril); los roles piden rutas
+  relativas en las sondas; `revision.md` documenta `FABRICA_PERMITIDOS` para los verificadores del corpus.
 - Carril investigación en la fábrica (`T4.5`): si el proyecto trae `scripts/investigacion/`, cada ronda corre
   `corpus.mjs validar` y `verificar-doi.mjs` (con `FABRICA_DOCUMENTOS`); un fallo da CAMBIOS REQUERIDOS sin llamar a
   revisores. Crossref caído corta la corrida solo si no hay otros fallos; `verificar-doi.mjs` reintenta una vez y

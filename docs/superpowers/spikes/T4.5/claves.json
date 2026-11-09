@@ -1,0 +1,14 @@
+{
+  "descripcion": "Defectos sembrados en el fixture de investigación (T4.5, cabo suelto). Cada defecto se localiza por `anclas` (regex de una línea) más `tramo` líneas, dentro de `archivo`. `rol` es el revisor responsable; si otro lo encuentra cuenta como cruzado.",
+  "defectos": [
+    { "id": "S1", "rol": "seguridad", "titulo": "Cita fuera del corpus (Smith & Jones, 2019) con DOI inventado", "archivo": "paper.md", "palabras": "smith|corpus|inventad|doi|fuera", "anclas": ["Smith & Jones, 2019\\)\\.$", "Smith, J\\., & Jones"], "tramo": 1 },
+    { "id": "S2", "rol": "seguridad", "titulo": "Frase literal del corpus sin comillas ni página (C5)", "archivo": "paper.md", "palabras": "literal|textual|comillas|p[aá]gina|plagio|par[aá]frasis", "anclas": ["Las redes profundas descubren"], "tramo": 1 },
+    { "id": "S3", "rol": "seguridad", "titulo": "Nombres y correos de participantes en el repo (C12)", "archivo": "datos/participantes.csv", "palabras": "personal|participante|correo|nombre|privacidad|pii", "anclas": ["Quispe"], "tramo": 2 },
+    { "id": "S4", "rol": "seguridad", "titulo": "Clave de servicio escrita en el script (C13)", "archivo": "scripts/analisis.mjs", "palabras": "clave|secreto|token|hardcode|credencial|api key|sk-", "anclas": ["const CLAVE_ENCUESTA"], "tramo": 1 },
+    { "id": "S5", "rol": "seguridad", "titulo": "[POR VERIFICAR] sin resolver en el documento (C2)", "archivo": "paper.md", "palabras": "por verificar|pendiente|sin resolver", "anclas": ["POR VERIFICAR"], "tramo": 1 },
+    { "id": "L1", "rol": "logica", "titulo": "Causalidad afirmada desde un estudio descriptivo (C7)", "archivo": "paper.md", "palabras": "causa|causal|causalidad|descriptivo", "anclas": ["el método B causa"], "tramo": 1 },
+    { "id": "L2", "rol": "logica", "titulo": "Diferencia del texto (8.50) distinta de la del script (8.00) (C10)", "archivo": "paper.md", "palabras": "8\\.5|8\\.50|diferencia|no coincide|script", "anclas": ["una diferencia de 8.50"], "tramo": 1 },
+    { "id": "L3", "rol": "logica", "titulo": "Afirmación empírica (80% prefiere B) sin fuente ni dato (C6)", "archivo": "paper.md", "palabras": "80|fuente|sin respaldo|prefiere|c6", "anclas": ["El 80% de los estudiantes"], "tramo": 1 },
+    { "id": "L4", "rol": "logica", "titulo": "sd dividida por n (poblacional) cuando la spec pide muestral (n − 1)", "archivo": "scripts/analisis.mjs", "palabras": "muestral|n - 1|n-1|poblacional|desviaci", "anclas": ["const sd = "], "tramo": 1 }
+  ]
+}

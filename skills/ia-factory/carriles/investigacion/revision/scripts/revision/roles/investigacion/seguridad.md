@@ -34,3 +34,5 @@ Un «citas correctas» sin lista de lo comprobado no vale: un script lo rechaza.
   `sinEjecutar` explicando por qué; las sondas con `modulo` solo corren JavaScript.
   **No cites `local_privado/` ni `.env` en ningún `comando`**: el script rechaza esas
   rutas y tu informe falla.
+
+**Rutas en las sondas:** siempre relativas a la raíz del proyecto (`paper.md`, `scripts/analisis.mjs`); nunca absolutas (`/tmp/...`, `file://...`) ni con `..`: el script rechaza esas rutas y tu informe falla. Tu material puede mostrar una carpeta temporal; ignórala.

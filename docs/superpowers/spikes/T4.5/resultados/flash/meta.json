@@ -1,0 +1,17 @@
+{
+  "modelo": "gemini-3.8-flash-medium",
+  "motor": "agy",
+  "roles": {
+    "seguridad": {
+      "ok": true,
+      "segundos": 99.595,
+      "costo": 0
+    },
+    "logica": {
+      "ok": true,
+      "segundos": 72.436,
+      "costo": 0
+    }
+  },
+  "variantes": {}
+}

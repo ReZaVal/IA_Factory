@@ -25,6 +25,10 @@ describe("roles investigación (T4.4)", () => {
     for (const a of ["seguridad.md", "logica.md"]) expect(leer(a)).toMatch(/\bC(1|2|3|5|6|7|8|9|10)\b/);
   });
 
+  it("ambos roles piden rutas relativas en las sondas (medición T4.5)", () => {
+    for (const a of ["seguridad.md", "logica.md"]) expect(leer(a)).toMatch(/Rutas en las sondas[\s\S]*relativas[\s\S]*nunca absolutas/);
+  });
+
   it("seguridad dice que el DOI lo verifica el script, no el modelo", () => {
     expect(leer("seguridad.md")).toMatch(/no (afirmes|asumas|des por).*DOI|DOI.*(lo verifica|verifica el script)/is);
   });
