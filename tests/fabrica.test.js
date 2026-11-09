@@ -30,7 +30,7 @@ describe("parseArgs", () => {
 
 describe("configFabrica", () => {
   it("entorno primero, luego .env.local, luego valores por defecto", () => {
-    expect(configFabrica({}, "")).toEqual({ claude: "claude", tests: "npm test", cobertura: "", servidor: "", permitidos: [] });
+    expect(configFabrica({}, "")).toEqual({ claude: "claude", tests: "npm test", cobertura: "", servidor: "", reproducir: "", reproducirArchivo: "", permitidos: [] });
     const cfg = configFabrica({ FABRICA_TESTS: "pytest" }, "FABRICA_TESTS=npm test\nFABRICA_PERMITIDOS=Bash(make lint:*), Bash(ls:*)\n");
     expect(cfg.tests).toBe("pytest");
     expect(cfg.permitidos).toEqual(["Bash(make lint:*)", "Bash(ls:*)"]);
@@ -203,7 +203,7 @@ function git(...args) {
 }
 
 /** Repo de prueba con la fábrica instalada y commiteada (el worktree sale de HEAD). */
-function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes = false, sinRevisorUi = false } = {}) {
+function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes = false, sinRevisorUi = false, python = null } = {}) {
   execFileSync(path.resolve(import.meta.dirname, "../instalar.sh"), [repo, "--carril", "software"], { encoding: "utf8" });
   const scripts = path.join(repo, "scripts/revision");
   renameSync(path.join(scripts, "gemini.mjs"), path.join(scripts, "gemini-real.mjs"));
@@ -213,6 +213,11 @@ function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes 
   if (sinAgentes) rmSync(path.join(repo, ".claude/agents/aprobador.md"));
   if (sinRevisorUi) rmSync(path.join(repo, ".claude/agents/revisor-ui.md"));
   writeFileSync(path.join(repo, "scripts/revision/capturas.sh"), CAPTURAS_SH);
+  if (python !== null) { // carril ML (T3.4): trae scripts/ml/verificar.mjs y código Python
+    cpSync(path.join(SKILL, "carriles/ml/revision/scripts/ml"), path.join(repo, "scripts/ml"), { recursive: true });
+    mkdirSync(path.join(repo, "src"), { recursive: true });
+    writeFileSync(path.join(repo, "src/modelo.py"), python);
+  }
   git("add", ".");
   git("commit", "--quiet", "-m", "fábrica");
 }
@@ -327,6 +332,44 @@ describe("fabrica TX.Y: pipeline completo", () => {
     expect(readFileSync(path.join(ronda1, "veredicto.md"), "utf8")).toMatch(/CAMBIOS REQUERIDOS[\s\S]*escenario e01.*esperaba 6, obtuvo 5/);
     expect(readFileSync(path.join(ronda1, "evidencia/matriz.md"), "utf8")).toMatch(/❌ FALLA/);
     expect(r.salida).toMatch(/CAMBIOS REQUERIDOS/);
+  });
+
+  it("carril ML: aleatoriedad sin semilla → CAMBIOS REQUERIDOS sin revisores ni aprobador (T3.4)", () => {
+    montarRepo({ python: "from sklearn.model_selection import train_test_split\ntrain_test_split(df, test_size=0.2)\n" });
+    const r = fabrica(["T9.1"]);
+    expect(r.codigo).toBe(SALIDA["CAMBIOS REQUERIDOS"]);
+    const orden = llamadas().map((l) => l.agente);
+    expect(orden).not.toContain("aprobador");
+    expect(orden).not.toContain("revisor-codigo");
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/ronda-1/veredicto.md"), "utf8")).toMatch(/semillas.*src\/modelo\.py:2.*train_test_split/);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8")).toMatch(/semillas \(ronda 1\).*FALLA/);
+  });
+
+  it("carril ML: con semilla fija sigue el pipeline y deja .revision/TX.Y/ml/semillas.json (T3.4)", () => {
+    montarRepo({ python: "SEMILLA = 7\ntrain_test_split(df, random_state=SEMILLA)\n" });
+    const r = fabrica(["T9.1"]);
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    expect(JSON.parse(readFileSync(path.join(wt(), ".revision/T9.1/ml/semillas.json"), "utf8")).hallazgos).toEqual([]);
+  });
+
+  it("carril ML: FABRICA_REPRODUCIR con salida distinta → CAMBIOS REQUERIDOS (T3.4)", () => {
+    montarRepo({ python: "SEMILLA = 7\n" });
+    const r = fabrica(["T9.1"], { FABRICA_REPRODUCIR: "node -e \"console.log(Math.random())\"" });
+    expect(r.codigo).toBe(SALIDA["CAMBIOS REQUERIDOS"]);
+    expect(readFileSync(path.join(wt(), ".revision/T9.1/ronda-1/veredicto.md"), "utf8")).toMatch(/reproducir.*distintos/);
+  });
+
+  it("carril ML: FABRICA_REPRODUCIR estable con --archivo de métricas → sigue (T3.4)", () => {
+    montarRepo({ python: "SEMILLA = 7\n" });
+    const r = fabrica(["T9.1"], { FABRICA_REPRODUCIR: "node -e \"require('fs').writeFileSync('m.json','{}')\"", FABRICA_REPRODUCIR_ARCHIVO: "m.json" });
+    expect(r.codigo).toBe(SALIDA.APROBADO);
+    expect(JSON.parse(readFileSync(path.join(wt(), ".revision/T9.1/ml/reproducir.json"), "utf8")).ok).toBe(true);
+  });
+
+  it("proyecto sin scripts/ml: no se hace ninguna verificación ML (T3.4)", () => {
+    montarRepo();
+    fabrica(["T9.1"]);
+    expect(existsSync(path.join(wt(), ".revision/T9.1/ml"))).toBe(false);
   });
 
   it("escenarios.json inválido → error de la fábrica, no aprobación", () => {

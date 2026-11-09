@@ -18,6 +18,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 | L3 | El worktree salía sin dependencias (lo ignorado por git no viaja) | Probar la fábrica con una suite que dependa de algo ignorado por git, dentro del worktree; preparar con `FABRICA_PREPARAR` | `worktree.sh`, `revision.md ## 3`, `tests/worktree.test.js` |
 | L4 | Nombres de función en «Archivos» contados como alcance extra | Los chequeos deterministas se prueban también con specs escritas por el planificador real, no solo con las sintéticas | `spec.mjs` (`archivosDeSpec`), `tests/spec.test.js` |
 | L5 | Un error de Gemini cortaba la fábrica, fuese transitorio o permanente | Al llamar a una API externa, separar transitorio de permanente: reintentar con tope lo primero y fallar rápido con qué hacer lo segundo; no asumir en la plantilla un plan de pago | `gemini.mjs` (`clasificarError`, `pedirConReintentos`), `revision.md ## 6`, `tests/revision.test.js` |
+| L15 | El probador no podía ejecutar nada en un proyecto Python (`modulo/funcion` es solo JS) y escribió escenarios tautológicos | Al abrir un carril con otro lenguaje, comprobar qué parte de la evidencia ejecutada asume JavaScript | `prueba.mjs` (`validarComando`), `probador.md`, `tests/prueba.test.js` |
 | L13 | Un hijo que terminaba sin leer stdin tumbaba la fábrica con `EPIPE`, de forma intermitente | Todo `stdin` de un proceso hijo lleva su manejador de `error`; ante un test intermitente, leer el mensaje completo antes de culpar al tiempo | `fabrica.mjs` (`correr`), `tests/fabrica.test.js` |
 | L11 | Una `Dn` sin commitear no llegaba al worktree y el aprobador bloqueaba | Lo que decide el dueño entre corridas se le pasa a la fábrica desde el repo principal; el flujo «decide y relanza» se prueba completo, con la decisión sin commitear | `fabrica.mjs` (`prepararTarea`), `aprobador.md`, `tests/fabrica.test.js` |
 | L10 | `capturas.sh` colgaba Chrome para siempre en WSL2 y nadie lo vio | Todo proceso externo de la fábrica lleva límite de tiempo; un script simulado en los tests no prueba la herramienta real: correrlo una vez de verdad antes de cerrar | `capturas.sh` (`capturar`, `CAPTURAS_LIMITE`) |
@@ -153,6 +154,29 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   quien venga: mis logs dentro del repo dieron un falso «modificó el árbol».
   No detecta escrituras fuera del repo; ahí la defensa es solo `--mode plan`.
 - **Regla derivada:** ver §1.
+
+### L16 — Un `escenarios.json` inválido tumbaba la corrida entera
+- **Estado:** 🔴 Abierto (S-30, `T3.4`)
+- **Síntoma:** el probador escribió un escenario con `local_privado` en un `git ls-files`;
+  `prueba.mjs` lo rechazó (correcto, `SECRETO`) y `fabrica.mjs` salió con `error` tras gastar
+  planificador, constructor y probador (US$ 1,43), sin dar al probador la oportunidad de corregir.
+- **Causa raíz probable:** los informes de revisión se reintentan una vez con el motivo
+  (`INTENTOS_INFORME`), pero el `escenarios.json` del probador no.
+- **Solución propuesta (sin aplicar):** reintentar al probador una vez con la lista de problemas.
+- **Regla derivada:** toda salida de un modelo que un script valida se reintenta con el motivo antes de fallar.
+
+### L15 — El probador no podía ejecutar nada en un proyecto Python
+- **Estado:** ✅ Resuelto (S-30, `T3.4`)
+- **Síntoma:** en `IA_Factory_ML_Test` el probador escribió 18 escenarios que solo comprobaban que
+  archivos y nombres de test existían (`grep`, `ls`) y avisó que «ninguno comprueba lo que de verdad
+  hace la tarea». La evidencia ejecutada era tautológica.
+- **Causa raíz:** `modulo`/`funcion` ejecutan JavaScript (`node --eval`) y los `comando` permitidos son
+  solo lectura; en Python no había forma de ejecutar un criterio.
+- **Solución aplicada:** un escenario `comando` puede correr `python3 -m pytest` con ids de test,
+  `-q/-x/-v` y `-k <texto simple>` (`prueba.mjs`, `validarComando`); `probador.md` lo documenta.
+  Sigue sin haber `modulo/funcion` para Python: la prueba de un criterio es el test que lo cubre.
+- **Regla derivada:** al abrir un carril con otro lenguaje, comprobar primero qué parte de la
+  evidencia ejecutada (`prueba.mjs`, `sondas.mjs`, `api.mjs`) asume JavaScript.
 
 ### L14 — Flash 3.8 no entrega el informe de Lógica en `agy`; Argon agotó su cuota
 - **Estado:** 🟡 Parcial (S-25/S-26): Flash resuelto; Argon sigue sin cuota

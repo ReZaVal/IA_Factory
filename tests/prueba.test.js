@@ -58,6 +58,38 @@ describe("validarEscenarios", () => {
   });
 });
 
+describe("validarEscenarios: pytest como comando (T3.4, L15)", () => {
+  const cmd = (comando) => validarEscenarios({ escenarios: [{ id: "c", criterio: 2, titulo: "t", comando, espera: { codigo: 0 } }] }).join();
+
+  it("acepta correr tests concretos: ids de nodo, -q, -x, -k", () => {
+    expect(cmd(["python3", "-m", "pytest", "-q", "tests/test_a.py::test_x"])).toBe("");
+    expect(cmd(["python3", "-m", "pytest", "tests/test_a.py::test_x[caso-1]", "-x"])).toBe("");
+    expect(cmd(["python", "-m", "pytest", "-q", "-k", "metricas and dos", "tests/test_a.py"])).toBe("");
+  });
+
+  it("rechaza lo que cambia qué se ejecuta o dónde se escribe", () => {
+    for (const argv of [
+      ["python3", "-m", "pytest", "-p", "plugin"],
+      ["python3", "-m", "pytest", "-c", "otro.ini"],
+      ["python3", "-m", "pytest", "--basetemp", "x"],
+      ["python3", "-m", "pytest", "--rootdir=x"],
+      ["python3", "-m", "pytest", "-o", "addopts=x"],
+      ["python3", "-m", "pytest", "-k", "a;rm -rf ."]
+    ]) expect(cmd(argv)).toMatch(/pytest/);
+  });
+
+  it("no abre la puerta a otros usos de python", () => {
+    expect(cmd(["python3", "-c", "print(1)"])).toMatch(/no permitido/);
+    expect(cmd(["python3", "script.py"])).toMatch(/no permitido/);
+    expect(cmd(["python3", "-m", "http.server"])).toMatch(/no permitido/);
+  });
+
+  it("sigue negando secretos y rutas fuera del proyecto", () => {
+    expect(cmd(["python3", "-m", "pytest", "../x/tests/test_a.py"])).toMatch(/fuera del proyecto/);
+    expect(cmd(["python3", "-m", "pytest", "local_privado/test_a.py"])).toMatch(/secreto/);
+  });
+});
+
 describe("validarEscenarios: flujos y supuestos (T1.12)", () => {
   const flujo = (extra = {}) => escenario({ id: "f1", flujo: true, criterio: null, titulo: "Cómo funciona", ...extra });
   const supuesto = (extra = {}) => ({ id: "S1", criterios: [1], titulo: "Tope en 0", origen: "specs/T9.1.md, «Riesgos»", opciones: ["0", "error"], ...extra });

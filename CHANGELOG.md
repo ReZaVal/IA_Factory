@@ -4,6 +4,11 @@
 - Fase 3 (`T3.1`): carril ML. Nuevo `carriles/ml/constitucion-ml.md` (13 reglas duras:
   datos y secretos, experimento antes que código, partición sin leakage,
   reproducibilidad); `instalar.sh --carril ml` la instala junto con `dominio-datos.md`.
+- Carril ML en la fábrica (`T3.4`): si el proyecto trae `scripts/ml/verificar.mjs`, cada ronda corre
+  `semillas` (y `reproducir` con `FABRICA_REPRODUCIR`/`FABRICA_REPRODUCIR_ARCHIVO`); un fallo da
+  CAMBIOS REQUERIDOS sin llamar a revisores. Resultados en `.revision/TX.Y/ml/`. Un escenario del
+  probador puede correr `python3 -m pytest <ids de test>` (`L15`): sin eso, en Python solo había
+  escenarios de lectura.
 - Herramientas del carril ML (`T3.3`): `scripts/ml/verificar.mjs`, sin modelo. `semillas` marca
   aleatoriedad sin semilla en el código Python (C6); `reproducir` exige la misma salida o
   métrica en N corridas (C10). Aún no lo llama `fabrica.mjs` (`T3.4`).

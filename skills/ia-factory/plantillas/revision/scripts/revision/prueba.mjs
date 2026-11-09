@@ -26,6 +26,11 @@ const ESPECIALES = { NaN: "NaN", Infinity: "Infinity", "-Infinity": "-Infinity",
 // Un escenario `comando` es un argv sin shell: solo lectura (el orquestador lo corre fuera de los permisos del agente).
 const GIT_LECTURA = ["diff", "status", "log", "show", "ls-files"];
 const EJECUTABLES = ["grep", "ls", "cat", "wc"];
+// Proyectos Python (L15): `modulo`/`funcion` solo corren JavaScript, así que un escenario puede correr tests
+// concretos con pytest. Solo ids de nodo, -q/-x/-v y -k <expresión simple>: nada que cambie plugins, config o rutas.
+const PYTEST = /^(python3?)$/;
+const ARG_PYTEST = /^(-q|-x|-v|-vv|[\w./-]+\.py(::[\w.\[\]-]+)*)$/;
+const EXPRESION_K = /^[\w ]+$/;
 // Quien escribe un comando es un modelo y su salida va a evidencia/, que se versiona (D15): nada de secretos.
 const SECRETO = /(^|[/:=]|^-[A-Za-z]+)\.env(?![a-z])|(^|[/:=])local_privado(\/|$)|^-[A-Za-z]*R|^--dereference-recursive/;
 const ES_TEST = /(^|\/)(tests?|__tests__)\/|\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.py$/;
@@ -125,9 +130,15 @@ function validarComando(e, donde) {
   const [cmd, sub] = Array.isArray(e.comando) ? e.comando : [];
   const p = [];
   if (!Array.isArray(e.comando) || !e.comando.every((x) => typeof x === "string")) return [`${donde}: comando debe ser un arreglo argv de textos`];
-  const permitido = cmd === "git" ? GIT_LECTURA.includes(sub) : EJECUTABLES.includes(cmd);
-  if (!permitido) p.push(`${donde}: comando no permitido (solo ${EJECUTABLES.join(", ")} y git ${GIT_LECTURA.join("|")})`);
+  const esPytest = PYTEST.test(cmd) && sub === "-m" && e.comando[2] === "pytest";
+  const permitido = esPytest || (cmd === "git" ? GIT_LECTURA.includes(sub) : EJECUTABLES.includes(cmd));
+  if (!permitido) p.push(`${donde}: comando no permitido (solo ${EJECUTABLES.join(", ")}, git ${GIT_LECTURA.join("|")} y python3 -m pytest <tests>)`);
   const args = e.comando.slice(1);
+  if (esPytest) {
+    const resto = e.comando.slice(3);
+    const mal = resto.filter((a, i) => (resto[i - 1] === "-k" ? !EXPRESION_K.test(a) : a !== "-k" && !ARG_PYTEST.test(a)));
+    if (mal.length) p.push(`${donde}: pytest solo admite ids de test, -q, -x, -v y -k <texto simple> (no: ${mal.join(" ")})`);
+  }
   if (args.some((a) => SECRETO.test(a))) p.push(`${donde}: comando que puede leer un secreto (.env, local_privado, -R)`);
   if (args.some((a) => path.isAbsolute(a) || a.split("/").includes(".."))) p.push(`${donde}: comando con una ruta fuera del proyecto`);
   if (!Number.isInteger(e.espera?.codigo)) p.push(`${donde}: espera.codigo (entero) es obligatorio`);
