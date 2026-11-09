@@ -6,6 +6,7 @@ import {
   loadConfig,
   buildPrompt,
   buildSystem,
+  SIN_HERRAMIENTAS,
   clasificarError,
   pedirConReintentos,
   argsAgy,
@@ -98,8 +99,15 @@ describe("buildSystem", () => {
     expect(s.indexOf("ROL")).toBeLessThan(s.indexOf("FMT"));
   });
 
-  it("sin constitución (proyecto 1.0) queda contexto + rol + formato", () => {
-    expect(buildSystem({ ...partes, carril: "software", constitucion: "" })).toBe("CTX\n\nROL\n\nFMT");
+  it("sin constitución (proyecto 1.0) queda contexto + aviso de herramientas + rol + formato", () => {
+    expect(buildSystem({ ...partes, carril: "software", constitucion: "" })).toBe(`CTX\n\n${SIN_HERRAMIENTAS}\n\nROL\n\nFMT`);
+  });
+
+  it("dice que no hay herramientas, justo después del contexto y antes de las reglas (L14)", () => {
+    const s = buildSystem({ ...partes, carril: "software", constitucion: "C1" });
+    expect(SIN_HERRAMIENTAS).toMatch(/No tienes herramientas: no puedes ejecutar comandos/);
+    expect(s.indexOf("CTX")).toBeLessThan(s.indexOf("No tienes herramientas"));
+    expect(s.indexOf("No tienes herramientas")).toBeLessThan(s.indexOf("C1"));
   });
 });
 

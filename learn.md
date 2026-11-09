@@ -155,7 +155,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 - **Regla derivada:** ver §1.
 
 ### L14 — Flash 3.8 no entrega el informe de Lógica en `agy`; Argon agotó su cuota
-- **Estado:** 🔴 Abierto (S-25, `T2.7`)
+- **Estado:** 🟡 Parcial (S-25/S-26): Flash resuelto; Argon sigue sin cuota
 - **Síntoma:** (1) `gemini-3.8-flash-medium` respondió Seguridad (64 s) pero en Lógica
   intentó ejecutar un comando, `agy -p` se lo negó («a tool required the "command"
   permission that headless mode cannot prompt for») y terminó sin respuesta tres veces
@@ -165,7 +165,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   impide y Flash no se recupera. Sin confirmar si una regla `permissions.allow` o un
   prompt más explícito («no ejecutes nada») lo arregla. (2) uso previo de la cuenta; la
   cuota de Argon y la de Flash son distintas.
-- **Solución aplicada:** ninguna. `T2.7` queda incompleta (informe del spike).
+- **Solución aplicada:** probada solo en el spike (S-26): añadir «No tienes herramientas: no ejecutes nada…» al contexto hizo que Flash entregara el informe de Lógica al primer intento. Repetido 3 veces: sin la frase 0/3 informes de Lógica, con la frase 3/3 (y `L1`/`L2` bloqueantes en las 3); **ya está en el producto** (`SIN_HERRAMIENTAS` en `gemini.mjs`, para todos los roles Gemini; medido solo en Lógica). Argon sigue sin cuota.
 - **Regla derivada:** una cuota agotada de `agy` puede durar días: antes de planear una
   medición larga, comprobar con una llamada barata que el modelo responde.
 

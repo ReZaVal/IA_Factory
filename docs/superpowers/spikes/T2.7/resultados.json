@@ -57,11 +57,11 @@
     "rolesCompletos": 2
   },
   "flash": {
-    "detectados": 3,
-    "detectadosBloqueantes": 3,
+    "detectados": 5,
+    "detectadosBloqueantes": 5,
     "total": 5,
     "falsosPositivos": 0,
-    "ruido": 0,
+    "ruido": 1,
     "defectos": [
       {
         "id": "S1",
@@ -90,21 +90,21 @@
       {
         "id": "L1",
         "titulo": "paginar numera desde 0: la página 1 se salta los primeros elementos",
-        "detectado": false,
-        "comoBloqueante": false,
-        "porSuRol": false,
-        "severidad": null
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
       },
       {
         "id": "L2",
         "titulo": "promedio de lista vacía da NaN en vez de 0",
-        "detectado": false,
-        "comoBloqueante": false,
-        "porSuRol": false,
-        "severidad": null
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
       }
     ],
     "falsos": [],
-    "rolesCompletos": 1
+    "rolesCompletos": 2
   }
 }

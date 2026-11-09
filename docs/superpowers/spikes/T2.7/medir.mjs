@@ -2,7 +2,8 @@
 // Medición de revisores con defectos sembrados (T2.7, D12/D13). Monta un repo temporal con la
 // fábrica instalada y el fixture sin commitear, corre Seguridad y Lógica con cada modelo y puntúa
 // los informes contra claves.json.
-// Uso: node medir.mjs [--modelos argon,flash,claude] [--roles seguridad,logica] [--solo-puntuar]
+// Uso: node medir.mjs [--modelos argon,flash,claude] [--roles seguridad,logica] [--variante noejecutar] [--solo-puntuar]
+//   --variante noejecutar: añade al rol, solo en el repo temporal, «no tienes herramientas, no ejecutes nada» (L14)
 //   --roles: repite solo esos roles y conserva el resto de resultados/<modelo>/meta.json
 //   argon = agy/gemini-4-argon-medium · flash = agy/gemini-3.8-flash-medium · claude = claude -p (Sonnet, sin herramientas)
 //   --solo-puntuar: no llama a ningún modelo; puntúa lo que ya hay en resultados/<modelo>/
@@ -24,6 +25,9 @@ const MODELOS = {
   flash: { motor: "agy", id: "gemini-3.8-flash-medium" },
   claude: { motor: "claude", id: "claude-sonnet-5-5" }
 };
+const VARIANTES = {
+  noejecutar: "\n\n## Importante\nNo tienes herramientas: no puedes ejecutar comandos, tests ni leer archivos. Razona solo con la spec y el diff que recibes y responde directamente con el informe.\n"
+};
 const CONTEXTO = `# Contexto del proyecto (común a todos los revisores)
 
 Revisas cambios de un cuaderno personal de notas (texto libre de la persona usuaria, datos solo en el navegador).
@@ -36,12 +40,12 @@ Recibes la **spec** de la tarea y el **diff**. Revisa solo tu especialidad; no r
 const sh = (cmd, args, cwd, env = {}) => execFileSync(cmd, args, { cwd, encoding: "utf8", env: { ...process.env, GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t", ...env } });
 
 /** Repo temporal: fábrica instalada y confirmada; el fixture queda sin commitear, como lo dejaría el constructor. */
-async function prepararRepo() {
+async function prepararRepo(variante) {
   const dir = await mkdtemp(path.join(tmpdir(), "t27-"));
   sh("git", ["init", "-q", "-b", "main"], dir);
   await writeFile(path.join(dir, "package.json"), JSON.stringify({ name: "medicion", type: "module", scripts: { test: "node tests/notas.test.js" } }, null, 2));
   sh(path.join(REPO, "instalar.sh"), [dir, "--carril", "software"], REPO);
-  await writeFile(path.join(dir, "scripts/revision/roles/_contexto.md"), CONTEXTO);
+  await writeFile(path.join(dir, "scripts/revision/roles/_contexto.md"), CONTEXTO + (VARIANTES[variante] ?? ""));
   sh("git", ["add", "-A"], dir);
   sh("git", ["commit", "-q", "-m", "base"], dir);
   await cp(path.join(AQUI, "fixture"), dir, { recursive: true });
@@ -88,13 +92,13 @@ async function conClaude(dir, rol, modelo) {
   return { informe, segundos: (Date.now() - t0) / 1000, costo };
 }
 
-async function correr(nombre, roles) {
+async function correr(nombre, roles, variante) {
   const modelo = MODELOS[nombre];
-  const dir = await prepararRepo();
+  const dir = await prepararRepo(variante);
   const salida = path.join(AQUI, "resultados", nombre);
   await mkdir(salida, { recursive: true });
   const previo = existsSync(path.join(salida, "meta.json")) ? JSON.parse(await readFile(path.join(salida, "meta.json"), "utf8")) : null;
-  const meta = { modelo: modelo.id, motor: modelo.motor, roles: previo?.roles ?? {} };
+  const meta = { modelo: modelo.id, motor: modelo.motor, roles: previo?.roles ?? {}, variantes: { ...(previo?.variantes ?? {}), ...(variante ? Object.fromEntries(roles.map((r) => [r, variante])) : {}) } };
   for (const rol of roles) {
     try {
       const r = await (modelo.motor === "agy" ? conAgy : conClaude)(dir, rol, modelo);
@@ -137,6 +141,6 @@ const pedidos = (args.includes("--modelos") ? args[args.indexOf("--modelos") + 1
 if (!args.includes("--solo-puntuar")) for (const n of pedidos) {
   if (!MODELOS[n]) throw new Error(`modelo desconocido ${n}`);
   process.stderr.write(`→ ${n}\n`);
-  await correr(n, roles);
+  await correr(n, roles, args.includes("--variante") ? args[args.indexOf("--variante") + 1] : undefined);
 }
 await puntuar();
