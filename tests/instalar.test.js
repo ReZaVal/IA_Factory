@@ -10,6 +10,7 @@ const INSTALAR = path.resolve(import.meta.dirname, "../instalar.sh");
 // Salida de `instalar.sh --con-revision` en 1.0.0 (commit 8b5f7db).
 const ARCHIVOS_1_0 = [
   ".claude/agents/aprobador.md",
+  ".github/workflows/fabrica.yml",
   ".claude/agents/constructor.md",
   ".claude/agents/planificador.md",
   ".claude/agents/probador.md",
@@ -37,6 +38,7 @@ const NUEVOS_1_1 = [
   "constitucion-software.md",
   "scripts/fabrica/fabrica.mjs",
   "scripts/fabrica/grupo.mjs",
+  "scripts/fabrica/proteger-rama.sh",
   "scripts/fabrica/worktree.sh",
   "scripts/revision/gatekeeper.mjs",
   "scripts/revision/evidencia.mjs",

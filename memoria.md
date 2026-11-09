@@ -321,6 +321,25 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   implementa el gatekeeper; `T2.5` y `T2.7` son requisitos para activar
   `automerge`. Cierra la parte de `T2.1`; `D4` ya no tiene inferencia pendiente.
 
+### D19 — Repos públicos para el auto-merge; protección de rama con un check `tests`
+- **Decisión:** el merge automático (`D4`) solo se activa en repos **públicos**
+  (o con GitHub Pro/Team, si algún día se tiene). La protección de rama exige el
+  check `tests` y rama al día, incluye a los admins y prohíbe force-push y borrado.
+  No exige revisión humana: en el núcleo el gatekeeper abre un PR y lo mezcla la
+  persona. Se entrega como plantilla (`.github/workflows/fabrica.yml`, job `tests`
+  obligatorio y `radio` informativo) y `scripts/fabrica/proteger-rama.sh`, que sin
+  `--aplicar` solo muestra la regla.
+- **Razón:** elegida por el usuario (S-24, 2026-11-09), cierra `P2`. Los repos
+  privados en plan gratuito no admiten checks obligatorios.
+- **Alternativas rechazadas:** GitHub Pro/Team (de pago, `agente.md §4`); repos
+  privados sin protección (el merge automático quedaría sin freno); que el
+  gatekeeper corra en CI (`.revision/` no se versiona, así que no tendría los
+  dictámenes).
+- **Impacto:** un repo público no puede contener secretos ni código de clientes:
+  `automerge` solo en proyectos propios, coherente con `D17`. `T2.5` queda a falta
+  de probar workflow y protección en un repo de prueba (requiere confirmar su
+  creación); `T2.6` depende de eso.
+
 ## 4. Contrato de datos / estructura
 Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen.schema.json`
 (JSON Schema 2020-12). Resumen (`D18`):
@@ -352,9 +371,8 @@ Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen
 - [ ] **P1 — Ritmo, duración de sesión y deadline.** Provisional: 1 sesión por
   semana de 1-2 h, sin deadline (como Supervisión de Contratistas). Confirmar;
   cambia el cronograma de `planner.md §5`.
-- [ ] **P2 — Protección de rama en repos privados.** El auto-merge seguro (`D4`)
-  necesita checks obligatorios en GitHub: ¿GitHub Pro/Team, o repos cliente
-  públicos? Bloquea `T2.5`.
+- [x] **P2 — Protección de rama en repos privados.** ¿GitHub Pro/Team, o repos
+  públicos? → Resuelta (S-24): repos públicos, `D19`.
 - [x] **P3 — Estructura del Brain.** Cómo se mapean `02-DOCS/wiki/` (index, log,
   carpetas por carril) y `constitution.md` sobre el harness. → Resuelta en
   `D8` (S-02).
@@ -391,5 +409,4 @@ Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen
 - [x] **P8 — Destino de la evidencia aprobada.** → Resuelta (S-15): se guarda
   en el repo, `D15`.
 
-> Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P2 bloquea
-> `T2.5`; P4, el cierre de cada fase de carril.
+> Ninguna pregunta bloquea la fase activa. P1 afecta solo fechas; P4, el cierre de cada fase de carril.

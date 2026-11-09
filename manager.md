@@ -72,7 +72,9 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   `MERGE` solo con radio bajo + SDD + `automerge`. Aún sin radio real ni enchufe.
 - **Radio (S-23):** `T2.4` ✅: `radio.mjs` + `nucleo.json`; el gatekeeper lo calcula solo.
   Lista de núcleo = la heredada de `via.mjs`, pendiente de tu visto bueno.
-- **Próximos pasos:** `T2.5` (🔒, `P2`).
+- **CI (S-24):** `P2` → `D19`: repos públicos. `T2.5` 🟡: plantilla de workflow y
+  `proteger-rama.sh` listos; falta probarlos en un repo público de prueba.
+- **Próximos pasos:** confirmar el repo de prueba de `T2.5`; luego `T2.7` y `T2.6`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

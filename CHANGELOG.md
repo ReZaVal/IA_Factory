@@ -22,6 +22,11 @@
   Todo en verde → `MERGE` solo con radio `bajo`, vía SDD y `--automerge` /
   `FABRICA_AUTOMERGE=1`; si no, `PR`. Sin `--radio` (lo calcula `T2.4`) asume `nucleo`.
   Deja `.revision/TX.Y/gatekeeper.json`. Aún no lo llama `fabrica.mjs` (`T2.6`).
+- CI y protección de rama (`D19`, `T2.5`): el carril trae `.github/workflows/fabrica.yml`
+  (job `tests` obligatorio, `radio` informativo en el resumen del PR; adapta `npm test` y
+  Node) y `scripts/fabrica/proteger-rama.sh <dueño/repo>`, que sin `--aplicar` solo muestra
+  la regla (check `tests`, rama al día, admins incluidos, sin force-push). Pide repo
+  público o plan Pro/Team. Aún no probado contra GitHub real.
 - Radio de impacto (`D4`, `T2.4`): nuevo `scripts/revision/radio.mjs` (sin modelo) clasifica
   el diff contra la base en `bajo` o `nucleo`. Reutiliza la lista de núcleo de `via.mjs`
   (ahora partida en estructura y semántica, mismo comportamiento) y se afina por proyecto

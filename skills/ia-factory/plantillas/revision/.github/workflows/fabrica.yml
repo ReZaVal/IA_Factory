@@ -1,0 +1,45 @@
+# IA Factory — CI obligatorio para el merge automático (D4, D19, T2.5).
+# Check obligatorio: `tests`. Lo exige la protección de rama (scripts/fabrica/proteger-rama.sh).
+# `radio` solo informa (bajo / núcleo) en el resumen del PR; no bloquea.
+# Adapta `npm test` y la versión de Node a tu proyecto; si cambias el nombre del job `tests`,
+# cambia también CHECKS en proteger-rama.sh.
+name: fabrica
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  radio:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Radio de impacto del PR
+        run: |
+          set +e
+          salida="$(node scripts/revision/radio.mjs --base "origin/${{ github.base_ref }}")"
+          echo "### Radio de impacto" >> "$GITHUB_STEP_SUMMARY"
+          echo "$salida" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
