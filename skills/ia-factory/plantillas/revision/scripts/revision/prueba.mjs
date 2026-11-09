@@ -14,6 +14,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { isDeepStrictEqual } from "node:util";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { correrApi, validarPeticiones } from "./api.mjs";
@@ -159,8 +160,10 @@ function validarPasos(e, donde) {
   return p;
 }
 
+const mostrar = (v) => (v !== null && typeof v === "object" ? JSON.stringify(v) : String(v));
+
 /** Motivo del fallo de un paso, o null si cumple lo que dice la spec. */
-function fallo(espera, obtenido, todos) {
+export function fallo(espera, obtenido, todos) {
   if (!obtenido) return "el paso no produjo resultado";
   if (obtenido.mutado) return "mutó sus argumentos";
   if ("error" in espera) {
@@ -170,7 +173,8 @@ function fallo(espera, obtenido, todos) {
   }
   if (obtenido.error) return `lanzó ${obtenido.error}: ${obtenido.mensaje}`;
   const valor = "igualA" in espera ? todos[espera.igualA]?.valor : espera.valor;
-  return obtenido.valor === valor ? null : `esperaba ${valor}, obtuvo ${obtenido.valor}`;
+  // L18: objetos y arreglos se comparan por estructura; con === un valor no primitivo nunca cumplía.
+  return valor === obtenido.valor || isDeepStrictEqual(valor, obtenido.valor) ? null : `esperaba ${mostrar(valor)}, obtuvo ${mostrar(obtenido.valor)}`;
 }
 
 const comillas = (s) => `'${s.replaceAll("'", "'\\''")}'`;

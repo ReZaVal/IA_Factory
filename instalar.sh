@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # IA Factory — copia las plantillas del harness a un proyecto. Nunca sobrescribe:
 # si un archivo ya existe, lo deja y lo reporta.
-# Uso: ./instalar.sh <ruta-del-proyecto> [--carril <software|ml>] [--con-revision]
+# Uso: ./instalar.sh <ruta-del-proyecto> [--carril <software|ml|investigacion>] [--con-revision]
 #   --carril <c>    módulo de revisión + lo propio del carril (roles, herramientas,
 #                   constitucion-<c>.md); carriles en skills/ia-factory/carriles/
 #   --con-revision  igual que --carril software (compatibilidad con 1.0)
 set -euo pipefail
 
-uso="Uso: ./instalar.sh <ruta-del-proyecto> [--carril <software|ml>] [--con-revision]"
+uso="Uso: ./instalar.sh <ruta-del-proyecto> [--carril <software|ml|investigacion>] [--con-revision]"
 destino="${1:?$uso}"
 shift
 skill="$(cd "$(dirname "$0")" && pwd)/skills/ia-factory"
@@ -75,6 +75,7 @@ if [ -n "$carril" ]; then
   echo "Carril $carril"
   copiar "$skill/carriles/$carril/constitucion-$carril.md" "constitucion-$carril.md"
   [ ! -d "$skill/carriles/$carril/revision" ] || copiar_arbol "$skill/carriles/$carril/revision"
+  [ ! -d "$skill/carriles/$carril/proyecto" ] || copiar_arbol "$skill/carriles/$carril/proyecto"
   [ "$carril" != "ml" ] || copiar "$origen/dominio-datos.md" "dominio-datos.md"
   find "$destino/scripts/revision" "$destino/scripts/fabrica" -name '*.sh' -exec chmod +x {} + 2>/dev/null || true
   grep -q "^# IA Factory" "$destino/.gitignore" 2>/dev/null || printf '\n# IA Factory — revisión multi-agente: informes efímeros y clave de Gemini\n' >> "$destino/.gitignore"

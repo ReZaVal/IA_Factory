@@ -65,7 +65,7 @@ const VISTAS = [[360, "claro"], [360, "oscuro"], [1280, "claro"], [1280, "oscuro
 const PANTALLA_INICIO = { id: "inicio", titulo: "Inicio", ruta: "" };
 const INTENTOS_INFORME = 2;
 // Informes de una ronda; al pedir cambios se mueven a .revision/TX.Y/ronda-N/.
-const DE_RONDA = [...["via", "seguridad", "logica", "ui", "codigo", "veredicto"].flatMap((f) => [`${f}.md`, `${f}.dictamen.json`]), "veredicto.juicio.json", "evidencia", "ml"];
+const DE_RONDA = [...["via", "seguridad", "logica", "ui", "codigo", "veredicto"].flatMap((f) => [`${f}.md`, `${f}.dictamen.json`]), "veredicto.juicio.json", "evidencia", "ml", "investigacion"];
 const DIR_RONDA = /^ronda-\d+$/;
 const CUOTA = /cuota|quota|usage limit|rate.?limit|limit reached|resource.?exhausted/i;
 // Roles antes de que exista lo que se revisa: relanzar debe repetir la construcción.
@@ -93,7 +93,7 @@ export function parseArgs(argv) {
 
 /**
  * Entorno primero; si falta, `.env.local`. FABRICA_TESTS es el comando de la suite
- * (constructor y aprobador lo corren); FABRICA_COBERTURA, el de cobertura (opcional); FABRICA_SERVIDOR, el que levanta la app en $PORT para la evidencia de API (opcional); FABRICA_REPRODUCIR, el comando que entrena y evalúa (carril ML: se corre dos veces y debe dar lo mismo; FABRICA_REPRODUCIR_ARCHIVO, el archivo de métricas que compara en vez de la salida); FABRICA_PERMITIDOS, reglas extra separadas por coma.
+ * (constructor y aprobador lo corren); FABRICA_COBERTURA, el de cobertura (opcional); FABRICA_SERVIDOR, el que levanta la app en $PORT para la evidencia de API (opcional); FABRICA_REPRODUCIR, el comando que entrena y evalúa (carril ML: se corre dos veces y debe dar lo mismo; FABRICA_REPRODUCIR_ARCHIVO, el archivo de métricas que compara en vez de la salida); FABRICA_DOCUMENTOS, los documentos de investigación (separados por coma) cuyos DOI se comprueban contra el corpus (carril investigación); FABRICA_PERMITIDOS, reglas extra separadas por coma.
  * @param {Record<string, string | undefined>} env
  * @param {string} dotenvText
  */
@@ -107,6 +107,7 @@ export function configFabrica(env, dotenvText) {
     servidor: valor("FABRICA_SERVIDOR"),
     reproducir: valor("FABRICA_REPRODUCIR"),
     reproducirArchivo: valor("FABRICA_REPRODUCIR_ARCHIVO"),
+    documentos: valor("FABRICA_DOCUMENTOS").split(",").map((d) => d.trim()).filter(Boolean),
     permitidos: valor("FABRICA_PERMITIDOS").split(",").map((s) => s.trim()).filter(Boolean)
   };
 }
@@ -393,10 +394,42 @@ async function verificacionesMl(ctx, n) {
   return fallos;
 }
 
+/**
+ * Carril investigación (T4.5): si el proyecto trae scripts/investigacion/, valida el formato del corpus y
+ * comprueba los DOI contra Crossref (y los de FABRICA_DOCUMENTOS contra el corpus). Sin modelo.
+ * Devuelve los fallos; si Crossref no responde corta la corrida (reintentar no es culpa del constructor).
+ */
+async function verificacionesInvestigacion(ctx, n) {
+  const corpus = "scripts/investigacion/corpus.mjs";
+  if (!existsSync(path.join(ctx.wt, corpus))) return [];
+  await mkdir(ctx.rel("investigacion"), { recursive: true });
+  const lineas = (r) => r.error.split("\n").map((l) => l.trim()).filter(Boolean);
+  const val = await correr(process.execPath, [corpus, "validar"], { cwd: ctx.wt });
+  await writeFile(ctx.rel("investigacion/corpus.txt"), val.salida + val.error);
+  if (val.codigo === 2) throw new Error(`corpus.mjs: ${val.error.trim()}`);
+  ctx.paso(`corpus (ronda ${n})`, val.codigo === 0 ? val.salida.trim() : `FALLA — ${lineas(val).length} errores`);
+  if (val.codigo !== 0) return lineas(val).map((l) => `corpus: ${l}`);
+  if (!existsSync(path.join(ctx.wt, "scripts/investigacion/verificar-doi.mjs"))) return [];
+  const docs = ctx.cfg.documentos.flatMap((d) => ["--documento", d]);
+  const doi = await correr(process.execPath, ["scripts/investigacion/verificar-doi.mjs", ...docs], { cwd: ctx.wt });
+  await writeFile(ctx.rel("investigacion/doi.txt"), doi.salida + doi.error);
+  if (doi.codigo === 2 || doi.codigo === 3) throw new Error(`verificar-doi.mjs no pudo comprobar los DOI (¿sin red?); reintenta la corrida:\n${doi.error.trim()}`);
+  ctx.paso(`doi (ronda ${n})`, doi.codigo === 0 ? doi.salida.trim() : `FALLA — ${doi.salida.trim()}`);
+  return doi.codigo === 0 ? [] : lineas(doi).map((l) => `doi: ${l.replace(/^FALLO /, "")}`);
+}
+
 /** Evidencia ejecutada de la ronda n. Devuelve los fallos (vacío si todo en verde). */
 async function probar(ctx, n) {
   const fallosPrueba = await probarEscenarios(ctx, n);
-  return [...fallosPrueba, ...(await verificacionesMl(ctx, n))];
+  const previos = [...fallosPrueba, ...(await verificacionesMl(ctx, n))];
+  try {
+    return [...previos, ...(await verificacionesInvestigacion(ctx, n))];
+  } catch (e) {
+    // Crossref caído no debe esconder fallos reales de la ronda: se corrigen primero y el DOI se reintenta después.
+    if (!previos.length || !/no pudo comprobar los DOI/.test(e.message)) throw e;
+    ctx.paso(`doi (ronda ${n})`, "NO VERIFICABLE — se reintenta cuando el resto esté en verde");
+    return previos;
+  }
 }
 
 async function probarEscenarios(ctx, n) {
