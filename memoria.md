@@ -336,9 +336,8 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   gatekeeper corra en CI (`.revision/` no se versiona, así que no tendría los
   dictámenes).
 - **Impacto:** un repo público no puede contener secretos ni código de clientes:
-  `automerge` solo en proyectos propios, coherente con `D17`. `T2.5` queda a falta
-  de probar workflow y protección en un repo de prueba (requiere confirmar su
-  creación); `T2.6` depende de eso.
+  `automerge` solo en proyectos propios, coherente con `D17`. `T2.5` se probó en
+  `ReZaVal/CoLLMena` (S-24, a pedido del usuario); `T2.6` depende de `T2.7`.
 
 ## 4. Contrato de datos / estructura
 Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen.schema.json`
