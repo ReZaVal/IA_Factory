@@ -1,6 +1,25 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Carril investigación en la fábrica (`T4.5`): si el proyecto trae `scripts/investigacion/`, cada ronda corre
+  `corpus.mjs validar` y `verificar-doi.mjs` (con `FABRICA_DOCUMENTOS`); un fallo da CAMBIOS REQUERIDOS sin llamar a
+  revisores. Crossref caído corta la corrida solo si no hay otros fallos; `verificar-doi.mjs` reintenta una vez y
+  acepta `CROSSREF_API`.
+- `prueba.mjs` compara por estructura los `valor` que son objetos o arreglos (`L18`); antes nunca cumplían y el
+  motivo decía `[object Object]`.
+- Fase 4 (`T4.4`): roles del carril investigación en `scripts/revision/roles/investigacion/`:
+  Seguridad revisa citas, fuentes y datos (corpus, referencias inventadas, DOI vía
+  `verificar-doi.mjs`, citas textuales); Lógica revisa metodología y evidencia.
+- Fase 4 (`T4.3`): `scripts/investigacion/verificar-doi.mjs`. Comprueba contra Crossref que cada DOI
+  del corpus exista y que título, primer autor y año coincidan, y que un documento no cite DOIs
+  fuera del corpus; `--registrar` anota `verificado`. Sin Crossref responde «no verificable».
+- Fase 4 (`T4.2`): corpus de investigación. `--carril investigacion` instala `research/corpus/`
+  (README, `_plantilla.md`) y `scripts/investigacion/corpus.mjs validar` (formato, campos, claves
+  y DOI duplicados; sin red). `instalar.sh` copia ahora el árbol opcional `carriles/<c>/proyecto/`.
+- Fase 4 (`T4.1`): carril investigación. Nuevo `carriles/investigacion/constitucion-investigacion.md`
+  (14 reglas duras: fuentes y citas con corpus y DOI verificado, afirmaciones con evidencia,
+  metodología antes que resultados, reproducibilidad, datos y secretos); `instalar.sh --carril
+  investigacion` la instala.
 - Fase 3 (`T3.1`): carril ML. Nuevo `carriles/ml/constitucion-ml.md` (13 reglas duras:
   datos y secretos, experimento antes que código, partición sin leakage,
   reproducibilidad); `instalar.sh --carril ml` la instala junto con `dominio-datos.md`.

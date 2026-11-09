@@ -80,6 +80,11 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   falta `D20` (`T2.7`) para activar `automerge` en proyectos reales.
 - **Fase 3 (S-27):** `T3.1`-`T3.4` ✅ (constitución, roles ML, `verificar.mjs`, repo de prueba
   `/home/renzo/IA_Factory_ML_Test`; `fabrica T1.1` APROBADO en la ronda 1 con Flash, tras corregir `L15`-`L17`). Arrancada con la Fase 2 sin cerrar (`T2.7`/`D20` esperan a Argon); Fase 3 cerrada con salvedades (ver `planner.md` S-30); siguiente: Fase 4 (`T4.1`) o medir los roles ML con un leakage sembrado.
+- **Fase 4 cerrada (S-35):** `T4.5` ✅: `fabrica T1.1 --carril investigacion` APROBADO en la ronda 1 en `/home/renzo/IA_Factory_Research_Test` (corpus + DOI reales); destapó `L18` y un fallo de Crossref ya corregidos. Salvedades en `planner.md` S-35. Siguiente: Fase 5 (`T5.1`) o medir los roles con un defecto sembrado.
+- **Fase 4 (S-34):** `T4.4` ✅: roles `seguridad` (citas/fuentes) y `logica` (metodología) del carril; solo probados en formato. Siguiente `T4.5`: enchufar `corpus.mjs`/`verificar-doi.mjs` en `fabrica.mjs` y correr en un paper de prueba.
+- **Fase 4 (S-33):** `T4.3` ✅: `verificar-doi.mjs` (Crossref; suite simulada + prueba manual real); siguiente `T4.4`.
+- **Fase 4 (S-32):** `T4.2` ✅: corpus `research/corpus/` (plantilla, convenciones, `corpus.mjs validar`); siguiente `T4.3`.
+- **Fase 4 (S-31):** `T4.1` ✅: `constitucion-investigacion.md` (14 reglas) e `instalar.sh --carril investigacion`; pendiente visto bueno del dueño. Siguiente: `T4.2` (corpus).
 - **Próximos pasos:** el dueño decidió esperar a Argon (cuota de `agy` ≈ 2026-11-14): entonces
   correr `node medir.mjs --modelos argon` (en el spike de `T2.7`), cerrar `T2.7` con `D20` y seguir con `T2.6`.
   Antes de planear la corrida, comprobar con una llamada barata que Argon responde (`L14`).
@@ -128,7 +133,7 @@ Se definen al activarse (`D6`, `D7`).
 | 1 — Núcleo del pipeline | 🟡 activa, `T1.1`-`T1.8` ✅, corrida real hecha; `T1.9`-`T1.14` ✅, `T1.15` ⬜ (`D14`, `D16`) |
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ✅ con salvedades (S-30) |
-| 4 — Investigación | ⬜ |
+| 4 — Investigación | ✅ con salvedades (S-35) |
 | 5 — Multimedia | ⬜ |
 | 6 — Codex | ⬜ postergada |
 | 7 — Ingesta | ⬜ postergada |

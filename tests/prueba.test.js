@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync, mkdirSync, realpathSy
 import { tmpdir } from "node:os";
 import path from "node:path";
 import {
-  expresion, snippet, validarEscenarios, criteriosDeSpec, matriz, testsNuevos, probar, verificarHashes, registrarHashes, anadirHashes
+  expresion, snippet, validarEscenarios, criteriosDeSpec, matriz, testsNuevos, probar, verificarHashes, registrarHashes, anadirHashes, fallo
 } from "../skills/ia-factory/plantillas/revision/scripts/revision/prueba.mjs";
 
 const PRUEBA = path.resolve(import.meta.dirname, "../skills/ia-factory/plantillas/revision/scripts/revision/prueba.mjs");
@@ -228,6 +228,24 @@ describe("testsNuevos", () => {
   it("lista tests nuevos y modificados, no el código ni lo ignorado", () => {
     montarProyecto();
     expect(testsNuevos(dir)).toEqual(["tests/suma.test.js"]);
+  });
+});
+
+describe("fallo: valores no primitivos (L18)", () => {
+  it("objetos y arreglos iguales por estructura cumplen", () => {
+    expect(fallo({ valor: { A: { n: 3, sd: 1.5 }, d: [1, 2] } }, { valor: { A: { n: 3, sd: 1.5 }, d: [1, 2] } }, {})).toBeNull();
+    expect(fallo({ valor: [1, [2]] }, { valor: [1, [2]] }, {})).toBeNull();
+  });
+  it("igualA también compara por estructura", () => {
+    expect(fallo({ igualA: "a" }, { valor: { x: 1 } }, { a: { valor: { x: 1 } } })).toBeNull();
+  });
+  it("estructura distinta falla y el motivo muestra el contenido, no [object Object]", () => {
+    const m = fallo({ valor: { n: 3 } }, { valor: { n: 4 } }, {});
+    expect(m).toBe('esperaba {"n":3}, obtuvo {"n":4}');
+  });
+  it("primitivos siguen igual", () => {
+    expect(fallo({ valor: 5 }, { valor: 5 }, {})).toBeNull();
+    expect(fallo({ valor: 6 }, { valor: 5 }, {})).toBe("esperaba 6, obtuvo 5");
   });
 });
 

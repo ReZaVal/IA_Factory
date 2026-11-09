@@ -30,7 +30,7 @@ describe("parseArgs", () => {
 
 describe("configFabrica", () => {
   it("entorno primero, luego .env.local, luego valores por defecto", () => {
-    expect(configFabrica({}, "")).toEqual({ claude: "claude", tests: "npm test", cobertura: "", servidor: "", reproducir: "", reproducirArchivo: "", permitidos: [] });
+    expect(configFabrica({}, "")).toEqual({ claude: "claude", tests: "npm test", cobertura: "", servidor: "", reproducir: "", reproducirArchivo: "", documentos: [], permitidos: [] });
     const cfg = configFabrica({ FABRICA_TESTS: "pytest" }, "FABRICA_TESTS=npm test\nFABRICA_PERMITIDOS=Bash(make lint:*), Bash(ls:*)\n");
     expect(cfg.tests).toBe("pytest");
     expect(cfg.permitidos).toEqual(["Bash(make lint:*)", "Bash(ls:*)"]);
@@ -204,7 +204,7 @@ function git(...args) {
 }
 
 /** Repo de prueba con la fábrica instalada y commiteada (el worktree sale de HEAD). */
-function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes = false, sinRevisorUi = false, python = null } = {}) {
+function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes = false, sinRevisorUi = false, python = null, investigacion = null } = {}) {
   execFileSync(path.resolve(import.meta.dirname, "../instalar.sh"), [repo, "--carril", "software"], { encoding: "utf8" });
   const scripts = path.join(repo, "scripts/revision");
   renameSync(path.join(scripts, "gemini.mjs"), path.join(scripts, "gemini-real.mjs"));
@@ -218,6 +218,13 @@ function montarRepo({ tocar = "`src/suma.js`, `tests/suma.test.js`", sinAgentes 
     cpSync(path.join(SKILL, "carriles/ml/revision/scripts/ml"), path.join(repo, "scripts/ml"), { recursive: true });
     mkdirSync(path.join(repo, "src"), { recursive: true });
     writeFileSync(path.join(repo, "src/modelo.py"), python);
+  }
+  if (investigacion !== null) { // carril investigación (T4.5): scripts del corpus + archivos del paper de prueba
+    cpSync(path.join(SKILL, "carriles/investigacion/proyecto/scripts/investigacion"), path.join(repo, "scripts/investigacion"), { recursive: true });
+    for (const [ruta, texto] of Object.entries(investigacion)) {
+      mkdirSync(path.dirname(path.join(repo, ruta)), { recursive: true });
+      writeFileSync(path.join(repo, ruta), texto);
+    }
   }
   git("add", ".");
   git("commit", "--quiet", "-m", "fábrica");
@@ -371,6 +378,59 @@ describe("fabrica TX.Y: pipeline completo", () => {
     montarRepo();
     fabrica(["T9.1"]);
     expect(existsSync(path.join(wt(), ".revision/T9.1/ml"))).toBe(false);
+  });
+
+  describe("carril investigación (T4.5)", () => {
+    const fuente = (o = {}) => {
+      const c = { clave: "perez-2020-redes", tipo: "libro", autores: "Pérez, A.", anio: "2020", titulo: "Redes", medio: "Editorial X",
+        doi: "sin-doi", url: "https://ejemplo.org/redes", accedido: "2026-11-09", verificado: "", ...o };
+      return `---\n${Object.entries(c).map(([k, v]) => `${k}: ${v}`).join("\n")}\n---\n`;
+    };
+
+    it("corpus inválido → CAMBIOS REQUERIDOS sin revisores ni aprobador", () => {
+      montarRepo({ investigacion: { "research/corpus/perez-2020-redes.md": fuente({ tipo: "tuit" }) } });
+      const r = fabrica(["T9.1"]);
+      expect(r.codigo).toBe(SALIDA["CAMBIOS REQUERIDOS"]);
+      const orden = llamadas().map((l) => l.agente);
+      expect(orden).not.toContain("aprobador");
+      expect(readFileSync(path.join(wt(), ".revision/T9.1/ronda-1/veredicto.md"), "utf8")).toMatch(/corpus: perez-2020-redes\.md: tipo/);
+      expect(readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8")).toMatch(/corpus \(ronda 1\).*FALLA/);
+    });
+
+    it("documento que cita un DOI fuera del corpus → CAMBIOS REQUERIDOS", () => {
+      montarRepo({ investigacion: { "research/corpus/perez-2020-redes.md": fuente(), "paper.md": "Ver 10.9999/ajeno.1.\n" } });
+      const r = fabrica(["T9.1"], { FABRICA_DOCUMENTOS: "paper.md" });
+      expect(r.codigo).toBe(SALIDA["CAMBIOS REQUERIDOS"]);
+      expect(readFileSync(path.join(wt(), ".revision/T9.1/ronda-1/veredicto.md"), "utf8")).toMatch(/doi: paper\.md.*10\.9999\/ajeno\.1.*fuera del corpus/);
+    });
+
+    it("corpus válido y documento limpio → sigue y deja .revision/TX.Y/investigacion/", () => {
+      montarRepo({ investigacion: { "research/corpus/perez-2020-redes.md": fuente(), "paper.md": "Sin DOI.\n" } });
+      const r = fabrica(["T9.1"], { FABRICA_DOCUMENTOS: "paper.md" });
+      expect(r.codigo).toBe(SALIDA.APROBADO);
+      expect(readFileSync(path.join(wt(), ".revision/T9.1/investigacion/corpus.txt"), "utf8")).toMatch(/1 fuentes, 0 errores/);
+    });
+
+    it("Crossref inalcanzable → la corrida se corta, no culpa al constructor", () => {
+      montarRepo({ investigacion: { "research/corpus/perez-2020-redes.md": fuente({ doi: "10.1000/abc.123", url: "" }) } });
+      const r = fabrica(["T9.1"], { CROSSREF_API: "http://127.0.0.1:1/works/" });
+      expect(r.codigo).not.toBe(SALIDA.APROBADO);
+      expect(r.codigo).not.toBe(SALIDA["CAMBIOS REQUERIDOS"]);
+      expect(r.salida + r.error).toMatch(/no pudo comprobar los DOI/);
+    });
+
+    it("Crossref caído NO esconde los fallos reales de la ronda: CAMBIOS REQUERIDOS con los otros fallos", () => {
+      montarRepo({ investigacion: { "research/corpus/perez-2020-redes.md": fuente({ doi: "10.1000/abc.123", url: "" }) } });
+      const r = fabrica(["T9.1"], { CROSSREF_API: "http://127.0.0.1:1/works/", FABRICA_TESTS: "node -e \"process.exit(1)\"" });
+      expect(r.codigo).toBe(SALIDA["CAMBIOS REQUERIDOS"]);
+      expect(readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8")).toMatch(/doi \(ronda 1\).*NO VERIFICABLE/);
+    });
+
+    it("proyecto sin scripts/investigacion: no se hace ninguna verificación (T4.5)", () => {
+      montarRepo();
+      fabrica(["T9.1"]);
+      expect(existsSync(path.join(wt(), ".revision/T9.1/investigacion"))).toBe(false);
+    });
   });
 
   it("escenarios.json inválido dos veces → error de la fábrica, no aprobación (L16)", () => {

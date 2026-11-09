@@ -18,6 +18,7 @@ regla que dejaron. Las decisiones van a `memoria.md`.
 | L3 | El worktree salía sin dependencias (lo ignorado por git no viaja) | Probar la fábrica con una suite que dependa de algo ignorado por git, dentro del worktree; preparar con `FABRICA_PREPARAR` | `worktree.sh`, `revision.md ## 3`, `tests/worktree.test.js` |
 | L4 | Nombres de función en «Archivos» contados como alcance extra | Los chequeos deterministas se prueban también con specs escritas por el planificador real, no solo con las sintéticas | `spec.mjs` (`archivosDeSpec`), `tests/spec.test.js` |
 | L5 | Un error de Gemini cortaba la fábrica, fuese transitorio o permanente | Al llamar a una API externa, separar transitorio de permanente: reintentar con tope lo primero y fallar rápido con qué hacer lo segundo; no asumir en la plantilla un plan de pago | `gemini.mjs` (`clasificarError`, `pedirConReintentos`), `revision.md ## 6`, `tests/revision.test.js` |
+| L18 | `prueba.mjs` comparaba con `===`: un `valor` objeto/arreglo nunca cumplía y la fábrica agotaba las 3 rondas | Probar el evaluador con el tipo de valor típico del carril nuevo; un fallo idéntico en rondas seguidas apunta al evaluador | `prueba.mjs` (`fallo`), `tests/prueba.test.js` |
 | L17 | La página de evidencia se caía con un flujo que era un `comando` (pytest) | Al añadir una forma nueva de escenario, buscar todo lo que despacha por forma y probar la página con ella | `pagina.mjs` (`pasoComando`), `tests/pagina.test.js` |
 | L16 | Un `escenarios.json` inválido tumbaba la corrida entera sin dar al probador la oportunidad de corregir | Toda salida de un modelo que un script valida se reintenta con el motivo antes de fallar | `fabrica.mjs` (`probadorConEscenarios`), `tests/fabrica.test.js` |
 | L15 | El probador no podía ejecutar nada en un proyecto Python (`modulo/funcion` es solo JS) y escribió escenarios tautológicos | Al abrir un carril con otro lenguaje, comprobar qué parte de la evidencia ejecutada asume JavaScript | `prueba.mjs` (`validarComando`), `probador.md`, `tests/prueba.test.js` |
@@ -156,6 +157,18 @@ regla que dejaron. Las decisiones van a `memoria.md`.
   quien venga: mis logs dentro del repo dieron un falso «modificó el árbol».
   No detecta escrituras fuera del repo; ahí la defensa es solo `--mode plan`.
 - **Regla derivada:** ver §1.
+
+### L18 — `prueba.mjs` no podía dar por cumplido un valor que fuera objeto o arreglo
+- **Estado:** ✅ Resuelto (S-35, `T4.5`)
+- **Síntoma:** en `IA_Factory_Research_Test` la fábrica dio CAMBIOS REQUERIDOS 3 rondas seguidas (US$ 3,09) por
+  escenarios que decían `esperaba [object Object], obtuvo [object Object]`. El constructor lo diagnosticó bien: el código estaba
+  correcto y el evaluador no podía aprobarlo.
+- **Causa raíz:** `fallo()` comparaba con `===`; solo funcionaba con primitivos. Los escenarios de `T1.2`/`T3.4` solo devolvían
+  números, textos o booleanos, y los ejemplos de la spec de investigación devuelven un objeto resumen.
+- **Solución aplicada:** comparación estructural (`isDeepStrictEqual`) y el motivo muestra el contenido en JSON; tests en `tests/prueba.test.js`.
+- **Regla derivada:** al abrir un carril, probar el evaluador con el tipo de valor que devuelve su código típico
+  (objetos, arreglos, floats), no solo con el del carril anterior. Un bucle de rondas que repite el mismo fallo idéntico
+  es señal de evaluador roto, no de constructor.
 
 ### L17 — La página de evidencia se caía con un flujo que corre un comando
 - **Estado:** ✅ Resuelto (S-30, `T3.4`)
