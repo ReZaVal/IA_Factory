@@ -85,7 +85,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 - **Fase 4 (S-33):** `T4.3` ✅: `verificar-doi.mjs` (Crossref; suite simulada + prueba manual real); siguiente `T4.4`.
 - **Fase 4 (S-32):** `T4.2` ✅: corpus `research/corpus/` (plantilla, convenciones, `corpus.mjs validar`); siguiente `T4.3`.
 - **Fase 4 (S-31):** `T4.1` ✅: `constitucion-investigacion.md` (14 reglas) e `instalar.sh --carril investigacion`; pendiente visto bueno del dueño. Siguiente: `T4.2` (corpus).
-- **Próximos pasos:** `T2.7` cerrada con `D20` (Argon Seguridad, Hydrogen Lógica, `automerge` apagado). Pendiente: cablear un modelo por rol en el producto (hoy un solo `AGY_MODEL`). Luego `T2.6`.
+- **Próximos pasos:** `T2.7` cerrada con `D20` (Argon Seguridad, Hydrogen Lógica, `automerge` apagado). Modelo por rol cableado (S-40). Siguiente: `T2.6`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Modelo `agy` por rol (`D20`, `T2.7`): `gemini.mjs` usa Argon en Seguridad y Hydrogen en Lógica; un rol sin entrada usa
+  Argon. `AGY_MODEL_<ROL>` lo cambia por rol y `AGY_MODEL` para todos (el de rol manda). Sin cambios si ya fijabas `AGY_MODEL`.
 - Rol Lógica (carril software), `D20`/`T2.7`: un test débil o ausente se reporta como máximo MEDIUM; HIGH/CRITICAL solo
   para un bug demostrado en el código del diff. Medido: Argon marcaba HIGH «test débil» en 2 de 3 corridas.
 - Carril investigación en la fábrica (`T4.5`): si el proyecto trae `scripts/investigacion/`, cada ronda corre

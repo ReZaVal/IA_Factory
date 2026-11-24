@@ -353,8 +353,7 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
 - **Alternativas rechazadas:** Argon también en Lógica (el usuario prefirió Hydrogen, aunque con la regla de
   MEDIUM también cumplió); Claude en paralelo (más caro y no medido en esta tanda); descartar a Argon.
 - **Impacto:** **provisional**: dos tareas sintéticas de defectos de manual. Hydrogen en Seguridad y Argon en
-  Lógica con otra tarea no se midieron en la misma medida. Falta cablear el modelo por rol en el producto
-  (`roles.json`/`gemini.mjs`, hoy un solo `AGY_MODEL`). `T2.6` deja de depender de `T2.7`.
+  Lógica con otra tarea no se midieron en la misma medida. Cableado en `gemini.mjs` (S-40): modelo por rol, `AGY_MODEL_<ROL>` > `AGY_MODEL` > defecto por rol. `T2.6` deja de depender de `T2.7`.
 
 ## 4. Contrato de datos / estructura
 Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen.schema.json`

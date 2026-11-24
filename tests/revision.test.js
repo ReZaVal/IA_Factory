@@ -64,6 +64,26 @@ describe("loadConfig", () => {
     expect(loadConfig({ AGY_BIN: "/x/agy" }, "AGY_MODEL=gemini-3.8-flash-medium\nGEMINI_MODEL=gemini-3.5-flash\n")).toMatchObject({ agy: "/x/agy", model: "gemini-3.8-flash-medium" });
   });
 
+  it("modelo por rol con agy (D20): Seguridad usa Argon y Lógica usa Hydrogen", () => {
+    expect(loadConfig({}, "", "seguridad").model).toBe("gemini-4-argon-medium");
+    expect(loadConfig({}, "", "logica").model).toBe("gemini-4-hydrogen-medium");
+  });
+
+  it("un rol sin modelo propio cae al de D13", () => {
+    expect(loadConfig({}, "", "ui").model).toBe("gemini-4-argon-medium");
+  });
+
+  it("precedencia: AGY_MODEL_<ROL> > AGY_MODEL > modelo por rol; .env.local vale igual que el entorno", () => {
+    expect(loadConfig({ AGY_MODEL: "global" }, "", "logica").model).toBe("global");
+    expect(loadConfig({ AGY_MODEL: "global", AGY_MODEL_LOGICA: "propio" }, "", "logica").model).toBe("propio");
+    expect(loadConfig({}, "AGY_MODEL_SEGURIDAD=desde-env-local\n", "seguridad").model).toBe("desde-env-local");
+    expect(loadConfig({ AGY_MODEL_LOGICA: "propio" }, "", "seguridad").model).toBe("gemini-4-argon-medium");
+  });
+
+  it("el modelo por rol no aplica al motor api", () => {
+    expect(loadConfig({ GEMINI_MOTOR: "api", GEMINI_MODEL: "m-api" }, "", "logica").model).toBe("m-api");
+  });
+
   it("GEMINI_MOTOR=api usa clave y modelo de la API; el entorno manda sobre .env.local", () => {
     const env = { GEMINI_MOTOR: "api", GEMINI_API_KEY: "k-env", GEMINI_MODEL: "m-env" };
     expect(loadConfig(env, "GEMINI_API_KEY=k-file\nGEMINI_MODEL=m-file")).toMatchObject({ motor: "api", apiKey: "k-env", model: "m-env" });
