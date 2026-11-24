@@ -352,8 +352,11 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   repuntuó sin repetir llamadas; claves y umbral no cambiaron.
 - **Alternativas rechazadas:** caso A (Argon en ambos roles y `automerge` opcional): Lógica no
   cumple el criterio de falsos positivos; caso C (descartar a Argon): Seguridad sí cumple.
-- **Opciones abiertas para Lógica (sin elegir):** Argon acotando la severidad de «test débil»;
-  Claude en paralelo; una segunda tarea de medición; exigir tests de casos borde.
+- **Lógica (S-38, el usuario eligió acotar la severidad):** el rol `logica.md` del carril software limita a
+  MEDIUM los hallazgos sobre tests débiles o ausentes. **Validado en el mismo fixture** (S-38, 3 corridas):
+  `L1`/`L2` HIGH 3/3, «test débil» MEDIUM 3/3, 0 FP bloqueantes → cumple el umbral. **Sin generalizar:** la regla
+  se escribió viendo ese fixture; falta una segunda tarea sintética antes de dar a Argon por revisor de Lógica.
+  Siguen abiertas: Claude en paralelo, exigir tests de casos borde.
 - **Impacto:** **provisional**: una sola tarea sintética, 5 defectos de manual y 3 corridas.
   `T2.6` deja de depender de `T2.7`. `automerge` no se activa en ningún repo.
 

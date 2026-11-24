@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Rol Lógica (carril software), `D20`/`T2.7`: un test débil o ausente se reporta como máximo MEDIUM; HIGH/CRITICAL solo
+  para un bug demostrado en el código del diff. Medido: Argon marcaba HIGH «test débil» en 2 de 3 corridas.
 - Carril investigación en la fábrica (`T4.5`): si el proyecto trae `scripts/investigacion/`, cada ronda corre
   `corpus.mjs validar` y `verificar-doi.mjs` (con `FABRICA_DOCUMENTOS`); un fallo da CAMBIOS REQUERIDOS sin llamar a
   revisores. Crossref caído corta la corrida solo si no hay otros fallos; `verificar-doi.mjs` reintenta una vez y

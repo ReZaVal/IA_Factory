@@ -128,3 +128,17 @@ repuntuaron las mismas 6 llamadas, sin tocar `claves.json` ni el umbral. Resulta
 | Detección bloqueante | `S1` 3/3 · `S2` 2/3 · `S3` 3/3 ✅ | `L1` 3/3 · `L2` 3/3 ✅ |
 | FP bloqueantes | 1 (corr. 1: XSS citado en `:17`, el defecto está en 19) ✅ | 2, repetidos (HIGH «test débil», corr. 1 y 3) ❌ |
 **Caso B.** `D20` registrada en `memoria.md` como provisional. Opciones para Lógica pendientes (ver `D20`).
+
+### Lógica con la regla «test débil ≤ MEDIUM» (S-38)
+Tras acotar la severidad en `roles/logica.md`, 3 corridas más de Argon solo en Lógica, **mismo fixture**
+(`repeticiones/argon-logica-m<n>/`, `repeticiones/puntuar-logica-m.mjs`; 3 llamadas, 3/3 informes válidos):
+| | m1 | m2 | m3 | Umbral |
+|---|---|---|---|---|
+| Entrega | ✅ | ✅ | ✅ | 3/3 ✅ |
+| `L1` bloqueante | ✅ HIGH | ✅ HIGH | ✅ HIGH | ≥ 2/3 ✅ |
+| `L2` bloqueante | ✅ HIGH | ✅ HIGH | ✅ HIGH | ≥ 2/3 ✅ |
+| «Test débil» | MEDIUM | MEDIUM | MEDIUM | (antes HIGH en 2/3) |
+| FP bloqueantes | 0 | 0 | 0 (repite XSS y clave CRITICAL de Seguridad: defectos reales) | ≤ 1 ✅ |
+**Lógica cumple el umbral en este fixture.** Salvedad: la regla se escribió *después* de ver el fallo en este mismo
+fixture, así que esta medición confirma que la regla funciona pero **no demuestra generalización**; hace falta una
+segunda tarea con defectos distintos antes de tratar a Argon como revisor de Lógica y de plantear `automerge`.
