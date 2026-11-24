@@ -1,6 +1,6 @@
 # T2.7 — Medición de revisores con defectos sembrados (parcial)
 
-**Fecha:** 2026-11-09 · **Estado:** incompleta: falta Argon. No se decide `D20`. Flash completó Lógica con una instrucción extra (ver abajo).
+**Fecha:** 2026-11-09 · **Estado:** Argon medido 3 veces (S-37, abajo). `D20` **propuesta, pendiente del dueño**. Flash completó Lógica con una instrucción extra (ver abajo).
 
 ## Qué se midió
 Una tarea sintética (`fixture/`, módulo de notas, 5 defectos sembrados que los tests no atrapan) con su
@@ -20,13 +20,13 @@ CRITICAL/HIGH que no corresponde a ningún defecto.
 ## Resultado
 | Defecto | Claude (Sonnet 5.5, sin herramientas) | Flash 3.8 (`agy`) | Argon (`agy`) |
 |---|---|---|---|
-| S1 | ✅ bloqueante | ✅ bloqueante | sin datos |
-| S2 | ✅ bloqueante | ✅ bloqueante | sin datos |
-| S3 | ✅ bloqueante | ✅ bloqueante | sin datos |
-| L1 | ❌ no | ❌ no | sin datos |
-| L2 | 🟡 solo MEDIUM/LOW | ✅ bloqueante | sin datos |
-| **Detectados** | **4/5** (3 bloqueantes) | **4/5** (4 bloqueantes)* | — |
-| Falsos positivos HIGH/CRITICAL | 1 (discutible, ver salvedades) | 0 | — |
+| S1 | ✅ bloqueante | ✅ bloqueante | ✅ 2/3 bloq. (3 corridas, ver S-37) |
+| S2 | ✅ bloqueante | ✅ bloqueante | ✅ 2/3 bloq. (3 corridas, ver S-37) |
+| S3 | ✅ bloqueante | ✅ bloqueante | ✅ 3/3 bloq. (3 corridas, ver S-37) |
+| L1 | ❌ no | ❌ no | ✅ 3/3 bloq. (3 corridas, ver S-37) |
+| L2 | 🟡 solo MEDIUM/LOW | ✅ bloqueante | ✅ 3/3 bloq. (3 corridas, ver S-37) |
+| **Detectados** | **4/5** (3 bloqueantes) | **4/5** (4 bloqueantes)* | **5/5** (bloqueantes, por la puntuación literal) |
+| Falsos positivos HIGH/CRITICAL | 1 (discutible, ver salvedades) | 0 | ver S-37 |
 
 \* Flash con la variante `noejecutar` en Lógica (abajo). Sin ella, Lógica no entregaba informe (3/5).
 | Ruido MEDIUM/LOW | 0 | 0 | — |
@@ -72,7 +72,59 @@ la frase iría en `_contexto.md` o en el rol Lógica.
   `paginar` desde 0 habría pasado. El aprobador no lo arregla (no ve lo que el revisor no reporta, `D12`).
 - Falta Argon, el modelo por defecto de `D13`: sin esa fila no hay `D20`.
 
-## Para completarla
-1. Esperar la cuota de Argon (≈ 2026-11-14) y correr `node medir.mjs --modelos argon`.
-2. Repetir Flash/Lógica con y sin la instrucción para ver si el efecto es estable; si lo es, llevarla al producto.
-3. Repetir cada modelo 3 veces y, si se quiere precisión, añadir una segunda tarea con defectos sutiles.
+## Argon, 3 corridas (S-37, 2026-11-23)
+Ejecutado según `ticket-argon.md` (umbral fijado antes de correr). `node medir.mjs --modelos argon` ×3, sin
+variante (la frase ya está en el producto, `SIN_HERRAMIENTAS`); 6 llamadas, todas con informe válido
+(33–72 s por rol). Informes en `repeticiones/argon-<n>/`, puntuación en `repeticiones/argon-puntuacion.json`
+(`repeticiones/puntuar-argon.mjs`). `puntuar.mjs` y `claves.json` **no se tocaron**. Cada defecto se cuenta
+en el informe de **su propio rol**. Respaldo de Flash en `repeticiones-flash/`.
+
+**Puntuación literal** (`puntuar.mjs` tal cual; bloqueante = CRITICAL/HIGH):
+| | Corr. 1 | Corr. 2 | Corr. 3 | Umbral |
+|---|---|---|---|---|
+| Entrega Seguridad / Lógica | ✅ / ✅ | ✅ / ✅ | ✅ / ✅ | 3/3 y 3/3 → **cumple** |
+| S1 XSS | ✅ (*) | ✅ | ❌ (solo MEDIUM) | ≥ 2/3 → cumple (*) |
+| S2 CSV | ❌ | ✅ | ✅ | ≥ 2/3 → cumple |
+| S3 clave | ✅ | ✅ | ✅ | cumple |
+| L1 paginar | ✅ | ✅ | ✅ | cumple |
+| L2 promedio vacío | ✅ | ✅ | ✅ | cumple |
+| FP bloqueantes Seguridad | 1 | 0 | 1 | ≤ 1 y ninguno repetido → **no cumple** (2, repetido) |
+| FP bloqueantes Lógica | 2 | 1 | 1 | **no cumple** (4, repetidos) |
+
+**Lectura de los falsos positivos (hay que decidirla; no ajusté nada):**
+- *Seguridad:* los 2 «FP» son el XSS real (`S1`). Argon citó `notas.js:17` (o `17-20`) y el ancla de `S1` está en la
+  línea 19: `puntuar.mjs` usa solo la **primera** línea de un rango, con holgura ±1, y falla por 2. Leyendo las
+  descripciones, **los tres defectos de Seguridad salen como CRITICAL/HIGH en 3/3 corridas y no hay FP de
+  Seguridad**; el MEDIUM sobre `nota.autor` es ruido. (La puntuación literal «S1 ✅ en la corrida 1» es por
+  casualidad: asignó a `S1` el hallazgo del CSV.)
+- *Lógica:* el informe de Lógica repitió XSS y clave como CRITICAL (defectos reales de otro rol, permitido por el
+  contexto) —puntuados como FP por el mismo motivo de líneas—, y **en 2 de 3 corridas** marcó como **HIGH** que
+  el test de `paginar` es débil (`tests/notas.test.js:6`). Eso no es un defecto sembrado: **FP genuino y repetido**,
+  aunque defendible (el test sí deja pasar `L1`). Con cualquiera de las dos lecturas **Lógica no cumple el criterio
+  de FP**.
+
+**Caso según el umbral:**
+- Lectura literal: Seguridad falla por FP → **caso C**.
+- Corrigiendo solo el artefacto de líneas (los «FP» de Seguridad son `S1`): Seguridad cumple, Lógica falla por
+  FP (detección 5/5 y entrega 3/3, pero 2 HIGH repetidos sobre el test) → **caso B**.
+- En ninguna lectura es **A**. Detección y entrega de Argon son las mejores medidas hasta ahora (5/5 de los
+  defectos de su rol, sin fallos de entrega); lo que lo frena es el ruido bloqueante de Lógica.
+
+### Propuesta de `D20` (provisional, **no registrada** en `memoria.md`)
+Una sola tarea sintética, 5 defectos de manual y 3 corridas: es una indicación, no una medida fiable.
+1. Argon revisor de **Seguridad** (y de Lógica si se acepta el ruido sobre los tests, que hoy bloquearía rondas
+   por un HIGH discutible).
+2. **`automerge` sigue apagado** en ambos casos (`D4`/`D18`): no se cumple A.
+3. Decisiones para el dueño: (a) ¿se acepta corregir el matching de rangos de `puntuar.mjs` (usar cualquier
+   línea del rango) y puntuar de nuevo **sin repetir llamadas**? (b) ¿el HIGH sobre «test débil» cuenta como FP
+   o como hallazgo legítimo (y entonces el rol Lógica debe acotar su severidad)? (c) ¿B o C?
+
+### Decisión del dueño (S-37): caso B, con rangos corregidos
+Se corrigió `puntuar.mjs` (acepta rangos y varias ubicaciones; 3 tests nuevos en `tests/medicion.test.js`) y se
+repuntuaron las mismas 6 llamadas, sin tocar `claves.json` ni el umbral. Resultado:
+| Criterio | Seguridad | Lógica |
+|---|---|---|
+| Entrega | 3/3 ✅ | 3/3 ✅ |
+| Detección bloqueante | `S1` 3/3 · `S2` 2/3 · `S3` 3/3 ✅ | `L1` 3/3 · `L2` 3/3 ✅ |
+| FP bloqueantes | 1 (corr. 1: XSS citado en `:17`, el defecto está en 19) ✅ | 2, repetidos (HIGH «test débil», corr. 1 y 3) ❌ |
+**Caso B.** `D20` registrada en `memoria.md` como provisional. Opciones para Lógica pendientes (ver `D20`).

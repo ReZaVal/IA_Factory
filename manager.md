@@ -85,9 +85,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 - **Fase 4 (S-33):** `T4.3` ✅: `verificar-doi.mjs` (Crossref; suite simulada + prueba manual real); siguiente `T4.4`.
 - **Fase 4 (S-32):** `T4.2` ✅: corpus `research/corpus/` (plantilla, convenciones, `corpus.mjs validar`); siguiente `T4.3`.
 - **Fase 4 (S-31):** `T4.1` ✅: `constitucion-investigacion.md` (14 reglas) e `instalar.sh --carril investigacion`; pendiente visto bueno del dueño. Siguiente: `T4.2` (corpus).
-- **Próximos pasos:** el dueño decidió esperar a Argon (cuota de `agy` ≈ 2026-11-14): entonces
-  correr `node medir.mjs --modelos argon` (en el spike de `T2.7`), cerrar `T2.7` con `D20` y seguir con `T2.6`.
-  Antes de planear la corrida, comprobar con una llamada barata que Argon responde (`L14`).
+- **Próximos pasos:** `T2.7` cerrada con `D20` (Argon en Seguridad, `automerge` apagado). Pendiente del dueño: revisor de Lógica. Luego `T2.6`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

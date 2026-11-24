@@ -19,8 +19,8 @@ export function lineasDeDefectos(claves, fuente) {
   }));
 }
 
-/** Número de línea de «archivo:12» o «archivo:12-15» (la primera). */
-const lineaDe = (ubicacion) => Number(ubicacion.match(/:(\d+)/)?.[1]) || null;
+/** Rangos [ini, fin] de «archivo:12», «archivo:12-15» o varias separadas por comas (S-37: antes solo la primera línea). */
+const rangosDe = (ubicacion) => [...ubicacion.matchAll(/:(\d+)(?:\s*-\s*(\d+))?/g)].map((m) => [Number(m[1]), Number(m[2] ?? m[1])]);
 
 /**
  * @param {string} informe
@@ -31,10 +31,10 @@ const lineaDe = (ubicacion) => Number(ubicacion.match(/:(\d+)/)?.[1]) || null;
  */
 export function hallazgosPuntuados(informe, rol, claves, lineas, holgura = 1) {
   return hallazgosDeInforme(informe, rol).map((h) => {
-    const n = lineaDe(h.ubicacion);
+    const rangos = rangosDe(h.ubicacion);
     const defecto = claves.defectos.find((d) => {
       const set = lineas.get(d.id);
-      if (n !== null) return [...set].some((l) => Math.abs(l - n) <= holgura);
+      if (rangos.length) return [...set].some((l) => rangos.some(([a, b]) => l >= a - holgura && l <= b + holgura));
       return new RegExp(d.palabras, "i").test(`${h.descripcion} ${h.correccion}`);
     });
     return { ...h, defecto: defecto?.id ?? null };

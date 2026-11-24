@@ -1,0 +1,57 @@
+{
+  "modelo": "flash",
+  "rol": "logica",
+  "resumen": [
+    {
+      "variante": "ninguna",
+      "n": 1,
+      "ok": false,
+      "segundos": null,
+      "error": "logica/gemini-3.8-flash-medium: agy terminó sin respuesta: jetski: no output produced — a tool required the \"command\" permission that headless mode cannot promp"
+    },
+    {
+      "variante": "ninguna",
+      "n": 2,
+      "ok": false,
+      "segundos": null,
+      "error": "logica/gemini-3.8-flash-medium: agy terminó sin respuesta: jetski: no output produced — a tool required the \"command\" permission that headless mode cannot promp"
+    },
+    {
+      "variante": "ninguna",
+      "n": 3,
+      "ok": false,
+      "segundos": null,
+      "error": "logica/gemini-3.8-flash-medium: agy terminó sin respuesta: jetski: no output produced — a tool required the \"command\" permission that headless mode cannot promp"
+    },
+    {
+      "variante": "noejecutar",
+      "n": 1,
+      "ok": true,
+      "segundos": 72.807,
+      "error": null,
+      "L1": true,
+      "L2": true,
+      "falsosPositivos": 0
+    },
+    {
+      "variante": "noejecutar",
+      "n": 2,
+      "ok": true,
+      "segundos": 81.461,
+      "error": null,
+      "L1": true,
+      "L2": true,
+      "falsosPositivos": 0
+    },
+    {
+      "variante": "noejecutar",
+      "n": 3,
+      "ok": true,
+      "segundos": 106.877,
+      "error": null,
+      "L1": true,
+      "L2": true,
+      "falsosPositivos": 0
+    }
+  ]
+}

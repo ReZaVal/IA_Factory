@@ -339,6 +339,24 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   `automerge` solo en proyectos propios, coherente con `D17`. `T2.5` se probó en
   `ReZaVal/CoLLMena` (S-24, a pedido del usuario); `T2.6` depende de `T2.7`.
 
+### D20 — Argon revisor de Seguridad; Lógica abierta; `automerge` apagado (provisional)
+- **Decisión:** según la medición `T2.7` (`docs/superpowers/spikes/T2.7/informe.md`, caso B
+  del umbral fijado en S-36): **Argon** (`gemini-4-argon-medium`) es el revisor de
+  **Seguridad**. `automerge` (`D18`) **sigue apagado**. El revisor de **Lógica** no
+  se fija: queda por decidir entre las opciones de abajo.
+- **Razón (decidida por el usuario, S-37, 2026-11-23: «Caso B, corregir rangos»):** 3
+  corridas de Argon entregaron 6/6 informes; Seguridad: `S1`-`S3` bloqueantes en ≥ 2/3
+  y 1 falso positivo bloqueante en total → cumple. Lógica: `L1` y `L2` bloqueantes en
+  3/3, pero 2 falsos positivos HIGH repetidos (el test de `paginar` es débil) → no cumple.
+  Se corrigió `puntuar.mjs` para aceptar rangos de línea (antes solo la primera línea) y se
+  repuntuó sin repetir llamadas; claves y umbral no cambiaron.
+- **Alternativas rechazadas:** caso A (Argon en ambos roles y `automerge` opcional): Lógica no
+  cumple el criterio de falsos positivos; caso C (descartar a Argon): Seguridad sí cumple.
+- **Opciones abiertas para Lógica (sin elegir):** Argon acotando la severidad de «test débil»;
+  Claude en paralelo; una segunda tarea de medición; exigir tests de casos borde.
+- **Impacto:** **provisional**: una sola tarea sintética, 5 defectos de manual y 3 corridas.
+  `T2.6` deja de depender de `T2.7`. `automerge` no se activa en ningún repo.
+
 ## 4. Contrato de datos / estructura
 Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen.schema.json`
 (JSON Schema 2020-12). Resumen (`D18`):

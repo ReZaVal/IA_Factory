@@ -19,6 +19,24 @@ describe("claves", () => {
   });
 });
 
+describe("ubicaciones con rango", () => {
+  const l = lineasDeDefectos(claves, fuente);
+  const linea = Math.min(...l.get("S1"));
+  it("un rango que contiene la línea del defecto lo detecta aunque empiece lejos", () => {
+    const r = puntuarModelo([{ rol: "seguridad", informe: informe(["CRITICAL", `\`src/notas.js:${linea - 3}-${linea + 1}\``, "xss en el título"]) }], claves, fuente);
+    expect(r.defectos.find((d) => d.id === "S1")).toMatchObject({ comoBloqueante: true });
+    expect(r.falsosPositivos).toBe(0);
+  });
+  it("varias ubicaciones separadas por comas: basta una", () => {
+    const r = puntuarModelo([{ rol: "seguridad", informe: informe(["HIGH", `\`src/notas.js:900\`, \`src/notas.js:${linea}\``, "xss"]) }], claves, fuente);
+    expect(r.defectos.find((d) => d.id === "S1").comoBloqueante).toBe(true);
+  });
+  it("un rango lejano de todo defecto sigue siendo falso positivo", () => {
+    const r = puntuarModelo([{ rol: "seguridad", informe: informe(["HIGH", "`src/notas.js:900-905`", "otra cosa"]) }], claves, fuente);
+    expect(r.falsosPositivos).toBe(1);
+  });
+});
+
 describe("puntuarModelo", () => {
   it("cuenta defectos por línea, bloqueantes, falsos positivos y ruido", () => {
     const l = lineasDeDefectos(claves, fuente);
