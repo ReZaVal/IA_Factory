@@ -76,6 +76,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   (PR #6, check `tests` verde, protección aplicada a `main`). Su check es de humo.
 - **Medición (S-25):** `T2.7` 🟡: Claude 4/5 (perdió L1; L2 solo MEDIUM/LOW); Flash 3/5, o 4–5/5 con «no ejecutes nada» en Lógica (frase ya en el producto; 4 corridas);
   Argon sin cuota hasta ≈ 2026-11-14. Sin `D20`. Ver `docs/superpowers/spikes/T2.7/informe.md`.
+- **Medición (S-36):** Argon 5/5 y Hydrogen 4/5 (una corrida cada uno); `D20` registrada con Hydrogen para el código de Claude, `automerge` sigue apagado; `fabrica.md` deja el paso manual a `integrar.mjs` (`T2.6`).
 - **Integración (S-26):** `T2.6` ✅: `integrar.mjs` probado de punta a punta en CoLLMena (PR #7 mezclado tras CI verde);
   falta `D20` (`T2.7`) para activar `automerge` en proyectos reales.
 - **Fase 3 (S-27):** `T3.1`-`T3.4` ✅ (constitución, roles ML, `verificar.mjs`, repo de prueba

@@ -2,7 +2,7 @@
 // Medición de revisores con defectos sembrados (T2.7, D12/D13). Monta un repo temporal con la
 // fábrica instalada y el fixture sin commitear, corre Seguridad y Lógica con cada modelo y puntúa
 // los informes contra claves.json.
-// Uso: node medir.mjs [--modelos argon,flash,claude] [--roles seguridad,logica] [--variante noejecutar] [--solo-puntuar]
+// Uso: node medir.mjs [--modelos argon,hydrogen,flash,claude] [--roles seguridad,logica] [--variante noejecutar] [--solo-puntuar]
 //   --variante noejecutar: añade al rol, solo en el repo temporal, «no tienes herramientas, no ejecutes nada» (L14)
 //   --roles: repite solo esos roles y conserva el resto de resultados/<modelo>/meta.json
 //   argon = agy/gemini-4-argon-medium · flash = agy/gemini-3.8-flash-medium · claude = claude -p (Sonnet, sin herramientas)
@@ -22,6 +22,7 @@ const ROLES = ["seguridad", "logica"];
 const TAREA = "T9.1";
 const MODELOS = {
   argon: { motor: "agy", id: "gemini-4-argon-medium" },
+  hydrogen: { motor: "agy", id: "gemini-4-hydrogen-medium" },
   flash: { motor: "agy", id: "gemini-3.8-flash-medium" },
   claude: { motor: "claude", id: "claude-sonnet-5-5" }
 };

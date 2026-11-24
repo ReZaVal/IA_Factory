@@ -290,6 +290,13 @@ describe("fabrica TX.Y: pipeline completo", () => {
     expect(existsSync(path.join(repo, "src/suma.js"))).toBe(false);
   });
 
+  it("al APROBAR, fabrica.md deja el siguiente paso: commit manual y integrar.mjs --dry-run (T2.6, D4)", () => {
+    montarRepo();
+    fabrica(["T9.1"]);
+    const informe = readFileSync(path.join(wt(), ".revision/T9.1/fabrica.md"), "utf8");
+    expect(informe).toMatch(/Siguiente paso[\s\S]*commitea[\s\S]*integrar\.mjs --tarea T9\.1 --ronda 1 --raiz \S+ --dry-run/);
+  });
+
   it("los agentes Claude corren con acceptEdits y sin poder commitear", () => {
     montarRepo();
     fabrica(["T9.1"], { FABRICA_TESTS: "node tests/suma.test.js --ok" });

@@ -1,6 +1,8 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- `fabrica.mjs` deja en `fabrica.md` un «Siguiente paso (manual)» al APROBAR: commit de la persona y `integrar.mjs --dry-run` (`T2.6`, `D4`).
+- Medición `T2.7`: `medir.mjs` admite `hydrogen`; Argon 5/5 y Hydrogen 4/5 con defectos sembrados; `D20`.
 - Carril investigación en la fábrica (`T4.5`): si el proyecto trae `scripts/investigacion/`, cada ronda corre
   `corpus.mjs validar` y `verificar-doi.mjs` (con `FABRICA_DOCUMENTOS`); un fallo da CAMBIOS REQUERIDOS sin llamar a
   revisores. Crossref caído corta la corrida solo si no hay otros fallos; `verificar-doi.mjs` reintenta una vez y

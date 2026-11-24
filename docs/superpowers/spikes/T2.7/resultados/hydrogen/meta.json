@@ -1,0 +1,20 @@
+{
+  "modelo": "gemini-4-hydrogen-medium",
+  "motor": "agy",
+  "roles": {
+    "seguridad": {
+      "ok": true,
+      "segundos": 35.353,
+      "costo": 0
+    },
+    "logica": {
+      "ok": true,
+      "segundos": 32.436,
+      "costo": 0
+    }
+  },
+  "variantes": {
+    "seguridad": "noejecutar",
+    "logica": "noejecutar"
+  }
+}

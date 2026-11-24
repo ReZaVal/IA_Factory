@@ -1,4 +1,61 @@
 {
+  "argon": {
+    "detectados": 5,
+    "detectadosBloqueantes": 5,
+    "total": 5,
+    "falsosPositivos": 1,
+    "ruido": 1,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "XSS: el título de la nota va sin escapar en renderNota",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S2",
+        "titulo": "Inyección de fórmulas en el CSV: =, +, -, @ al inicio de celda",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "S3",
+        "titulo": "Clave de exportación escrita en el código",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "L1",
+        "titulo": "paginar numera desde 0: la página 1 se salta los primeros elementos",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L2",
+        "titulo": "promedio de lista vacía da NaN en vez de 0",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      }
+    ],
+    "falsos": [
+      {
+        "rol": "seguridad",
+        "ubicacion": "`src/notas.js:17-18`",
+        "descripcion": "**Captura y exposición de dato personal no especificado (`autor`):** `renderNota` procesa y muestra `nota.autor ?? \"anónimo\"`, un dato identificativo de persona que no figura en el Contrato #1 (solo especifica título y texto) y añade tratamiento de datos personales no contemplado en la spec."
+      }
+    ],
+    "rolesCompletos": 2
+  },
   "claude": {
     "detectados": 4,
     "detectadosBloqueantes": 3,
@@ -105,6 +162,63 @@
       }
     ],
     "falsos": [],
+    "rolesCompletos": 2
+  },
+  "hydrogen": {
+    "detectados": 4,
+    "detectadosBloqueantes": 4,
+    "total": 5,
+    "falsosPositivos": 1,
+    "ruido": 1,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "XSS: el título de la nota va sin escapar en renderNota",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S2",
+        "titulo": "Inyección de fórmulas en el CSV: =, +, -, @ al inicio de celda",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "S3",
+        "titulo": "Clave de exportación escrita en el código",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "L1",
+        "titulo": "paginar numera desde 0: la página 1 se salta los primeros elementos",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L2",
+        "titulo": "promedio de lista vacía da NaN en vez de 0",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      }
+    ],
+    "falsos": [
+      {
+        "rol": "logica",
+        "ubicacion": "`src/notas.js:17`",
+        "descripcion": "`renderNota` interpola `nota.titulo` sin escapar (`<h3>${nota.titulo}</h3>`), permitiendo inyección HTML/XSS e incumpliendo el Contrato 1 y el Criterio 1."
+      }
+    ],
     "rolesCompletos": 2
   }
 }

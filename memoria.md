@@ -366,6 +366,23 @@ Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen
   `APROBADO` sin CRITICAL/HIGH confirmados, suite en verde re-ejecutada por el
   script, `radio = bajo`, vía no FTD y `automerge` activo en el proyecto.
 
+### D20 — Revisores del código de Claude: Hydrogen; auto-merge sigue apagado
+- **Decisión (S-36, 2026-11-23, dirección del dueño):** el código o producto que
+  escribe Claude lo revisa Hydrogen (`gemini-4-hydrogen-medium` vía `agy`, `D13`),
+  con `SIN_HERRAMIENTAS`. El `automerge` (`D4`) no se activa en proyectos reales
+  mientras no se repita la medición (3 corridas por modelo y una segunda tarea).
+- **Datos (`T2.7`, una tarea, una corrida):** Argon 5/5 (1 FP), Flash 5/5 (0 FP),
+  Hydrogen 4/5 (1 FP, falla `L2` promedio de lista vacía), Claude 4/5 (`L1` perdido).
+  Sin varianza: sirve para descartar, no para elegir con precisión.
+- **Riesgo conocido:** Hydrogen no vio `L2`, que Argon y Flash sí vieron como
+  bloqueante. Mitigación propuesta, pendiente de tu confirmación: Argon o Flash como
+  segundo revisor de Lógica.
+- **Alternativas rechazadas:** solo Claude como revisor (revisa su propio estilo y
+  perdió `L1`); activar el auto-merge ya (la cobertura de Lógica no está medida con
+  repeticiones).
+- **Impacto:** `AGY_MODEL`/`MODELO_AGY` de `gemini.mjs` y la plantilla `.env` aún
+  apuntan a Argon: cambiarlos tras tu OK.
+
 ## 5. Preguntas abiertas
 - [ ] **P1 — Ritmo, duración de sesión y deadline.** Provisional: 1 sesión por
   semana de 1-2 h, sin deadline (como Supervisión de Contratistas). Confirmar;

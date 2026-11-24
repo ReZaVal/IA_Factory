@@ -542,6 +542,18 @@ function paginaEvidencia(ctx) {
   }
 }
 
+/** T2.6/D4: la fábrica no commitea ni integra sola; deja el paso manual para quien aprueba. */
+function siguientePaso(ctx) {
+  const ronda = ctx.rondas().at(-1)?.n ?? 1;
+  return [
+    "",
+    "## Siguiente paso (manual)",
+    `1. Revisa el cambio y commitea en la rama del worktree (\`${ctx.wt}\`): la fábrica no commitea (D4).`,
+    `2. Mira qué haría el gatekeeper: \`node scripts/revision/integrar.mjs --tarea ${ctx.tarea} --ronda ${ronda} --raiz ${ctx.wt} --dry-run\``,
+    "3. Si te parece bien, repite sin `--dry-run`: abre el PR (y mezcla solo con radio bajo, `automerge` activo y CI en verde)."
+  ];
+}
+
 function informeFabrica(ctx, { resultado, motivo, escalar }, ultimoVeredicto, pagina = "") {
   const costo = ctx.pasos().reduce((n, p) => n + p.costo, 0);
   return [
@@ -554,7 +566,8 @@ function informeFabrica(ctx, { resultado, motivo, escalar }, ultimoVeredicto, pa
     "| Paso | Resultado | Costo (US$) |",
     "|---|---|---|",
     ...ctx.pasos().map((p) => `| ${p.nombre} | ${p.resultado.replaceAll("|", "\\|")} | ${p.costo.toFixed(2)} |`),
-    ...(escalar ? ["", "## Último veredicto", "", ultimoVeredicto.trim()] : [])
+    ...(escalar ? ["", "## Último veredicto", "", ultimoVeredicto.trim()] : []),
+    ...(resultado === "APROBADO" ? siguientePaso(ctx) : [])
   ].join("\n");
 }
 

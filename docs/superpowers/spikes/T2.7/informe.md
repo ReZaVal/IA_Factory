@@ -1,6 +1,6 @@
 # T2.7 — Medición de revisores con defectos sembrados (parcial)
 
-**Fecha:** 2026-11-09 · **Estado:** incompleta: falta Argon. No se decide `D20`. Flash completó Lógica con una instrucción extra (ver abajo).
+**Fecha:** 2026-11-09 · **Estado:** Argon medido el 2026-11-23 (S-36), con la variante `noejecutar`. `D20` la decide el dueño. Flash completó Lógica con una instrucción extra (ver abajo).
 
 ## Qué se midió
 Una tarea sintética (`fixture/`, módulo de notas, 5 defectos sembrados que los tests no atrapan) con su
@@ -20,13 +20,13 @@ CRITICAL/HIGH que no corresponde a ningún defecto.
 ## Resultado
 | Defecto | Claude (Sonnet 5.5, sin herramientas) | Flash 3.8 (`agy`) | Argon (`agy`) |
 |---|---|---|---|
-| S1 | ✅ bloqueante | ✅ bloqueante | sin datos |
-| S2 | ✅ bloqueante | ✅ bloqueante | sin datos |
-| S3 | ✅ bloqueante | ✅ bloqueante | sin datos |
-| L1 | ❌ no | ❌ no | sin datos |
-| L2 | 🟡 solo MEDIUM/LOW | ✅ bloqueante | sin datos |
-| **Detectados** | **4/5** (3 bloqueantes) | **4/5** (4 bloqueantes)* | — |
-| Falsos positivos HIGH/CRITICAL | 1 (discutible, ver salvedades) | 0 | — |
+| S1 | ✅ bloqueante | ✅ bloqueante | ✅ bloqueante |
+| S2 | ✅ bloqueante | ✅ bloqueante | ✅ bloqueante |
+| S3 | ✅ bloqueante | ✅ bloqueante | ✅ bloqueante |
+| L1 | ❌ no | ❌ no | ✅ bloqueante |
+| L2 | 🟡 solo MEDIUM/LOW | ✅ bloqueante | ✅ bloqueante |
+| **Detectados** | **4/5** (3 bloqueantes) | **4/5** (4 bloqueantes)* | **5/5** (5 bloqueantes, una corrida; 76 s) |
+| Falsos positivos HIGH/CRITICAL | 1 (discutible, ver salvedades) | 0 | 1 (sin revisar su causa) |
 
 \* Flash con la variante `noejecutar` en Lógica (abajo). Sin ella, Lógica no entregaba informe (3/5).
 | Ruido MEDIUM/LOW | 0 | 0 | — |
@@ -53,6 +53,9 @@ bloqueante y siguió sin ver `L1`. **Repetido 3 veces con y sin la frase** (`rep
 Sumando la corrida anterior con la frase, `L1` salió en 3 de 4 y `L2` en 4 de 4. Son pocas corridas de una sola tarea: indica un efecto fuerte sobre *si responde*, no una tasa fiable de detección. **El producto no cambió:** si se adopta,
 la frase iría en `_contexto.md` o en el rol Lógica.
 
+## Hydrogen (S-36)
+`gemini-4-hydrogen-medium` (`agy`, variante `noejecutar`, una corrida): **4/5** bloqueantes; vio `S1`-`S3` y `L1`, **falló `L2`** (promedio de lista vacía); 1 FP y 1 ruido; 68 s. Es el revisor que eligió el dueño para el código de Claude (`D20`), con ese hueco conocido.
+
 ## Salvedades
 - **Una sola tarea con 5 defectos y una sola corrida por modelo:** no hay varianza ni significancia; 5/5
   frente a 3/5 no es 100 % frente a 60 %. Sirve para descartar, no para elegir con precisión.
@@ -70,7 +73,7 @@ la frase iría en `_contexto.md` o en el rol Lógica.
   Claude vio `L2` solo como MEDIUM/LOW y Flash, con la instrucción extra, como bloqueante. Los de Seguridad (XSS, CSV, clave) sí los ven ambos.
 - Con esto **no se justifica el auto-merge** (`D4`) apoyado solo en estos revisores: un bug de lógica como
   `paginar` desde 0 habría pasado. El aprobador no lo arregla (no ve lo que el revisor no reporta, `D12`).
-- Falta Argon, el modelo por defecto de `D13`: sin esa fila no hay `D20`.
+- Argon (modelo por defecto de `D13`) detectó los 5 defectos como bloqueantes, incluidos `L1` y `L2`, en una sola corrida y una sola tarea: es el único que vio `L1` sin ayuda, pero no hay varianza. Con 1 FP. La fila existe; `D20` espera la decisión del dueño.
 
 ## Para completarla
 1. Esperar la cuota de Argon (≈ 2026-11-14) y correr `node medir.mjs --modelos argon`.
