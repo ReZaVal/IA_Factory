@@ -81,7 +81,7 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   activen esta opción (debe ser **opt-in por proyecto**, inferencia a confirmar
   en `T2.1`).
 
-### D5 — Carriles: software, ML, investigación y multimedia
+### D5 — Carriles: software, ML, investigación y multimedia (multimedia retirado por `D21`)
 - **Decisión:** se implementan los cuatro carriles.
 - **Razón:** elegido por el usuario (S-01).
 - **Alternativas rechazadas:** solo software.
@@ -382,6 +382,17 @@ Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen
   `APROBADO` sin CRITICAL/HIGH confirmados, suite en verde re-ejecutada por el
   script, `radio = bajo`, vía no FTD y `automerge` activo en el proyecto.
 
+### D21 — Se retira el carril multimedia (Fase 5)
+- **Decisión (S-37, 2026-11-23):** el carril multimedia deja de ser parte del proyecto.
+  Salen `T5.1`-`T5.5` (constitución, FFmpeg, frames, safe zones, prueba en un video).
+  Quedan tres carriles: software, ML e investigación.
+- **Razón:** elegida por el usuario: «eso ya no irá en el proyecto».
+- **Alternativas rechazadas:** dejarlo postergado como `D6`/`D7` (se descarta, no se
+  pospone).
+- **Impacto:** reemplaza lo dicho en `D5` sobre multimedia; cierre estimado de las
+  fases 1-4 en 2027-04-05. `propuesta_t_cnica_universal_ai_factory.md` conserva el texto
+  original (es el documento de partida).
+
 ## 5. Preguntas abiertas
 - [ ] **P1 — Ritmo, duración de sesión y deadline.** Provisional: 1 sesión por
   semana de 1-2 h, sin deadline (como Supervisión de Contratistas). Confirmar;
@@ -398,7 +409,7 @@ Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen
   usuario; una copia de un proyecto real queda como segunda prueba. Corrida
   real hecha (S-11): `T1.1` y `T1.2` aprobadas por la fábrica con `agy`. Carril ML (S-28): repo sintético
   `/home/renzo/IA_Factory_ML_Test` (churn, sklearn), creado a pedido del usuario. Corrida real ML (S-30): `T1.1` APROBADO con Flash. Faltan
-  investigación y multimedia.
+  investigación (multimedia retirado, `D21`).
 
 - [ ] **P5 — Rondas y paso del auditor de spec.** `T1.3` dejó provisional:
   máx. 2 rondas planificador ↔ auditor y luego al usuario; el rol `spec` es
