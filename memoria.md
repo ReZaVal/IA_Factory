@@ -339,26 +339,22 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   `automerge` solo en proyectos propios, coherente con `D17`. `T2.5` se probó en
   `ReZaVal/CoLLMena` (S-24, a pedido del usuario); `T2.6` depende de `T2.7`.
 
-### D20 — Argon revisor de Seguridad; Lógica abierta; `automerge` apagado (provisional)
-- **Decisión:** según la medición `T2.7` (`docs/superpowers/spikes/T2.7/informe.md`, caso B
-  del umbral fijado en S-36): **Argon** (`gemini-4-argon-medium`) es el revisor de
-  **Seguridad**. `automerge` (`D18`) **sigue apagado**. El revisor de **Lógica** no
-  se fija: queda por decidir entre las opciones de abajo.
-- **Razón (decidida por el usuario, S-37, 2026-11-23: «Caso B, corregir rangos»):** 3
-  corridas de Argon entregaron 6/6 informes; Seguridad: `S1`-`S3` bloqueantes en ≥ 2/3
-  y 1 falso positivo bloqueante en total → cumple. Lógica: `L1` y `L2` bloqueantes en
-  3/3, pero 2 falsos positivos HIGH repetidos (el test de `paginar` es débil) → no cumple.
-  Se corrigió `puntuar.mjs` para aceptar rangos de línea (antes solo la primera línea) y se
-  repuntuó sin repetir llamadas; claves y umbral no cambiaron.
-- **Alternativas rechazadas:** caso A (Argon en ambos roles y `automerge` opcional): Lógica no
-  cumple el criterio de falsos positivos; caso C (descartar a Argon): Seguridad sí cumple.
-- **Lógica (S-38, el usuario eligió acotar la severidad):** el rol `logica.md` del carril software limita a
-  MEDIUM los hallazgos sobre tests débiles o ausentes. **Validado en el mismo fixture** (S-38, 3 corridas):
-  `L1`/`L2` HIGH 3/3, «test débil» MEDIUM 3/3, 0 FP bloqueantes → cumple el umbral. **Sin generalizar:** la regla
-  se escribió viendo ese fixture; falta una segunda tarea sintética antes de dar a Argon por revisor de Lógica.
-  Siguen abiertas: Claude en paralelo, exigir tests de casos borde.
-- **Impacto:** **provisional**: una sola tarea sintética, 5 defectos de manual y 3 corridas.
-  `T2.6` deja de depender de `T2.7`. `automerge` no se activa en ningún repo.
+### D20 — Argon revisor de Seguridad, Hydrogen revisor de Lógica; `automerge` sigue apagado (provisional)
+- **Decisión:** revisor de **Seguridad** = Argon (`gemini-4-argon-medium`); revisor de **Lógica** =
+  Hydrogen (`gemini-4-hydrogen-medium`), ambos por `agy`. El rol `logica.md` del carril software limita a
+  MEDIUM los hallazgos sobre tests débiles o ausentes. **`automerge` (`D18`) no se activa** en ningún repo:
+  queda como opt-in del dueño, proyecto por proyecto y solo propios (`D17`).
+- **Razón (S-37 y S-39, 2026-11-23, decidida por el usuario: «Argon no ve lógica, Hydrogen puede»):** con
+  3 corridas por celda en dos tareas sintéticas (5 defectos cada una), el umbral de S-36 se cumple: Argon en
+  Seguridad (`S1`-`S3` bloqueantes 3/3 en ambas, ≤ 1 falso positivo bloqueante, no repetido) y Hydrogen en
+  Lógica (`L1`/`L2` bloqueantes 3/3 en ambas, 0 falsos positivos). Argon en Lógica, sin la regla de MEDIUM,
+  falló por falsos positivos repetidos (HIGH «test débil»); `puntuar.mjs` ahora admite rangos y rescata
+  por palabras clave los hallazgos con líneas desfasadas (el modelo cuenta mal las líneas).
+- **Alternativas rechazadas:** Argon también en Lógica (el usuario prefirió Hydrogen, aunque con la regla de
+  MEDIUM también cumplió); Claude en paralelo (más caro y no medido en esta tanda); descartar a Argon.
+- **Impacto:** **provisional**: dos tareas sintéticas de defectos de manual. Hydrogen en Seguridad y Argon en
+  Lógica con otra tarea no se midieron en la misma medida. Falta cablear el modelo por rol en el producto
+  (`roles.json`/`gemini.mjs`, hoy un solo `AGY_MODEL`). `T2.6` deja de depender de `T2.7`.
 
 ## 4. Contrato de datos / estructura
 Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen.schema.json`

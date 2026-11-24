@@ -157,5 +157,56 @@
     ],
     "falsos": [],
     "rolesCompletos": 2
+  },
+  "hydrogen": {
+    "detectados": 4,
+    "detectadosBloqueantes": 4,
+    "total": 5,
+    "falsosPositivos": 0,
+    "ruido": 0,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "XSS: el título de la nota va sin escapar en renderNota",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": false,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S2",
+        "titulo": "Inyección de fórmulas en el CSV: =, +, -, @ al inicio de celda",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      },
+      {
+        "id": "S3",
+        "titulo": "Clave de exportación escrita en el código",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": false,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "L1",
+        "titulo": "paginar numera desde 0: la página 1 se salta los primeros elementos",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L2",
+        "titulo": "promedio de lista vacía da NaN en vez de 0",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      }
+    ],
+    "falsos": [],
+    "rolesCompletos": 1
   }
 }

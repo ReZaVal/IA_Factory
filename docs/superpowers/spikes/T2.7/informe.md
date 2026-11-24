@@ -142,3 +142,53 @@ Tras acotar la severidad en `roles/logica.md`, 3 corridas más de Argon solo en 
 **Lógica cumple el umbral en este fixture.** Salvedad: la regla se escribió *después* de ver el fallo en este mismo
 fixture, así que esta medición confirma que la regla funciona pero **no demuestra generalización**; hace falta una
 segunda tarea con defectos distintos antes de tratar a Argon como revisor de Lógica y de plantear `automerge`.
+
+### Segunda tarea (T9.2, S-39): Lógica con Argon, 3 corridas
+Fixture nuevo (`fixture2/`, `claves2.json`; `medir.mjs --tarea 2`): módulo de recordatorios, defectos distintos
+(`S1` contaminación de prototipo al importar, `S2` etiqueta sin escapar en un atributo, `S3` `Math.random` para el
+código del enlace, `L1` `proximos` excluye el último día, `L2` `agruparPorEtiqueta` solo usa la primera etiqueta).
+Los tests del fixture pasan con los defectos y el de `proximos` solo mira el tamaño. Se corrió **solo Lógica** con la
+regla «test débil ≤ MEDIUM», 3 llamadas (3/3 informes, 29–35 s): `repeticiones/argon2-logica-<n>/`,
+`repeticiones/puntuar-tarea2.mjs`.
+
+| | 1 | 2 | 3 |
+|---|---|---|---|
+| `L1` (por descripción) | HIGH | HIGH | HIGH |
+| `L2` (por descripción) | HIGH | HIGH | HIGH |
+| Tests débiles | 2 × MEDIUM | 2 × MEDIUM | 2 × MEDIUM |
+| FP bloqueantes reales | 0 | 0 | 0 |
+| `S1` (de otro rol) | — | — | MEDIUM |
+
+**Puntuación literal de `puntuar.mjs`: `L1` 0/3 y `L2` 0/3, y 6 «falsos positivos» HIGH.** Es un artefacto de líneas:
+Argon citó `:39`/`:47` (corr. 1 y 3) y `:48`/`:56` (corr. 2) cuando los defectos están en las líneas 43 y 51
+(desfase de −4 y de +5 a +8), fuera de la holgura de ±1; los textos describen exactamente `L1` y `L2`. Leyendo las
+descripciones, Lógica **cumple el umbral** (entrega 3/3, `L1`/`L2` bloqueantes 3/3, 0 FP bloqueantes). No ajusté
+`puntuar.mjs` para esto, pero **conviene decidir cómo puntuar** (el modelo cuenta mal las líneas; en la primera tarea
+también se desfasó 1-2). Hipótesis sin comprobar: el diff que recibe no numera las líneas del archivo.
+Conclusión: la regla generaliza (los 6 hallazgos sobre tests salieron MEDIUM) y Argon encuentra los dos defectos
+de Lógica en una tarea distinta. Seguridad de la segunda tarea no se midió.
+
+### Puntuación por palabras clave, Hydrogen y Seguridad de la tarea 2 (S-39)
+**Decisión del dueño:** Argon no se usa en Lógica; Hydrogen sí; comparar por palabras clave; medir Seguridad.
+- **`puntuar.mjs`:** si la línea citada no cae en ningún defecto, se busca por palabras clave (≥ 2 coincidencias, sin
+  empate) y **solo si el hallazgo apunta al archivo con defectos** (uno sobre los tests no se rescata). Si la línea y el
+  texto se contradicen, manda el texto; si la línea toca varios defectos, desempata el texto. 4 tests nuevos. Se
+  repuntuó todo: **Claude y Flash no cambian**; las corridas de Argon de la tarea 1 tampoco. Script único:
+  `repeticiones/puntuar-todo.mjs`. `claves*.json` y umbral sin cambios.
+- **Hydrogen** (`gemini-4-hydrogen-medium`, mismo prompt y regla «test débil ≤ MEDIUM»), Lógica, 3 corridas por tarea:
+  6/6 informes (31–48 s).
+
+| Conjunto (3 corridas) | Entrega | Defectos del rol | FP bloqueantes (por corrida) | Umbral |
+|---|---|---|---|---|
+| **Hydrogen, Lógica, tarea 1** | 3/3 | `L1` 3/3, `L2` 3/3 bloqueantes | 0, 0, 0 | ✅ |
+| **Hydrogen, Lógica, tarea 2** | 3/3 | `L1` 3/3, `L2` 3/3 bloqueantes | 0, 0, 0 | ✅ |
+| **Argon, Seguridad, tarea 2** | 3/3 | `S1`, `S2`, `S3` 3/3 bloqueantes | 1, 0, 0 (`JSON.parse` sin manejo de errores, HIGH, solo una vez) | ✅ |
+| Argon, Seguridad, tarea 1 | 3/3 | `S1`-`S3` 3/3 | 0, 0, 0 | ✅ |
+| Argon, Lógica, tarea 1 (prompt anterior) | 3/3 | `L1`, `L2` 3/3 | 1, 0, 1 (HIGH «test débil», repetido) | ❌ |
+| Argon, Lógica con la regla MEDIUM, tareas 1 y 2 | 6/6 | `L1`, `L2` 6/6 | 0 en las 6 | ✅ (no se usará, por decisión) |
+
+**Lectura:** Argon en Seguridad y Hydrogen en Lógica cumplen el umbral en **las dos tareas**; es el **caso A** con esa
+combinación. Salvedades: dos tareas sintéticas con defectos de manual y 3 corridas por celda; Hydrogen en Seguridad y
+Argon en Lógica con `L1`/`L2` ya cumplían, así que Hydrogen no se mide *frente a* otro revisor de Lógica que fallara;
+los informes de Lógica de Hydrogen traen 2-4 hallazgos cruzados de Seguridad (permitido si son CRITICAL; no
+penalizan). La regla «test débil ≤ MEDIUM» se escribió viendo la tarea 1; la tarea 2 es la que la valida.

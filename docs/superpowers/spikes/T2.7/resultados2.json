@@ -1,0 +1,120 @@
+{
+  "argon": {
+    "detectados": 3,
+    "detectadosBloqueantes": 3,
+    "total": 5,
+    "falsosPositivos": 3,
+    "ruido": 2,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "Contaminación de prototipo al importar: combinar sigue claves como __proto__",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S2",
+        "titulo": "Etiqueta sin escapar dentro del atributo data-etiqueta",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S3",
+        "titulo": "Código del enlace con Math.random: predecible",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L1",
+        "titulo": "proximos excluye el último día de la ventana (< en vez de <=)",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      },
+      {
+        "id": "L2",
+        "titulo": "agruparPorEtiqueta solo usa la primera etiqueta",
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
+      }
+    ],
+    "falsos": [
+      {
+        "rol": "seguridad",
+        "ubicacion": "`src/recordatorios.js`:37-39",
+        "descripcion": "**`JSON.parse` sin manejo de errores sobre entrada de usuario:** `importar(json, base)` ejecuta `JSON.parse(json)` directamente sin `try/catch` sobre el contenido de un archivo externo no confiable, lanzando una excepción no controlada si el archivo está corrupto o malformado, además de no validar que la raíz parseada sea un objeto plano antes de combinarla."
+      },
+      {
+        "rol": "logica",
+        "ubicacion": "`src/recordatorios.js:39`",
+        "descripcion": "`proximos()` usa `r.fecha < limite` en lugar de `r.fecha <= limite`, excluyendo el extremo superior de la ventana (`ahora + dias * DIA_MS`) cuando el contrato 3 exige **ambos extremos incluidos**."
+      },
+      {
+        "rol": "logica",
+        "ubicacion": "`src/recordatorios.js:47-49`",
+        "descripcion": "`agruparPorEtiqueta()` solo toma la primera etiqueta (`r.etiquetas?.[0] ?? SIN_ETIQUETA`), incumpliendo el contrato 4 («Un recordatorio con varias etiquetas aparece **en cada una**»)."
+      }
+    ],
+    "rolesCompletos": 2
+  },
+  "hydrogen": {
+    "detectados": 5,
+    "detectadosBloqueantes": 5,
+    "total": 5,
+    "falsosPositivos": 0,
+    "ruido": 1,
+    "defectos": [
+      {
+        "id": "S1",
+        "titulo": "Contaminación de prototipo al importar: combinar sigue claves como __proto__",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": false,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S2",
+        "titulo": "Etiqueta sin escapar dentro del atributo data-etiqueta",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": false,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "S3",
+        "titulo": "Código del enlace con Math.random: predecible",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": false,
+        "severidad": "CRITICAL"
+      },
+      {
+        "id": "L1",
+        "titulo": "proximos excluye el último día de la ventana (< en vez de <=)",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      },
+      {
+        "id": "L2",
+        "titulo": "agruparPorEtiqueta solo usa la primera etiqueta",
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
+      }
+    ],
+    "falsos": [],
+    "rolesCompletos": 1
+  }
+}

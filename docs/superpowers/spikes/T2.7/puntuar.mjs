@@ -32,14 +32,29 @@ const rangosDe = (ubicacion) => [...ubicacion.matchAll(/:(\d+)(?:\s*-\s*(\d+))?/
 export function hallazgosPuntuados(informe, rol, claves, lineas, holgura = 1) {
   return hallazgosDeInforme(informe, rol).map((h) => {
     const rangos = rangosDe(h.ubicacion);
-    const defecto = claves.defectos.find((d) => {
-      const set = lineas.get(d.id);
-      if (rangos.length) return [...set].some((l) => rangos.some(([a, b]) => l >= a - holgura && l <= b + holgura));
-      return new RegExp(d.palabras, "i").test(`${h.descripcion} ${h.correccion}`);
-    });
+    if (!rangos.length) return { ...h, defecto: claves.defectos.find((d) => aciertosDePalabras(d, h) > 0)?.id ?? null };
+    const porLinea = claves.defectos.filter((d) => [...lineas.get(d.id)].some((l) => rangos.some(([a, b]) => l >= a - holgura && l <= b + holgura)));
+    const porTexto = apuntaAlArchivoDelDefecto(h.ubicacion, claves) ? mejorPorPalabras(claves.defectos, h) : undefined;
+    const maxLinea = Math.max(0, ...porLinea.map((d) => aciertosDePalabras(d, h)));
+    // El texto manda si contradice a la línea (el modelo cuenta mal las líneas) o si no hay línea que valga.
+    const defecto = porTexto && !porLinea.includes(porTexto) && aciertosDePalabras(porTexto, h) > maxLinea
+      ? porTexto
+      : (porLinea.length > 1 ? mejorPorPalabras(porLinea, h) ?? porLinea[0] : porLinea[0] ?? porTexto);
     return { ...h, defecto: defecto?.id ?? null };
   });
 }
+
+/** Palabras de `d.palabras` (separadas por |) que aparecen en el hallazgo. */
+const aciertosDePalabras = (d, h) => d.palabras.split("|").filter((p) => new RegExp(p, "i").test(`${h.descripcion} ${h.correccion}`)).length;
+
+/** Defecto con más palabras clave en el hallazgo: al menos 2 y sin empate. @returns {object|undefined} */
+function mejorPorPalabras(candidatos, h) {
+  const puntos = candidatos.map((d) => [d, aciertosDePalabras(d, h)]).sort((x, y) => y[1] - x[1]);
+  return puntos[0]?.[1] >= 2 && puntos[0][1] > (puntos[1]?.[1] ?? 0) ? puntos[0][0] : undefined;
+}
+
+/** ¿La ubicación cita un archivo con defectos sembrados? (un hallazgo sobre los tests no se rescata por palabras). */
+const apuntaAlArchivoDelDefecto = (ubicacion, claves) => claves.defectos.some((d) => ubicacion.includes(d.archivo));
 
 /**
  * Resultado de un modelo: junta los informes de sus roles.
