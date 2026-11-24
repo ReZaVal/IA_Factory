@@ -1,0 +1,17 @@
+{
+  "modelo": "gemini-4-argon-medium",
+  "motor": "agy",
+  "roles": {
+    "logica": {
+      "ok": true,
+      "segundos": 28.973,
+      "costo": 0
+    },
+    "seguridad": {
+      "ok": true,
+      "segundos": 48.982,
+      "costo": 0
+    }
+  },
+  "variantes": {}
+}

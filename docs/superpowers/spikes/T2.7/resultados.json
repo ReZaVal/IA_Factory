@@ -4,7 +4,7 @@
     "detectadosBloqueantes": 5,
     "total": 5,
     "falsosPositivos": 1,
-    "ruido": 1,
+    "ruido": 0,
     "defectos": [
       {
         "id": "S1",
@@ -20,7 +20,7 @@
         "detectado": true,
         "comoBloqueante": true,
         "porSuRol": true,
-        "severidad": "HIGH"
+        "severidad": "CRITICAL"
       },
       {
         "id": "S3",
@@ -49,9 +49,9 @@
     ],
     "falsos": [
       {
-        "rol": "seguridad",
-        "ubicacion": "`src/notas.js:17-18`",
-        "descripcion": "**Captura y exposición de dato personal no especificado (`autor`):** `renderNota` procesa y muestra `nota.autor ?? \"anónimo\"`, un dato identificativo de persona que no figura en el Contrato #1 (solo especifica título y texto) y añade tratamiento de datos personales no contemplado en la spec."
+        "rol": "logica",
+        "ubicacion": "`tests/notas.test.js:6`",
+        "descripcion": "El test de `paginar` solo verifica `.length` sobre un arreglo de 6 elementos (`paginar([1, 2, 3, 4, 5, 6], 2, 2).length`), ocultando el desplazamiento de página e incumpliendo el criterio de aceptación 3 (`paginar([1,2,3,4,5], 2, 2)` devuelve `[3, 4]`) y C7. Además, faltan tests para `promedio([])` y páginas fuera de rango."
       }
     ],
     "rolesCompletos": 2
@@ -60,7 +60,7 @@
     "detectados": 4,
     "detectadosBloqueantes": 3,
     "total": 5,
-    "falsosPositivos": 1,
+    "falsosPositivos": 0,
     "ruido": 0,
     "defectos": [
       {
@@ -104,13 +104,7 @@
         "severidad": "LOW"
       }
     ],
-    "falsos": [
-      {
-        "rol": "seguridad",
-        "ubicacion": "src/notas.js:51-54",
-        "descripcion": "`destinoExportacion()` prepara el envío del CSV a un servicio externo con `Authorization: Bearer`. El contexto dice que los datos nunca salen del dispositivo salvo por la descarga que hace la persona. Eso expone notas de texto libre y posibles datos personales a un tercero, sin que la spec lo pida."
-      }
-    ],
+    "falsos": [],
     "rolesCompletos": 2
   },
   "flash": {
@@ -168,31 +162,31 @@
     "detectados": 4,
     "detectadosBloqueantes": 4,
     "total": 5,
-    "falsosPositivos": 1,
-    "ruido": 1,
+    "falsosPositivos": 0,
+    "ruido": 0,
     "defectos": [
       {
         "id": "S1",
         "titulo": "XSS: el título de la nota va sin escapar en renderNota",
         "detectado": true,
         "comoBloqueante": true,
-        "porSuRol": true,
+        "porSuRol": false,
         "severidad": "CRITICAL"
       },
       {
         "id": "S2",
         "titulo": "Inyección de fórmulas en el CSV: =, +, -, @ al inicio de celda",
-        "detectado": true,
-        "comoBloqueante": true,
-        "porSuRol": true,
-        "severidad": "HIGH"
+        "detectado": false,
+        "comoBloqueante": false,
+        "porSuRol": false,
+        "severidad": null
       },
       {
         "id": "S3",
         "titulo": "Clave de exportación escrita en el código",
         "detectado": true,
         "comoBloqueante": true,
-        "porSuRol": true,
+        "porSuRol": false,
         "severidad": "CRITICAL"
       },
       {
@@ -206,19 +200,13 @@
       {
         "id": "L2",
         "titulo": "promedio de lista vacía da NaN en vez de 0",
-        "detectado": false,
-        "comoBloqueante": false,
-        "porSuRol": false,
-        "severidad": null
+        "detectado": true,
+        "comoBloqueante": true,
+        "porSuRol": true,
+        "severidad": "HIGH"
       }
     ],
-    "falsos": [
-      {
-        "rol": "logica",
-        "ubicacion": "`src/notas.js:17`",
-        "descripcion": "`renderNota` interpola `nota.titulo` sin escapar (`<h3>${nota.titulo}</h3>`), permitiendo inyección HTML/XSS e incumpliendo el Contrato 1 y el Criterio 1."
-      }
-    ],
-    "rolesCompletos": 2
+    "falsos": [],
+    "rolesCompletos": 1
   }
 }

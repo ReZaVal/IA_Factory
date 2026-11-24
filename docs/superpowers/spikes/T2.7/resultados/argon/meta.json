@@ -4,17 +4,14 @@
   "roles": {
     "seguridad": {
       "ok": true,
-      "segundos": 38.962,
+      "segundos": 33.4,
       "costo": 0
     },
     "logica": {
       "ok": true,
-      "segundos": 37.183,
+      "segundos": 40.33,
       "costo": 0
     }
   },
-  "variantes": {
-    "seguridad": "noejecutar",
-    "logica": "noejecutar"
-  }
+  "variantes": {}
 }

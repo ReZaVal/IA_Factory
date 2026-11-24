@@ -17,6 +17,9 @@ Eres el revisor de corrección lógica. Busca:
   viejo sintético.
 - **Tests:** que fallen si el código se rompe (no tautológicos), casos borde
   (listas vacías, estado corrupto, valores desconocidos).
+  **Severidad:** un test débil o que falta es como máximo **MEDIUM**; no lo marques
+  HIGH ni CRITICAL. Reserva esas severidades para un bug que *tú* demuestras en el
+  código del diff (con su línea), aunque los tests no lo atrapen.
 
 ## Qué entregas además del formato común
 No opines sobre lo que se puede ejecutar. Sección `## Sondas`: los casos borde que te preocupan

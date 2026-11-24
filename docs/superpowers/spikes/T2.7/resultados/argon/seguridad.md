@@ -5,33 +5,38 @@
 ## Hallazgos
 | # | Severidad | Archivo:línea | Hallazgo | Corrección sugerida |
 |---|---|---|---|---|
-| 1 | CRITICAL | `src/notas.js:18` | **XSS en `renderNota` (viola C5 y Contrato #1):** `nota.titulo` se interpola directamente en `<h3>${nota.titulo}</h3>` sin pasar por `escaparHtml`, permitiendo ejecución de scripts si el título contiene HTML/JS (escrito por la persona usuaria o importado desde un archivo). | Escapar el título antes de interpolarlo: `<h3>${escaparHtml(nota.titulo)}</h3>`. |
-| 2 | CRITICAL | `src/notas.js:3-4`, `src/notas.js:50-53` | **Clave secreta y URL de exfiltración en el código (viola C2, Contexto y Contrato #6):** Se definen `SERVICIO_EXPORTACION` y el token bearer hardcoded `CLAVE_EXPORTACION` (`expo-9f3a7c1e5b2d4086a1c7e3f9b5d20481`), expuestos mediante `destinoExportacion()`. Además de incluir un secreto en archivo versionado (C2 y Contrato #6), contradice que los datos viven solo en el navegador y nunca salen del dispositivo salvo descarga local. | Eliminar `SERVICIO_EXPORTACION`, `CLAVE_EXPORTACION` y la función `destinoExportacion()`. |
-| 3 | HIGH | `src/notas.js:21-24`, `src/notas.js:27-30` | **Inyección de fórmulas en CSV (viola C6 y Contrato #2):** `celdaCsv` no neutraliza valores que comienzan por `=`, `+`, `-` o `@` (ni tras comillas o espacios iniciales). Como el archivo se abre en una hoja de cálculo, un título o texto importado/escrito que empiece por `=` ejecutará fórmulas arbitrarias. | Si `texto` comienza con `[=+\-@]` (o tabulación/retorno de carro iniciales), prefijar con una comilla simple `'` (p. ej. `'/^[=+\-@]/.test(texto) ? "'" + texto : texto'`) antes de escapar comillas y comas. |
-| 4 | HIGH | `src/notas.js:17-18` | **Captura y exposición de dato personal no especificado (`autor`):** `renderNota` procesa y muestra `nota.autor ?? "anónimo"`, un dato identificativo de persona que no figura en el Contrato #1 (solo especifica título y texto) y añade tratamiento de datos personales no contemplado en la spec. | Eliminar la lectura y renderizado de `nota.autor` en `renderNota` (y retirar `autor: "Ana"` del test en `tests/notas.test.js:4`), o documentar y aprobar su captura en la spec. |
+| 1 | CRITICAL | `src/notas.js:17-20` | **XSS por interpolación de `nota.titulo` sin escapar en HTML**: `renderNota` interpola `${nota.titulo}` directamente dentro de `<h3>...</h3>` sin pasar por `escaparHtml`. Dado que el título es texto libre de la persona usuaria o proviene de archivos importados, permite inyección de HTML/JavaScript arbitrario (incumple C5 y punto 1 del contrato). | Envolver `nota.titulo` con `escaparHtml(nota.titulo ?? "")` al construir el HTML en `renderNota`. |
+| 2 | CRITICAL | `src/notas.js:22-25`, `src/notas.js:28-31` | **Inyección de fórmulas en exportación CSV**: `celdaCsv` no neutraliza valores que comienzan por caracteres de fórmula (`=`, `+`, `-`, `@`, ni tabuladores o retornos de carro iniciales) antes de generar la celda. Al abrir el CSV en una hoja de cálculo, una nota o título importado con `=CMD(...)` o similar puede ejecutar fórmulas (incumple C6 y punto 2 del contrato). | Si el texto de la celda comienza con `=`, `+`, `-` o `@`, anteponer un apóstrofe (`'`) o neutralizar el prefijo antes de escapar comillas en `celdaCsv`. |
+| 3 | CRITICAL | `src/notas.js:3-4`, `src/notas.js:48-51` | **Clave/token y URL de servicio externo codificados en el repositorio y filtración de datos**: Se definen `SERVICIO_EXPORTACION` y el token Bearer `CLAVE_EXPORTACION = "expo-9f3a7c1e5b2d4086a1c7e3f9b5d20481"` en el código fuente, además de exportar `destinoExportacion()` para subir el CSV a un servidor externo. Incumple C2, el punto 6 del contrato y la restricción de privacidad del contexto (los datos viven en el navegador y nunca salen del dispositivo). | Eliminar `SERVICIO_EXPORTACION`, `CLAVE_EXPORTACION` y la función `destinoExportacion()`. |
+| 4 | MEDIUM | `src/notas.js:18-19` | **Captura y renderizado de dato personal no especificado (`nota.autor`)**: `renderNota` lee y muestra `nota.autor` (y en `tests/notas.test.js:4` se incluye `autor: "Ana"`), campo que no figura en el contrato de `renderNota` (que especifica únicamente título y texto de la nota). | Mostrar únicamente título y texto en `renderNota(nota)` según el contrato, eliminando el uso de `nota.autor`. |
 
 ## Superficie de entrada
-- **`escaparHtml(texto)`** (`src/notas.js:6`): recibe `texto` (cualquier valor convertible a string procedente de datos de la nota) para ser escapado antes de su inserción en HTML.
-- **`renderNota(nota)`** (`src/notas.js:16`): recibe un objeto `nota` con `nota.titulo`, `nota.texto` y `nota.autor`. Los datos provienen de texto libre escrito por la persona usuaria en el navegador o de archivos importados.
-- **`exportarCsv(notas)`** (`src/notas.js:27`): recibe un arreglo `notas` donde cada elemento tiene `titulo` (texto libre/importado), `texto` (texto libre/importado) y `nota` (numérico). Genera contenido CSV que la persona descarga y abre en una hoja de cálculo.
-- **`paginar(items, pagina, tamano)`** (`src/notas.js:33`): recibe arreglo `items` y parámetros numéricos de paginación `pagina` y `tamano`.
-- **`promedio(notas)`** (`src/notas.js:40`): recibe arreglo de objetos con la propiedad numérica `nota`.
-- **`ordenarPorNota(notas)`** (`src/notas.js:46`): recibe arreglo de objetos con la propiedad numérica `nota`.
-- **`destinoExportacion()`** (`src/notas.js:51`): sin parámetros de entrada; expone configuración de red (`url`) y credenciales (`authorization`).
+- **`escaparHtml(texto)`** (`src/notas.js:7`): recibe `texto` (cualquier valor convertible a `String`, proveniente de campos de texto libre o archivos importados).
+- **`renderNota(nota)`** (`src/notas.js:17`): recibe el objeto `nota` con propiedades `nota.titulo`, `nota.texto` y `nota.autor` (provenientes de entrada libre de la persona usuaria en el navegador o de archivos importados).
+- **`exportarCsv(notas)`** (`src/notas.js:28`): recibe un arreglo `notas` donde cada elemento aporta `n.titulo`, `n.texto` y `n.nota` (datos escritos por la persona usuaria o importados desde archivos) que pasan a `celdaCsv(valor)` para construir el archivo CSV descargable.
+- **`paginar(items, pagina, tamano)`** (`src/notas.js:34`): recibe el arreglo `items` y los parámetros numéricos `pagina` y `tamano`.
+- **`promedio(notas)`** (`src/notas.js:40`): recibe el arreglo `notas` y lee `n.nota`.
+- **`ordenarPorNota(notas)`** (`src/notas.js:45`): recibe el arreglo `notas` y lee `a.nota` / `b.nota`.
+- **`destinoExportacion()`** (`src/notas.js:49`): no recibe parámetros; expone configuración estática de red y credenciales (`SERVICIO_EXPORTACION`, `CLAVE_EXPORTACION`).
 
 ## Sondas
 ```json
 [
   {
-    "id": "a1",
+    "id": "s1",
     "hallazgo": 1,
-    "titulo": "XSS mediante etiquetas HTML en nota.titulo",
+    "titulo": "XSS en renderNota a través de nota.titulo sin escapar",
     "pasos": [
       {
-        "id": "r",
+        "id": "r1",
         "modulo": "src/notas.js",
         "funcion": "renderNota",
-        "args": [{ "titulo": "<script>alert(1)</script>", "texto": "Hola", "autor": "anónimo" }],
+        "args": [
+          {
+            "titulo": "<script>alert(1)</script>",
+            "texto": "Hola"
+          }
+        ],
         "espera": {
           "valor": "<article class=\"nota\"><h3>&lt;script&gt;alert(1)&lt;/script&gt;</h3><p>Hola</p><small>anónimo</small></article>"
         }
@@ -39,56 +44,60 @@
     ]
   },
   {
-    "id": "a2",
+    "id": "s2",
     "hallazgo": 2,
-    "titulo": "Clave secreta y token Bearer hardcoded en src/notas.js",
-    "comando": ["grep", "-n", "CLAVE_EXPORTACION", "src/notas.js"],
-    "espera": { "codigo": 1 }
-  },
-  {
-    "id": "a3",
-    "hallazgo": 3,
-    "titulo": "Inyección de fórmulas (=CMD) al inicio de celda en exportarCsv",
+    "titulo": "Inyección de fórmulas en exportarCsv con prefijo '='",
     "pasos": [
       {
-        "id": "r",
+        "id": "r2",
         "modulo": "src/notas.js",
         "funcion": "exportarCsv",
-        "args": [[{ "titulo": "=CMD|' /C calc'!A0", "texto": "normal", "nota": 10 }]],
+        "args": [
+          [
+            {
+              "titulo": "=1+1",
+              "texto": "normal",
+              "nota": 10
+            }
+          ]
+        ],
         "espera": {
-          "valor": "titulo,texto,nota\n'=CMD|' /C calc'!A0,normal,10"
+          "valor": "titulo,texto,nota\n'=1+1,normal,10"
         }
       }
     ]
   },
   {
-    "id": "a4",
-    "hallazgo": 4,
-    "titulo": "Renderizado de campo personal no especificado (autor) en renderNota",
+    "id": "s3",
+    "hallazgo": 3,
+    "titulo": "Secreto hardcodeado CLAVE_EXPORTACION en src/notas.js",
+    "comando": [
+      "grep",
+      "-n",
+      "CLAVE_EXPORTACION",
+      "src/notas.js"
+    ],
+    "espera": {
+      "codigo": 1
+    }
+  },
+  {
+    "id": "s4",
+    "hallazgo": null,
+    "titulo": "Escape correcto de HTML en nota.texto dentro de renderNota",
     "pasos": [
       {
-        "id": "r",
+        "id": "r4",
         "modulo": "src/notas.js",
         "funcion": "renderNota",
-        "args": [{ "titulo": "Clase", "texto": "Hola" }],
+        "args": [
+          {
+            "titulo": "Seguro",
+            "texto": "<img src=x onerror=alert(1)>"
+          }
+        ],
         "espera": {
-          "valor": "<article class=\"nota\"><h3>Clase</h3><p>Hola</p></article>"
-        }
-      }
-    ]
-  },
-  {
-    "id": "a5",
-    "hallazgo": null,
-    "titulo": "XSS en nota.texto es neutralizado por escaparHtml",
-    "pasos": [
-      {
-        "id": "r",
-        "modulo": "src/notas.js",
-        "funcion": "escaparHtml",
-        "args": ["<img src=x onerror=\"alert('xss')\">"],
-        "espera": {
-          "valor": "&lt;img src=x onerror=&quot;alert(&#39;xss&#39;)&quot;&gt;"
+          "valor": "<article class=\"nota\"><h3>Seguro</h3><p>&lt;img src=x onerror=alert(1)&gt;</p><small>anónimo</small></article>"
         }
       }
     ]
@@ -97,11 +106,11 @@
 ```
 
 ## Qué verifiqué
-- **Escapado HTML / XSS (`src/notas.js:6-19`):** Leí `escaparHtml` y comprobé que reemplaza `&`, `<`, `>`, `"` y `'`. Luego revisé `renderNota` (`src/notas.js:16-19`) y verifiqué línea por línea qué campos pasan por `escaparHtml`: `nota.texto` y `nota.autor` sí se escapan, pero `nota.titulo` se interpola crudo en `<h3>${nota.titulo}</h3>` (línea 18).
-- **Secretos y exfiltración (`src/notas.js:3-4`, `src/notas.js:50-53`):** Inspeccioné las constantes de nivel de módulo y funciones exportadas buscando URLs, tokens y cabeceras de autorización. Encontré `SERVICIO_EXPORTACION`, `CLAVE_EXPORTACION` y `destinoExportacion()`.
-- **Inyección en exportaciones CSV (`src/notas.js:21-30`):** Analicé `celdaCsv` y `exportarCsv` verificando el tratamiento de caracteres especiales. Confirmé que escapa `"`, `,` y `\n`, pero carece de neutralización para prefijos de fórmulas (`=`, `+`, `-`, `@`).
-- **Datos personales y pruebas (`src/notas.js:17-18`, `tests/notas.test.js:4`):** Revisé qué campos personales se manipulan en el código frente al contrato de `specs/T9.1.md`, detectando el campo `autor` no solicitado en la spec y el valor sintético `"Ana"` en el test.
-- **Cadena de suministro (`src/notas.js:1-54`, `tests/notas.test.js:1-12`):** Verifiqué todas las sentencias `import` en el diff; solo se utiliza `node:assert` en los tests y módulos locales sin dependencias externas ni scripts de CDN.
+- **Escape de HTML frente a XSS (C5)**: Revisión de `escaparHtml` (`src/notas.js:7-14`) y `renderNota` (`src/notas.js:17-20`). Verifiqué que `nota.texto` y `nota.autor` pasan por `escaparHtml`, pero `nota.titulo` se interpola sin escapar en `<h3>${nota.titulo}</h3>` (línea 19).
+- **Neutralización de fórmulas en CSV (C6)**: Revisión de `celdaCsv` (`src/notas.js:22-25`) y `exportarCsv` (`src/notas.js:28-31`). Verifiqué el tratamiento de comas, comillas y saltos de línea, y comprobé que no existe validación ni neutralización para celdas que inicien con `=`, `+`, `-` o `@`.
+- **Secretos y exfiltración de datos (C2 y Contrato 6)**: Lectura de `src/notas.js:3-4` y `src/notas.js:48-51`. Verifiqué la presencia de constantes con URL externa (`SERVICIO_EXPORTACION`) y token Bearer (`CLAVE_EXPORTACION`) expuestos mediante `destinoExportacion()`.
+- **Datos personales y fixtures de pruebas (C1)**: Lectura de `src/notas.js:18-19` y `tests/notas.test.js:1-11`. Verifiqué el uso del campo `autor` y que los datos en tests son sintéticos (`"Ana"`, `"Clase"`, `"Hola"`).
+- **Cadena de suministro y almacenamiento (C3, C4, C8)**: Revisión del diff completo para confirmar que no se introducen dependencias externas, llamadas a CDN, `JSON.parse` sin captura de errores ni modificaciones al formato de almacenamiento local.
 
 ## Evidencia
 ```javascript
@@ -109,30 +118,29 @@
 const SERVICIO_EXPORTACION = "https://exportaciones.cuaderno.example/v1";
 const CLAVE_EXPORTACION = "expo-9f3a7c1e5b2d4086a1c7e3f9b5d20481";
 
-// src/notas.js:16-19
+// src/notas.js:17-25
 export function renderNota(nota) {
   const nombre = escaparHtml(nota.autor ?? "anónimo");
   return `<article class="nota"><h3>${nota.titulo}</h3><p>${escaparHtml(nota.texto)}</p><small>${nombre}</small></article>`;
 }
 
-// src/notas.js:21-24
 function celdaCsv(valor) {
   const texto = String(valor ?? "");
   return /[",\n]/.test(texto) ? `"${texto.replaceAll('"', '""')}"` : texto;
 }
 
-// src/notas.js:50-53
+// src/notas.js:49-51
 export function destinoExportacion() {
   return { url: SERVICIO_EXPORTACION, cabeceras: { authorization: `Bearer ${CLAVE_EXPORTACION}` } };
 }
 ```
 
 ## Qué supuse
-- **Formato de neutralización de fórmulas CSV (Hallazgo 3 / Sonda `a3`):** Ni la spec ni `constitucion-software.md` (C6) fijan el carácter exacto de escape para neutralizar fórmulas al inicio de celda. Supuse la convención estándar de prefijar con comilla simple (`'`), descartando prefijar con tabulación (`\t`) o espacio, porque `'` es el estándar más extendido en hojas de cálculo sin alterar la visualización de la celda.
-- **Estructura HTML esperada sin `autor` (Hallazgo 4 / Sonda `a4`):** Supuse que `renderNota` debe devolver únicamente `<article class="nota"><h3>...</h3><p>...</p></article>` sin la etiqueta `<small>`, ya que el Contrato #1 especifica exclusivamente «una tarjeta con el título y el texto de la nota».
+- Para la sonda `s2` (inyección de fórmulas en CSV), supuse la convención estándar de neutralización prefijando con apóstrofe (`'`) las celdas que comienzan con `=`, `+`, `-` o `@` (descartando envolver en comillas con espacio o eliminar el carácter inicial, ya que la constitución C6 y la spec no fijan el carácter exacto de escape para fórmulas).
+- Para la sonda `s1`, mantuve la etiqueta `<small>anónimo</small>` que produce la estructura actual de `renderNota` con el fin de aislar en la sonda exclusivamente el fallo de XSS en `<h3>`.
 
 ## Qué no pude verificar
-- **Persistencia en almacenamiento local (`localStorage` / `IndexedDB`) e importación de archivos:** El diff solo incluye funciones puras en `src/notas.js`; no pude verificar cómo se parsean los archivos importados (`JSON.parse` con `try/catch`) ni cómo se guardan o migran las notas en el navegador porque ese código no forma parte del diff recibido.
+- Cómo se consume el valor devuelto por `renderNota(nota)` y `exportarCsv(notas)` en el resto de la aplicación, ni si algún otro módulo del repositorio invoca `destinoExportacion()`, ya que solo recibí el diff de `specs/T9.1.md`, `src/notas.js` y `tests/notas.test.js` sin herramientas de lectura ni ejecución.
 
 ## Preguntas
 Ninguna.

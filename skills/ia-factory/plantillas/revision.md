@@ -11,8 +11,8 @@ Flujo multi-agente de IA Factory (`memoria.md D<n>`). Las decisiones viven en
 | Auditor de spec | Gemini (`agy`) + chequeos deterministas | `scripts/revision/roles/spec.md`, `spec.mjs` | `.revision/TX.Y/spec.md` |
 | Clasificador de vía (FTD / SDD) | determinista | `scripts/revision/via.mjs` | `.revision/TX.Y/via.md` |
 | Constructor | Claude Opus 5.5 | `.claude/agents/constructor.md` | código + tests |
-| Revisor 1 — Seguridad/Datos | Gemini (`agy`, `AGY_MODEL`) | `scripts/revision/roles/seguridad.md` | `.revision/TX.Y/seguridad.md` |
-| Revisor 2 — Lógica/Métricas | Gemini (`agy`) | `scripts/revision/roles/logica.md` | `.revision/TX.Y/logica.md` |
+| Revisor 1 — Seguridad/Datos | Gemini (`agy`, Argon por defecto) | `scripts/revision/roles/seguridad.md` | `.revision/TX.Y/seguridad.md` |
+| Revisor 2 — Lógica/Métricas | Gemini (`agy`, Hydrogen por defecto) | `scripts/revision/roles/logica.md` | `.revision/TX.Y/logica.md` |
 | Revisor 3 — UI/Visión | Claude Sonnet 5.5 + capturas | `.claude/agents/revisor-ui.md`, `scripts/revision/roles/ui.md` | `.revision/TX.Y/ui.md` |
 | Revisor 4 — Código/Estilo | Claude Sonnet 5.5 | `.claude/agents/revisor-codigo.md` | `.revision/TX.Y/codigo.md` |
 | Approver (Gatekeeper) | Claude Opus 5.5 | `.claude/agents/aprobador.md` | `.revision/TX.Y/veredicto.md` |
@@ -257,8 +257,11 @@ Formato común de informes: `scripts/revision/roles/_formato.md`
   Google. Instálalo, inicia sesión una vez con `agy` y comprueba con
   `node scripts/revision/gemini.mjs --modelos`. Si `agy` no está en el `PATH`,
   usa `AGY_BIN`.
-- **Modelo:** `AGY_MODEL` en el entorno o en `.env.local` (por defecto
-  `gemini-4-argon-medium`). `GEMINI_MODEL` no aplica a este motor.
+- **Modelo:** por defecto uno por rol (`D20`): Seguridad `gemini-4-argon-medium`,
+  Lógica `gemini-4-hydrogen-medium`; un rol sin entrada usa Argon. Se cambia con
+  `AGY_MODEL_<ROL>` (p. ej. `AGY_MODEL_LOGICA`) o, para todos los roles, con
+  `AGY_MODEL`, en el entorno o en `.env.local`; manda `AGY_MODEL_<ROL>`, luego
+  `AGY_MODEL`. `GEMINI_MODEL` no aplica a este motor.
 - **Seguridad de `agy`:** corre siempre en `--mode plan`, desde una carpeta
   temporal y con el material dentro del prompt. Sin `plan` puede escribir,
   incluso fuera de la carpeta de trabajo. Si el árbol cambia, el informe se
@@ -282,5 +285,5 @@ Formato común de informes: `scripts/revision/roles/_formato.md`
   mejorar sus productos.
 - `.env.local` de ejemplo (todo opcional con `agy`):
   ```
-  AGY_MODEL=gemini-4-argon-medium
+  AGY_MODEL_LOGICA=gemini-4-hydrogen-medium
   ```

@@ -46,6 +46,8 @@ const MAX_ESPERA_MS = 90_000;
 const INTENTOS_INFORME = 2;
 const MOTORES = ["agy", "api"];
 const MODELO_AGY = "gemini-4-argon-medium";
+/** Modelo `agy` por rol (D20, medición T2.7): Argon no era fiable en Lógica; Hydrogen sí. Roles sin entrada usan MODELO_AGY. */
+const MODELO_AGY_POR_ROL = { seguridad: "gemini-4-argon-medium", logica: "gemini-4-hydrogen-medium" };
 const LIMITE_AGY = "600s";
 const INFORME_VALIDO = /^##\s*Veredicto:\s*(SIN|CON) BLOQUEANTES\s*$/im;
 const CUOTA_AGY = /quota|cuota|rate.?limit|resource.?exhausted|\b429\b/i;
@@ -100,8 +102,9 @@ export function parseDotenv(dotenvText) {
  * Variables de entorno primero; si faltan, `.env.local` (ignorado por git).
  * @param {Record<string, string | undefined>} env
  * @param {string} dotenvText
+ * @param {string} [rol] con `agy`: `AGY_MODEL_<ROL>` > `AGY_MODEL` > modelo por rol (D20) > D13
  */
-export function loadConfig(env, dotenvText) {
+export function loadConfig(env, dotenvText, rol = "") {
   const file = parseDotenv(dotenvText);
   const valor = (k) => env[k] || file[k] || "";
   const motor = valor("GEMINI_MOTOR") || "agy";
@@ -110,7 +113,9 @@ export function loadConfig(env, dotenvText) {
     motor,
     agy: valor("AGY_BIN") || "agy",
     apiKey: valor("GEMINI_API_KEY"),
-    model: motor === "agy" ? valor("AGY_MODEL") || MODELO_AGY : valor("GEMINI_MODEL")
+    model: motor === "agy"
+      ? (rol && valor(`AGY_MODEL_${rol.toUpperCase()}`)) || valor("AGY_MODEL") || MODELO_AGY_POR_ROL[rol] || MODELO_AGY
+      : valor("GEMINI_MODEL")
   };
 }
 
@@ -375,7 +380,7 @@ async function specInput(tarea, spec) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const dotenvPath = path.join(ROOT, ".env.local");
-  const cfg = loadConfig(process.env, existsSync(dotenvPath) ? await readFile(dotenvPath, "utf8") : "");
+  const cfg = loadConfig(process.env, existsSync(dotenvPath) ? await readFile(dotenvPath, "utf8") : "", args.rol);
   if (cfg.motor === "api" && !cfg.apiKey) throw new Error("Falta GEMINI_API_KEY: expórtala en tu shell o ponla en .env.local (ver revision.md ## 6)");
 
   if (args.modelos) {

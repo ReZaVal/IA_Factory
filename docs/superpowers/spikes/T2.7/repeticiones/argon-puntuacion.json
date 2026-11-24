@@ -1,0 +1,194 @@
+{
+  "1/seguridad": [
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:17`",
+      "defecto": null,
+      "desc": "**XSS por interpolación sin escapar (`C5` y Contrato 1):** En `renderNota(nota)`, `nota.titulo` se interpola d"
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:3-4`, `src/notas.js:50-52`",
+      "defecto": "S3",
+      "desc": "**Secreto y URL privada hardcodeados + exfiltración no autorizada (`C2`, Contrato 6 y Contexto):** Se definen "
+    },
+    {
+      "sev": "HIGH",
+      "ub": "`src/notas.js:20-23`, `src/notas.js:26-29`",
+      "defecto": "S1",
+      "desc": "**Inyección de fórmulas en exportación CSV (`C6` y Contrato 2):** `celdaCsv` no neutraliza valores que comienz"
+    },
+    {
+      "sev": "MEDIUM",
+      "ub": "`src/notas.js:16-17`",
+      "defecto": null,
+      "desc": "**Captura y exposición de datos personales no especificados (`nota.autor`):** `renderNota` procesa y renderiza"
+    }
+  ],
+  "1/logica": [
+    {
+      "sev": "HIGH",
+      "ub": "`src/notas.js:34-38`",
+      "defecto": "L1",
+      "desc": "`paginar` calcula el índice inicial como `pagina * tamano` (base 0) en lugar de `(pagina - 1) * tamano` (base "
+    },
+    {
+      "sev": "HIGH",
+      "ub": "`src/notas.js:41-44`",
+      "defecto": "L2",
+      "desc": "`promedio([])` divide `0 / 0` y devuelve `NaN`, incumpliendo el Contrato 4 («Sin notas devuelve `0`»)."
+    },
+    {
+      "sev": "HIGH",
+      "ub": "`tests/notas.test.js:6`",
+      "defecto": null,
+      "desc": "El test de `paginar` solo verifica la longitud (`.length, 2`) sobre un arreglo de 6 elementos (`[1, 2, 3, 4, 5"
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:17-20`",
+      "defecto": "S1",
+      "desc": "`renderNota` interpola `${nota.titulo}` directamente en el HTML sin llamar a `escaparHtml`, permitiendo XSS e "
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:3-4, 52-54`",
+      "defecto": "S3",
+      "desc": "Se incluye una clave secreta literal (`CLAVE_EXPORTACION`) y una función de envío remoto (`destinoExportacion`"
+    },
+    {
+      "sev": "MEDIUM",
+      "ub": "`src/notas.js:22-25`",
+      "defecto": "S2",
+      "desc": "`celdaCsv` no contempla saltos de retorno de carro (`\\r`) en la expresión regular `/[\",\\n]/`, lo que puede rom"
+    },
+    {
+      "sev": "MEDIUM",
+      "ub": "`tests/notas.test.js:1-11`",
+      "defecto": "S3",
+      "desc": "Faltan tests para casos borde exigidos por el contrato: `promedio([]) === 0`, páginas fuera de rango en `pagin"
+    }
+  ],
+  "2/seguridad": [
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:18`",
+      "defecto": "S1",
+      "desc": "**XSS en `renderNota`**: `nota.titulo` se interpola directamente dentro de `<h3>${nota.titulo}</h3>` sin pasar"
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:3-4`, `src/notas.js:46-48`",
+      "defecto": "S3",
+      "desc": "**Secreto harcodeado y canal de exfiltración de datos**: se definen `SERVICIO_EXPORTACION`, `CLAVE_EXPORTACION"
+    },
+    {
+      "sev": "HIGH",
+      "ub": "`src/notas.js:21-24`, `src/notas.js:27-30`",
+      "defecto": "S2",
+      "desc": "**Inyección de fórmulas en CSV**: `celdaCsv` y `exportarCsv` no neutralizan celdas cuyo valor comienza con `=`"
+    },
+    {
+      "sev": "MEDIUM",
+      "ub": "`src/notas.js:17-18`",
+      "defecto": "S1",
+      "desc": "**Captura y exposición de dato personal no especificado (`nota.autor`)**: `renderNota` procesa y muestra un ca"
+    }
+  ],
+  "2/logica": [
+    {
+      "sev": "HIGH",
+      "ub": "`src/notas.js:34-38`",
+      "defecto": "L1",
+      "desc": "**Paginación desplazada (off-by-one) y páginas `< 1` no devuelven `[]`:** `const desde = pagina * tamano` hace"
+    },
+    {
+      "sev": "HIGH",
+      "ub": "`src/notas.js:41-44`",
+      "defecto": "L2",
+      "desc": "**División por cero en `promedio([])`:** Cuando `notas` está vacío (`[]`), `0 / 0` devuelve `NaN`, incumpliend"
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:17-20`",
+      "defecto": "S1",
+      "desc": "**XSS / Inyección HTML en `renderNota`:** `nota.titulo` se interpola directamente en `<h3>${nota.titulo}</h3>`"
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:3-4`, `src/notas.js:52-54`",
+      "defecto": "S3",
+      "desc": "**Clave secreta hardcodeada en el código:** `CLAVE_EXPORTACION` y `SERVICIO_EXPORTACION` están escritas en el "
+    },
+    {
+      "sev": "MEDIUM",
+      "ub": "`tests/notas.test.js:6`",
+      "defecto": null,
+      "desc": "**Test de `paginar` incompleto / tautológico respecto al criterio 3:** Solo verifica `.length === 2` sobre `[1"
+    },
+    {
+      "sev": "MEDIUM",
+      "ub": "`tests/notas.test.js:7`",
+      "defecto": null,
+      "desc": "**Falta test de caso borde para `promedio([])`:** No se prueba la lista vacía especificada en el Contrato 4 («"
+    }
+  ],
+  "3/seguridad": [
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:17-20`",
+      "defecto": "S1",
+      "desc": "**XSS por interpolación de `nota.titulo` sin escapar en HTML**: `renderNota` interpola `${nota.titulo}` direct"
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:22-25`, `src/notas.js:28-31`",
+      "defecto": "S2",
+      "desc": "**Inyección de fórmulas en exportación CSV**: `celdaCsv` no neutraliza valores que comienzan por caracteres de"
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:3-4`, `src/notas.js:48-51`",
+      "defecto": "S3",
+      "desc": "**Clave/token y URL de servicio externo codificados en el repositorio y filtración de datos**: Se definen `SER"
+    },
+    {
+      "sev": "MEDIUM",
+      "ub": "`src/notas.js:18-19`",
+      "defecto": "S1",
+      "desc": "**Captura y renderizado de dato personal no especificado (`nota.autor`)**: `renderNota` lee y muestra `nota.au"
+    }
+  ],
+  "3/logica": [
+    {
+      "sev": "HIGH",
+      "ub": "`src/notas.js:34-38`",
+      "defecto": "L1",
+      "desc": "`paginar` indexa desde 0 (`const desde = pagina * tamano`) en vez de desde 1 y no valida `pagina < 1`. Para `p"
+    },
+    {
+      "sev": "HIGH",
+      "ub": "`src/notas.js:41-44`",
+      "defecto": "L2",
+      "desc": "`promedio([])` divide `0 / 0` y devuelve `NaN` en vez de `0`, incumpliendo el punto 4 del contrato («Sin notas"
+    },
+    {
+      "sev": "HIGH",
+      "ub": "`tests/notas.test.js:6`",
+      "defecto": null,
+      "desc": "El test de `paginar` solo verifica `.length` sobre un arreglo de 6 elementos (`paginar([1, 2, 3, 4, 5, 6], 2, "
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:18`",
+      "defecto": "S1",
+      "desc": "`renderNota` interpola `${nota.titulo}` directamente en `<h3>` sin pasar por `escaparHtml`, permitiendo XSS e "
+    },
+    {
+      "sev": "CRITICAL",
+      "ub": "`src/notas.js:3-4`",
+      "defecto": "S3",
+      "desc": "Clave secreta (`CLAVE_EXPORTACION`) y endpoint externo (`SERVICIO_EXPORTACION` / `destinoExportacion` en línea"
+    }
+  ]
+}

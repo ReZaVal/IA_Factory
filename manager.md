@@ -76,7 +76,6 @@ plan. Error detectado → `learn.md` antes de corregirlo.
   (PR #6, check `tests` verde, protección aplicada a `main`). Su check es de humo.
 - **Medición (S-25):** `T2.7` 🟡: Claude 4/5 (perdió L1; L2 solo MEDIUM/LOW); Flash 3/5, o 4–5/5 con «no ejecutes nada» en Lógica (frase ya en el producto; 4 corridas);
   Argon sin cuota hasta ≈ 2026-11-14. Sin `D20`. Ver `docs/superpowers/spikes/T2.7/informe.md`.
-- **Medición (S-36):** Argon 5/5 y Hydrogen 4/5 (una corrida cada uno); `D20` registrada con Hydrogen para el código de Claude, `automerge` sigue apagado; `fabrica.md` deja el paso manual a `integrar.mjs` (`T2.6`).
 - **Integración (S-26):** `T2.6` ✅: `integrar.mjs` probado de punta a punta en CoLLMena (PR #7 mezclado tras CI verde);
   falta `D20` (`T2.7`) para activar `automerge` en proyectos reales.
 - **Fase 3 (S-27):** `T3.1`-`T3.4` ✅ (constitución, roles ML, `verificar.mjs`, repo de prueba
@@ -86,9 +85,7 @@ plan. Error detectado → `learn.md` antes de corregirlo.
 - **Fase 4 (S-33):** `T4.3` ✅: `verificar-doi.mjs` (Crossref; suite simulada + prueba manual real); siguiente `T4.4`.
 - **Fase 4 (S-32):** `T4.2` ✅: corpus `research/corpus/` (plantilla, convenciones, `corpus.mjs validar`); siguiente `T4.3`.
 - **Fase 4 (S-31):** `T4.1` ✅: `constitucion-investigacion.md` (14 reglas) e `instalar.sh --carril investigacion`; pendiente visto bueno del dueño. Siguiente: `T4.2` (corpus).
-- **Próximos pasos:** el dueño decidió esperar a Argon (cuota de `agy` ≈ 2026-11-14): entonces
-  correr `node medir.mjs --modelos argon` (en el spike de `T2.7`), cerrar `T2.7` con `D20` y seguir con `T2.6`.
-  Antes de planear la corrida, comprobar con una llamada barata que Argon responde (`L14`).
+- **Próximos pasos:** `T2.7` cerrada con `D20` (Argon Seguridad, Hydrogen Lógica, `automerge` apagado). Modelo por rol cableado (S-40). Siguiente: `T2.6`.
 
 ## Mapa de extractos por fase
 ### Fase 1 — Núcleo del pipeline

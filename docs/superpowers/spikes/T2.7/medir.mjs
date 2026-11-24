@@ -2,10 +2,10 @@
 // Medición de revisores con defectos sembrados (T2.7, D12/D13). Monta un repo temporal con la
 // fábrica instalada y el fixture sin commitear, corre Seguridad y Lógica con cada modelo y puntúa
 // los informes contra claves.json.
-// Uso: node medir.mjs [--modelos argon,hydrogen,flash,claude] [--roles seguridad,logica] [--variante noejecutar] [--solo-puntuar]
+// Uso: node medir.mjs [--tarea 2] [--modelos argon,flash,claude] [--roles seguridad,logica] [--variante noejecutar] [--solo-puntuar]
 //   --variante noejecutar: añade al rol, solo en el repo temporal, «no tienes herramientas, no ejecutes nada» (L14)
 //   --roles: repite solo esos roles y conserva el resto de resultados/<modelo>/meta.json
-//   argon = agy/gemini-4-argon-medium · flash = agy/gemini-3.8-flash-medium · claude = claude -p (Sonnet, sin herramientas)
+//   argon = agy/gemini-4-argon-medium · hydrogen = agy/gemini-4-hydrogen-medium · flash = agy/gemini-3.8-flash-medium · claude = claude -p (Sonnet, sin herramientas)
 //   --solo-puntuar: no llama a ningún modelo; puntúa lo que ya hay en resultados/<modelo>/
 import { readFile, writeFile, mkdir, mkdtemp, copyFile, cp, readdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -19,7 +19,15 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(AQUI, "../../../..");
 const PRODUCTO = path.join(REPO, "skills/ia-factory/plantillas/revision/scripts/revision");
 const ROLES = ["seguridad", "logica"];
-const TAREA = "T9.1";
+const args = process.argv.slice(2);
+// --tarea 2: segunda tarea sintética (fixture2/, claves2.json, resultados2/); por defecto la primera.
+const SEGUNDA = args.includes("--tarea") && args[args.indexOf("--tarea") + 1] === "2";
+const TAREA = SEGUNDA ? "T9.2" : "T9.1";
+const FIXTURE = SEGUNDA ? "fixture2" : "fixture";
+const CLAVES = SEGUNDA ? "claves2.json" : "claves.json";
+const RESULTADOS = SEGUNDA ? "resultados2" : "resultados";
+const FUENTE = SEGUNDA ? "src/recordatorios.js" : "src/notas.js";
+const TEST = SEGUNDA ? "tests/recordatorios.test.js" : "tests/notas.test.js";
 const MODELOS = {
   argon: { motor: "agy", id: "gemini-4-argon-medium" },
   hydrogen: { motor: "agy", id: "gemini-4-hydrogen-medium" },
@@ -44,12 +52,12 @@ const sh = (cmd, args, cwd, env = {}) => execFileSync(cmd, args, { cwd, encoding
 async function prepararRepo(variante) {
   const dir = await mkdtemp(path.join(tmpdir(), "t27-"));
   sh("git", ["init", "-q", "-b", "main"], dir);
-  await writeFile(path.join(dir, "package.json"), JSON.stringify({ name: "medicion", type: "module", scripts: { test: "node tests/notas.test.js" } }, null, 2));
+  await writeFile(path.join(dir, "package.json"), JSON.stringify({ name: "medicion", type: "module", scripts: { test: `node ${TEST}` } }, null, 2));
   sh(path.join(REPO, "instalar.sh"), [dir, "--carril", "software"], REPO);
   await writeFile(path.join(dir, "scripts/revision/roles/_contexto.md"), CONTEXTO + (VARIANTES[variante] ?? ""));
   sh("git", ["add", "-A"], dir);
   sh("git", ["commit", "-q", "-m", "base"], dir);
-  await cp(path.join(AQUI, "fixture"), dir, { recursive: true });
+  await cp(path.join(AQUI, FIXTURE), dir, { recursive: true });
   return dir;
 }
 
@@ -96,7 +104,7 @@ async function conClaude(dir, rol, modelo) {
 async function correr(nombre, roles, variante) {
   const modelo = MODELOS[nombre];
   const dir = await prepararRepo(variante);
-  const salida = path.join(AQUI, "resultados", nombre);
+  const salida = path.join(AQUI, RESULTADOS, nombre);
   await mkdir(salida, { recursive: true });
   const previo = existsSync(path.join(salida, "meta.json")) ? JSON.parse(await readFile(path.join(salida, "meta.json"), "utf8")) : null;
   const meta = { modelo: modelo.id, motor: modelo.motor, roles: previo?.roles ?? {}, variantes: { ...(previo?.variantes ?? {}), ...(variante ? Object.fromEntries(roles.map((r) => [r, variante])) : {}) } };
@@ -115,9 +123,9 @@ async function correr(nombre, roles, variante) {
 }
 
 async function puntuar() {
-  const claves = JSON.parse(await readFile(path.join(AQUI, "claves.json"), "utf8"));
-  const fuente = await readFile(path.join(AQUI, "fixture/src/notas.js"), "utf8");
-  const base = path.join(AQUI, "resultados");
+  const claves = JSON.parse(await readFile(path.join(AQUI, CLAVES), "utf8"));
+  const fuente = await readFile(path.join(AQUI, FIXTURE, FUENTE), "utf8");
+  const base = path.join(AQUI, RESULTADOS);
   const porModelo = {};
   const extra = {};
   for (const nombre of existsSync(base) ? await readdir(base) : []) {
@@ -130,13 +138,12 @@ async function puntuar() {
     const costo = Object.values(meta.roles).reduce((n, r) => n + (r.costo ?? 0), 0);
     extra[nombre] = `${Math.round(seg)} s${costo ? ` · US$ ${costo.toFixed(2)}` : " · agy"}${informes.length < ROLES.length ? ` · ⚠ ${informes.length}/${ROLES.length} roles` : ""}`;
   }
-  await writeFile(path.join(AQUI, "resultados.json"), `${JSON.stringify(porModelo, null, 2)}\n`);
+  await writeFile(path.join(AQUI, SEGUNDA ? "resultados2.json" : "resultados.json"), `${JSON.stringify(porModelo, null, 2)}\n`);
   const tabla = tablaMarkdown(porModelo, claves, extra);
-  await writeFile(path.join(AQUI, "tabla.md"), `${tabla}\n`);
+  await writeFile(path.join(AQUI, SEGUNDA ? "tabla2.md" : "tabla.md"), `${tabla}\n`);
   process.stdout.write(`${tabla}\n`);
 }
 
-const args = process.argv.slice(2);
 const roles = args.includes("--roles") ? args[args.indexOf("--roles") + 1].split(",") : ROLES;
 const pedidos = (args.includes("--modelos") ? args[args.indexOf("--modelos") + 1] : "argon,flash,claude").split(",");
 if (!args.includes("--solo-puntuar")) for (const n of pedidos) {

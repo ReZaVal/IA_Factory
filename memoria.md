@@ -339,6 +339,22 @@ Contraste con IA Factory 1.0. Observaciones, no decisiones.
   `automerge` solo en proyectos propios, coherente con `D17`. `T2.5` se probó en
   `ReZaVal/CoLLMena` (S-24, a pedido del usuario); `T2.6` depende de `T2.7`.
 
+### D20 — Argon revisor de Seguridad, Hydrogen revisor de Lógica; `automerge` sigue apagado (provisional)
+- **Decisión:** revisor de **Seguridad** = Argon (`gemini-4-argon-medium`); revisor de **Lógica** =
+  Hydrogen (`gemini-4-hydrogen-medium`), ambos por `agy`. El rol `logica.md` del carril software limita a
+  MEDIUM los hallazgos sobre tests débiles o ausentes. **`automerge` (`D18`) no se activa** en ningún repo:
+  queda como opt-in del dueño, proyecto por proyecto y solo propios (`D17`).
+- **Razón (S-37 y S-39, 2026-11-23, decidida por el usuario: «Argon no ve lógica, Hydrogen puede»):** con
+  3 corridas por celda en dos tareas sintéticas (5 defectos cada una), el umbral de S-36 se cumple: Argon en
+  Seguridad (`S1`-`S3` bloqueantes 3/3 en ambas, ≤ 1 falso positivo bloqueante, no repetido) y Hydrogen en
+  Lógica (`L1`/`L2` bloqueantes 3/3 en ambas, 0 falsos positivos). Argon en Lógica, sin la regla de MEDIUM,
+  falló por falsos positivos repetidos (HIGH «test débil»); `puntuar.mjs` ahora admite rangos y rescata
+  por palabras clave los hallazgos con líneas desfasadas (el modelo cuenta mal las líneas).
+- **Alternativas rechazadas:** Argon también en Lógica (el usuario prefirió Hydrogen, aunque con la regla de
+  MEDIUM también cumplió); Claude en paralelo (más caro y no medido en esta tanda); descartar a Argon.
+- **Impacto:** **provisional**: dos tareas sintéticas de defectos de manual. Hydrogen en Seguridad y Argon en
+  Lógica con otra tarea no se midieron en la misma medida. Cableado en `gemini.mjs` (S-40): modelo por rol, `AGY_MODEL_<ROL>` > `AGY_MODEL` > defecto por rol. `T2.6` deja de depender de `T2.7`.
+
 ## 4. Contrato de datos / estructura
 Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen.schema.json`
 (JSON Schema 2020-12). Resumen (`D18`):
@@ -365,23 +381,6 @@ Esquema formal: `skills/ia-factory/plantillas/revision/scripts/revision/dictamen
 - `MERGE` solo si: 4/4 dictámenes válidos y con hash vigente, aprobador
   `APROBADO` sin CRITICAL/HIGH confirmados, suite en verde re-ejecutada por el
   script, `radio = bajo`, vía no FTD y `automerge` activo en el proyecto.
-
-### D20 — Revisores del código de Claude: Hydrogen; auto-merge sigue apagado
-- **Decisión (S-36, 2026-11-23, dirección del dueño):** el código o producto que
-  escribe Claude lo revisa Hydrogen (`gemini-4-hydrogen-medium` vía `agy`, `D13`),
-  con `SIN_HERRAMIENTAS`. El `automerge` (`D4`) no se activa en proyectos reales
-  mientras no se repita la medición (3 corridas por modelo y una segunda tarea).
-- **Datos (`T2.7`, una tarea, una corrida):** Argon 5/5 (1 FP), Flash 5/5 (0 FP),
-  Hydrogen 4/5 (1 FP, falla `L2` promedio de lista vacía), Claude 4/5 (`L1` perdido).
-  Sin varianza: sirve para descartar, no para elegir con precisión.
-- **Riesgo conocido:** Hydrogen no vio `L2`, que Argon y Flash sí vieron como
-  bloqueante. Mitigación propuesta, pendiente de tu confirmación: Argon o Flash como
-  segundo revisor de Lógica.
-- **Alternativas rechazadas:** solo Claude como revisor (revisa su propio estilo y
-  perdió `L1`); activar el auto-merge ya (la cobertura de Lógica no está medida con
-  repeticiones).
-- **Impacto:** `AGY_MODEL`/`MODELO_AGY` de `gemini.mjs` y la plantilla `.env` aún
-  apuntan a Argon: cambiarlos tras tu OK.
 
 ## 5. Preguntas abiertas
 - [ ] **P1 — Ritmo, duración de sesión y deadline.** Provisional: 1 sesión por
