@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.1.0 — en desarrollo
+- Se retira el carril multimedia del alcance (`D21`): el producto queda con los carriles software, ML e investigación.
 - `fabrica.mjs` deja en `fabrica.md` un «Siguiente paso (manual)» al APROBAR: commit de la persona y `integrar.mjs --dry-run` (`T2.6`, `D4`).
 - Modelo `agy` por rol (`D20`, `T2.7`): `gemini.mjs` usa Argon en Seguridad y Hydrogen en Lógica; un rol sin entrada usa
   Argon. `AGY_MODEL_<ROL>` lo cambia por rol y `AGY_MODEL` para todos (el de rol manda). Sin cambios si ya fijabas `AGY_MODEL`.

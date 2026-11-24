@@ -19,10 +19,10 @@ solo su `Dn`. Un cambio de plan se actualiza aquí, no en `memoria.md`.
 | 2 — Gatekeeper y auto-merge | 6 | 6 | 2026-12-28 → 2027-02-01 |
 | 3 — Carril ML | 4 | 4 | 2027-02-08 → 2027-03-01 |
 | 4 — Carril investigación | 5 | 5 | 2027-03-08 → 2027-04-05 |
-| 5 — Carril multimedia | 5 | 5 | 2027-04-12 → 2027-05-10 |
+| 5 — Carril multimedia (retirada, `D21`) | — | — | fuera del proyecto |
 | 6 — Codex (postergada, `D6`) | 2 | 2 | cuando haya clave de OpenAI |
 | 7 — Ingesta asíncrona (postergada, `D7`) | 5 | 5 | sin fecha |
-| **Total fases 1-5** | **27** | **27** | **cierre est. 2027-05-10** |
+| **Total fases 1-4** | **22** | **22** | **cierre est. 2027-04-05** |
 
 ### Convención
 `TX.Y` = tarea; `S-NN` = sesión. ⬜ pendiente · 🟡 en curso · ✅ hecha ·
@@ -98,14 +98,8 @@ en un mismo proyecto los nombres chocarían. Resuelto en `T3.2`: roles ML en `ro
 | ✅ T4.4 | Revisor Gemini de citas y metodología | T4.3 | 1 | Prompt + tests |
 | ✅ T4.5 | Prueba en un paper de prueba | T4.4 | 1 | Pipeline completo en verde |
 
-### Fase 5 — Carril multimedia ⬜
-| ID | Tarea | Dep. | Ses. | Criterio de salida |
-|---|---|---|---|---|
-| ⬜ T5.1 | `constitution.md` multimedia | T4.5 | 1 | Constitución |
-| ⬜ T5.2 | Herramientas FFmpeg por CLI (render, audio, subtítulos) | T5.1 | 1 | Scripts probados |
-| ⬜ T5.3 | Extracción de frames para el revisor de visión | T5.2 | 1 | Frames revisados por un agente Claude (`D13`: `agy` en `plan` no lee imágenes) |
-| ⬜ T5.4 | Revisor de safe zones y calidad de render | T5.3 | 1 | Prompt + tests |
-| ⬜ T5.5 | Prueba en un video de prueba | T5.4 | 1 | Pipeline completo en verde |
+### Fase 5 — Carril multimedia (retirada, `D21`)
+Sale del proyecto por decisión del dueño (S-37). Las tareas `T5.1`-`T5.5` se eliminan; el ID `Fase 5` no se reutiliza.
 
 ### Fase 6 — Codex como Revisor 1 (postergada, `D6`) ⬜
 | ID | Tarea | Dep. | Ses. | Criterio de salida |
@@ -124,7 +118,6 @@ hosting. 5 sesiones estimadas.
 | 8-13 | 2026-12-28 → 2027-02-01 | 2 | 🏁 auto-merge seguro |
 | 14-17 | 2027-02-08 → 2027-03-01 | 3 | 🏁 carril ML |
 | 18-22 | 2027-03-08 → 2027-04-05 | 4 | 🏁 carril investigación |
-| 23-27 | 2027-04-12 → 2027-05-10 | 5 | 🏁 carril multimedia |
 
 **Ruta crítica:** `T1.1 → T1.2 → T1.3 → T1.6 → T1.7 → T1.9 → … → T1.15 → T2.1 → … → T2.6`.
 **Dónde se puede romper:** (1) `claude -p` sin permisos suficientes (riesgo de
@@ -174,6 +167,7 @@ repos privados; (3) los carriles 3-5 dependen de tener proyectos de prueba
 | S-37 | 2026-11-23 | T2.7 | ✅ | Argon medido 3× (6/6 informes). Dueño: caso B corrigiendo rangos en `puntuar.mjs` (+3 tests) → `D20`: Argon revisor de Seguridad, `automerge` apagado, Lógica abierta. Ver `informe.md` | **Dueño: elegir revisor de Lógica**; luego `T2.6` |
 | S-38 | 2026-11-23 | T2.7 | 🟡 | Rol Lógica (software): «test débil» como máximo MEDIUM (+ test `rol-logica-severidad`, `CHANGELOG`). 541 tests verdes. Medido en el mismo fixture: Argon Lógica 3/3 informes, `L1`/`L2` HIGH 3/3, «test débil» MEDIUM 3/3, 0 FP bloqueantes | **Dueño: ¿segunda tarea sintética antes de fijar Argon en Lógica?** |
 | S-39 | 2026-11-23 | T2.7 | ✅ | Segunda tarea sintética (`fixture2/`, `claves2.json`, `medir.mjs --tarea 2`); `puntuar.mjs` con rescate por palabras clave (+4 tests); Hydrogen añadido a `medir.mjs`. Argon Seguridad y Hydrogen Lógica cumplen el umbral en las 2 tareas (3 corridas c/u, 0-1 FP). `D20` actualizada: Argon Seguridad + Hydrogen Lógica, `automerge` apagado | **Dueño: ¿cablear un modelo por rol en el producto (hoy un solo `AGY_MODEL`)?** Luego `T2.6` |
+| S-37 | 2026-11-23 | — | ✅ | Carril multimedia retirado a pedido del dueño (`D21`): sale la Fase 5 (`T5.1`-`T5.5`), el cronograma cierra en las fases 1-4 (22 tareas, est. 2027-04-05) y se quitan las menciones en `manager.md`, `memoria.md`, `SKILL.md` y la spec de evidencia. La propuesta original no se toca. No había código multimedia que borrar | **Fase 6 (`T6.1`, con clave de OpenAI) o medir los roles ML con un leakage sembrado** |
 | S-40 | 2026-11-23 | T2.7 | ✅ | Modelo `agy` por rol en `gemini.mjs` (`loadConfig(env, dotenv, rol)`): Seguridad Argon, Lógica Hydrogen; `AGY_MODEL_<ROL>` y `AGY_MODEL` lo cambian; `revision.md` y `CHANGELOG` al día. 550 tests, `plugin validate` y `instalar.sh --con-revision` OK. No se probó una llamada real a `agy` por rol | **`T2.6`** |
 
 ## 7. Cómo se mantiene vivo

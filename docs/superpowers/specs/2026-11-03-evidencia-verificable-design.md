@@ -35,7 +35,7 @@ Caso que lo motivó, `T1.2` (cupones) en `IA_Factory_Test`, APROBADA en la ronda
 - No se crean agentes nuevos salvo el probador. El resto es un contrato común.
 - No cambia `D4` (auto-merge), `D10` (permisos), `D11` (rondas) ni la regla de commit (`agente.md §4`).
 - No hay dashboard ni servidor permanente.
-- Los carriles ML, investigación y multimedia heredan el contrato cuando se activen; no se diseñan aquí.
+- Los carriles ML e investigación heredan el contrato cuando se activen; no se diseñan aquí.
 
 **Anti-metas** (fracaso aunque «funcione»)
 - Informes más largos que nadie lee.

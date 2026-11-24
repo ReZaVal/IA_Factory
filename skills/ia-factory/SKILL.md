@@ -78,7 +78,7 @@ El harness son **cinco documentos con roles disjuntos** más los documentos de
 | `planner.md` | **Plan de ejecución.** Tareas, sesiones y cronograma. | ¿Qué tarea concreta toca ahora, de qué depende, cuánto falta? |
 | `learn.md` | **Bitácora de aprendizaje.** Errores y sus reglas. | ¿Qué error ya pasó y qué regla dejó para no repetirlo? |
 | `<dominio>.md` (0..n) | **Cómo se hace X.** Uno por tipo de trabajo. | ¿Cómo se escribe el código / se arma el flujo / se valida? |
-| `constitucion-<carril>.md` (0..n) | **Reglas duras del carril** (software, ml, investigación, multimedia). Un doc de dominio más, uno por carril activo. | ¿Qué no puede romper nunca un cambio de este tipo? |
+| `constitucion-<carril>.md` (0..n) | **Reglas duras del carril** (software, ml, investigación). Un doc de dominio más, uno por carril activo. | ¿Qué no puede romper nunca un cambio de este tipo? |
 
 La constitución es la única fuente de las reglas duras del carril: el
 planificador la lee al escribir la spec y el script de revisores la envía a

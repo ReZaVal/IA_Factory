@@ -116,7 +116,8 @@ Criterio de salida: con 4/4 y bajo riesgo el cambio entra a `main` solo; con
 riesgo de núcleo se abre un PR; un dictamen faltante o alterado, o un test rojo,
 lo bloquea en CI aunque el agente diga lo contrario.
 
-### Fase 3 — Carril ML · Fase 4 — Investigación · Fase 5 — Multimedia
+### Fase 3 — Carril ML · Fase 4 — Investigación
+(La Fase 5, multimedia, se retiró: `D21`.)
 Criterio de salida de cada uno: constitución del carril, revisores y
 herramientas propios, y el pipeline completo en verde sobre un proyecto de
 prueba del carril.
@@ -132,7 +133,7 @@ Se definen al activarse (`D6`, `D7`).
 | 2 — Gatekeeper y auto-merge | ⬜ |
 | 3 — ML | ✅ con salvedades (S-30) |
 | 4 — Investigación | ✅ con salvedades (S-35) |
-| 5 — Multimedia | ⬜ |
+| 5 — Multimedia | ❌ retirada (`D21`) |
 | 6 — Codex | ⬜ postergada |
 | 7 — Ingesta | ⬜ postergada |
 
